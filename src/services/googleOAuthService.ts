@@ -35,7 +35,8 @@ class GoogleOAuthService {
 
   private readonly PROXY_API_BASE = "/api";
   private readonly GOOGLE_AUTH_API = `${this.PROXY_API_BASE}/auth/google/login`;
-  private readonly CALLBACK_URL = "http://localhost:3000/google/callback";
+  private readonly CALLBACK_URL =
+    "https://b6cece5bbf20.ngrok-free.app/google/callback";
 
   // Khởi tạo Google OAuth
   async initializeGoogleAuth(): Promise<void> {
@@ -115,7 +116,7 @@ class GoogleOAuthService {
       // Khóa redirect_uri đồng nhất theo LAN IP để tránh mismatch
       params.set(
         "redirect_uri",
-        `http://192.168.1.37:8080/api/auth/google/callback`
+        `https://b6cece5bbf20.ngrok-free.app/api/auth/google/callback`
       );
       params.set("prompt", "select_account");
       // Google yêu cầu device_id và device_name khi dùng private IP trong redirect_uri
