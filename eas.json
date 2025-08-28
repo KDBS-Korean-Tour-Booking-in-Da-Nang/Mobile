@@ -1,0 +1,20 @@
+{
+  "cli": {
+    "version": ">=3.0.0"
+  },
+  "build": {
+    "production": {
+      "android": {
+        "workflow": "managed"
+      },
+      "ios": {
+        "simulator": true
+      }
+    },
+    "development": {
+      "ios": {
+        "simulator": true
+      }
+    }
+  }
+}
