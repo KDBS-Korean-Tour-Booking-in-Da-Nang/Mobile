@@ -1,26 +1,20 @@
 import { useState, useEffect } from "react";
-import { useRouter } from "expo-router";
-import authService, {
-  LoginRequest,
-  SignupRequest,
-  ForgotPasswordRequest,
-  ResetPasswordRequest,
-} from "../services/authService";
+import authService from "../services/authService";
 
+// This hook remains for login form logic
 export const useLogin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, role: string) => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await authService.login({ email, password });
+      const response = await authService.login({ email, password, role });
       return response;
     } catch (err: any) {
       setError(err.message);
-      return null;
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -29,67 +23,43 @@ export const useLogin = () => {
   return { login, loading, error };
 };
 
+// This hook can be used to get the initial auth status without causing dependency cycles
+export const useAuthStatus = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      setLoading(true);
+      try {
+        const authenticated = await authService.isAuthenticated();
+        setIsAuthenticated(authenticated);
+      } catch (error) {
+        console.error("Auth check error:", error);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkStatus();
+  }, []);
+
+  return { isAuthenticated, loading };
+};
+
+// Other hooks like useSignUp, useForgotPassword can remain here as they are independent
 export const useSignUp = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const signUp = async (email: string, password: string, username: string) => {
+  const signUp = async (email: string, password: string, fullName: string) => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await authService.signup({ username, email, password });
-      return response;
-    } catch (err: any) {
-      setError(err.message);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return { signUp, loading, error };
-};
-
-export const useForgotPassword = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const forgotPassword = async (email: string) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await authService.forgotPassword({ email });
-      return response;
-    } catch (err: any) {
-      setError(err.message);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return { forgotPassword, loading, error };
-};
-
-export const useResetPassword = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const resetPassword = async (
-    email: string,
-    otp: string,
-    newPassword: string
-  ) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await authService.resetPassword({
+      const response = await authService.signup({
+        username: fullName,
         email,
-        otp,
-        newPassword,
+        password,
       });
       return response;
     } catch (err: any) {
@@ -100,49 +70,5 @@ export const useResetPassword = () => {
     }
   };
 
-  return { resetPassword, loading, error };
-};
-
-export const useAuth = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
-    try {
-      const authenticated = await authService.isAuthenticated();
-      const userData = await authService.getCurrentUser();
-
-      setIsAuthenticated(authenticated);
-      setUser(userData);
-    } catch (error) {
-      console.error("Auth check error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await authService.logout();
-      setIsAuthenticated(false);
-      setUser(null);
-      router.replace("/login");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
-  };
-
-  return {
-    isAuthenticated,
-    user,
-    loading,
-    logout,
-    checkAuthStatus,
-  };
+  return { signUp, loading, error };
 };

@@ -36,7 +36,7 @@ class GoogleOAuthService {
   private readonly PROXY_API_BASE = "/api";
   private readonly GOOGLE_AUTH_API = `${this.PROXY_API_BASE}/auth/google/login`;
   private readonly CALLBACK_URL =
-    "https://b6cece5bbf20.ngrok-free.app/google/callback";
+    "https://2dc573f3a009.ngrok-free.app/google/callback";
 
   // Khởi tạo Google OAuth
   async initializeGoogleAuth(): Promise<void> {
@@ -110,17 +110,13 @@ class GoogleOAuthService {
 
       if (!authUrl) throw new Error("Cannot get Google authorization URL");
 
-      // Ghi đè redirect_uri để tương thích emulator/device và thêm account picker
       const updated = new URL(authUrl);
       const params = updated.searchParams;
-      // Khóa redirect_uri đồng nhất theo LAN IP để tránh mismatch
       params.set(
         "redirect_uri",
-        `https://b6cece5bbf20.ngrok-free.app/api/auth/google/callback`
+        `https://2dc573f3a009.ngrok-free.app/api/auth/google/callback`
       );
       params.set("prompt", "select_account");
-      // Google yêu cầu device_id và device_name khi dùng private IP trong redirect_uri
-      // Không phụ thuộc vào native module: dùng giá trị mô tả đơn giản
       const deviceId = `dev-${Platform.OS}`;
       const deviceName = `LDPlayer-${Platform.OS}`;
       params.set("device_id", deviceId);
@@ -128,7 +124,6 @@ class GoogleOAuthService {
       updated.search = params.toString();
       const authUrlWithPrompt = updated.toString();
 
-      // Mở Google OAuth URL trong WebBrowser
       const result = await openAuthSessionAsync(
         authUrlWithPrompt,
         this.CALLBACK_URL
@@ -137,15 +132,12 @@ class GoogleOAuthService {
       if (result.type === "success" && result.url) {
         await this.handleGoogleCallback(result.url);
       } else if (result.type === "cancel") {
-        console.log("Google OAuth cancelled by user");
       }
     } catch (error) {
-      console.error("Google OAuth error:", error);
       throw new Error("Failed to start Google OAuth");
     }
   }
 
-  // Xử lý callback từ Google
   private async handleGoogleCallback(url: string): Promise<void> {
     try {
       const urlObj = new URL(url);
@@ -190,7 +182,6 @@ class GoogleOAuthService {
       // Emit event để notify app về login thành công
       this.onGoogleLoginSuccess?.({ token, authenticated: true, user });
     } catch (error) {
-      console.error("Google callback error:", error);
       this.onGoogleLoginError?.(error as Error);
     }
   }

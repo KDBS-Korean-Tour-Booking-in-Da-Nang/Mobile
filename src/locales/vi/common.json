@@ -1,0 +1,87 @@
+{
+  "brand": "Đà Nẵng - Korea Tour",
+  "home": {
+    "hero": {
+      "titleLead": "Tour du lịch",
+      "titleEmph": "Đà Nẵng - Korea",
+      "desc": "Khám phá vẻ đẹp của Đà Nẵng và trải nghiệm văn hóa Hàn Quốc với những tour du lịch chất lượng cao.",
+      "btnPayment": "Thanh toán",
+      "btnProfile": "Hồ sơ",
+      "btnRegister": "Đăng ký",
+      "btnLogin": "Đăng nhập"
+    },
+    "welcome": {
+      "heading": "Chào mừng đến với",
+      "subheading": "Tour du lịch Đà Nẵng - Korea"
+    },
+    "dashboard": {
+      "welcome": "Tour du lịch",
+      "subtitle": "Đà Nẵng - Korea",
+      "description": "Khám phá vẻ đẹp của Đà Nẵng và trải nghiệm văn hóa Hàn Quốc với những tour du lịch chất lượng cao.",
+      "totalTours": "Tổng số tour",
+      "pending": "Đang chờ",
+      "completed": "Đã hoàn thành",
+      "viewProfile": "Xem hồ sơ",
+      "settings": "Cài đặt",
+      "logout": "Đăng xuất",
+      "loggingOut": "Đang đăng xuất...",
+      "role": "Vai trò"
+    }
+  },
+  "auth": {
+    "common": {
+      "email": "Email",
+      "password": "Mật khẩu",
+      "rememberMe": "Ghi nhớ đăng nhập",
+      "or": "Hoặc",
+      "otp": "Mã OTP",
+      "otpPlaceholder": "000000",
+      "notReceivedCode": "Không nhận được mã?",
+      "resend": "Gửi lại",
+      "resendIn": "Gửi lại sau {{seconds}}s",
+      "backToLogin": "Quay lại đăng nhập",
+      "backToRegister": "Quay lại đăng ký",
+      "backToForgot": "Quay lại quên mật khẩu",
+      "send": "Gửi",
+      "sending": "Đang gửi..."
+    },
+    "login": {
+      "title": "Đăng nhập",
+      "subtitle": "Chào mừng bạn quay trở lại",
+      "submit": "Đăng nhập",
+      "submitting": "Đang đăng nhập...",
+      "loginWithGoogle": "Đăng nhập bằng Google",
+      "loginWithNaver": "Đăng nhập bằng Naver",
+      "forgotPassword": "Quên mật khẩu?",
+      "noAccount": "Chưa có tài khoản?",
+      "registerNow": "Đăng ký ngay",
+      "staffAdminLogin": "Đăng nhập Staff/Admin",
+      "error": "Đăng nhập thất bại. Vui lòng thử lại.",
+      "oauthErrorGoogle": "Không thể kết nối với Google. Vui lòng thử lại.",
+      "oauthErrorNaver": "Không thể kết nối với Naver. Vui lòng thử lại.",
+      "successMessage": "Đăng nhập thành công!"
+    },
+    "register": {
+      "title": "Đăng ký tài khoản",
+      "username": "Tên người dùng",
+      "usernamePlaceholder": "Nhập tên người dùng",
+      "password": "Mật khẩu",
+      "confirmPassword": "Xác nhận mật khẩu",
+      "roleSelect": "Chọn vai trò",
+      "roleUserTitle": "Người dùng",
+      "roleUserDesc": "Đăng ký tour du lịch",
+      "roleBusinessTitle": "Doanh nghiệp",
+      "roleBusinessDesc": "Cung cấp dịch vụ",
+      "submit": "Đăng ký",
+      "submitting": "Đang đăng ký...",
+      "haveAccount": "Đã có tài khoản?",
+      "login": "Đăng nhập",
+      "errors": {
+        "passwordMismatch": "Mật khẩu xác nhận không khớp",
+        "passwordMinLength": "Mật khẩu phải có ít nhất 6 ký tự",
+        "usernameRequired": "Tên người dùng không được để trống",
+        "registerFailed": "Đăng ký thất bại. Vui lòng thử lại."
+      }
+    }
+  }
+}

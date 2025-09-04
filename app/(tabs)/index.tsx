@@ -1,4 +1,3 @@
-import React from "react";
 import {
   View,
   Text,
@@ -6,7 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import { useAuth } from "../../src/hooks/useAuth";
+import { useAuthContext } from "../../src/contexts/authContext";
 import { Button } from "../../src/components/Button";
 import {
   colors,
@@ -16,7 +15,7 @@ import {
 } from "../../src/constants/theme";
 
 export default function HomeScreen() {
-  const { user, logout, loading } = useAuth();
+  const { user, logout, loading } = useAuthContext();
 
   const handleLogout = async () => {
     await logout();
@@ -25,8 +24,12 @@ export default function HomeScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.welcomeText}>Welcome back!</Text>
-        <Text style={styles.subtitleText}>Here is what is happening today</Text>
+        <Text style={styles.welcomeText}>Tour du lịch</Text>
+        <Text style={styles.subtitleText}>Đà Nẵng - Korea</Text>
+        <Text style={styles.descriptionText}>
+          Khám phá vẻ đẹp của Đà Nẵng và trải nghiệm văn hóa Hàn Quốc với những
+          tour du lịch chất lượng cao.
+        </Text>
       </View>
 
       <View style={styles.userCard}>
@@ -39,37 +42,37 @@ export default function HomeScreen() {
         <View style={styles.userInfo}>
           <Text style={styles.username}>{user?.username || "User"}</Text>
           <Text style={styles.email}>{user?.email || "user@example.com"}</Text>
-          <Text style={styles.role}>Role: {user?.role || "User"}</Text>
+          <Text style={styles.role}>Vai trò: {user?.role || "User"}</Text>
         </View>
       </View>
 
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>0</Text>
-          <Text style={styles.statLabel}>Total Orders</Text>
+          <Text style={styles.statLabel}>Tổng số tour</Text>
         </View>
 
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>0</Text>
-          <Text style={styles.statLabel}>Pending</Text>
+          <Text style={styles.statLabel}>Đang chờ</Text>
         </View>
 
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>0</Text>
-          <Text style={styles.statLabel}>Completed</Text>
+          <Text style={styles.statLabel}>Đã hoàn thành</Text>
         </View>
       </View>
 
       <View style={styles.actionsContainer}>
         <Button
-          title="View Profile"
+          title="Xem hồ sơ"
           onPress={() => {}}
           variant="outline"
           style={styles.actionButton}
         />
 
         <Button
-          title="Settings"
+          title="Cài đặt"
           onPress={() => {}}
           variant="outline"
           style={styles.actionButton}
@@ -77,7 +80,7 @@ export default function HomeScreen() {
       </View>
 
       <Button
-        title={loading ? "Logging out..." : "Logout"}
+        title={loading ? "Đang đăng xuất..." : "Đăng xuất"}
         onPress={handleLogout}
         variant="secondary"
         style={styles.logoutButton}
@@ -104,8 +107,16 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   subtitleText: {
+    fontSize: 20,
+    fontWeight: "600" as const,
+    color: colors.primary.main,
+    marginBottom: spacing.sm,
+  },
+  descriptionText: {
     fontSize: 16,
     color: colors.text.secondary,
+    textAlign: "center",
+    lineHeight: 24,
   },
   userCard: {
     backgroundColor: colors.surface.primary,

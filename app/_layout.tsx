@@ -1,36 +1,71 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
+import { Stack, useRouter } from "expo-router";
+import { useEffect } from "react";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import "react-native-reanimated";
+import * as SplashScreen from "expo-splash-screen";
+import { NavigationProvider } from "../src/navigation";
+import { AuthProvider, useAuthContext } from "../src/contexts/authContext";
 
-import { useColorScheme } from "@/hooks/useColorScheme";
+SplashScreen.preventAutoHideAsync();
+
+function RootLayoutNav() {
+  const { isAuthenticated, loading } = useAuthContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loading) {
+      return; // Wait for the auth state to be determined
+    }
+
+    if (isAuthenticated) {
+      router.replace("/forum");
+    } else {
+      router.replace("/home");
+    }
+  }, [isAuthenticated, loading]);
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="home" />
+      <Stack.Screen name="loginSelection" />
+      <Stack.Screen name="userLogin" />
+      <Stack.Screen name="adminLogin" />
+      <Stack.Screen name="signUp" />
+      <Stack.Screen name="forum" />
+      <Stack.Screen name="verifyEmail" />
+      <Stack.Screen name="resetPassword" />
+      <Stack.Screen name="businessInfo" />
+      <Stack.Screen name="forgot" />
+      <Stack.Screen name="createPost" options={{ presentation: "modal" }} />
+      <Stack.Screen name="userProfile" />
+      <Stack.Screen name="(tabs)" />
+    </Stack>
+  );
+}
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
+  const [loaded, error] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
+  useEffect(() => {
+    if (error) throw error;
+  }, [error]);
+
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
+
   if (!loaded) {
-    // Async font loading only occurs in development.
     return null;
   }
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack initialRouteName="login">
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="forgot" options={{ title: "Forgot Password" }} />
-        <Stack.Screen name="signup" options={{ title: "Sign Up" }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <NavigationProvider>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </NavigationProvider>
   );
 }
