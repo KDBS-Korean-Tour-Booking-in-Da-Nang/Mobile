@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
-import forumService, { PostResponse } from "../services/forumService";
-import reactionService from "../services/reactionService";
+import { updatePost, deletePost, PostResponse } from "../endpoints/forum";
+import { addReaction, clearReaction } from "../endpoints/reactions";
 import { useAuthContext } from "../contexts/authContext";
 import CommentSection from "./CommentSection";
 import EditPostModal from "./EditPostModal";
 import ReportModal from "./ReportModal";
-import savedPostService from "../services/savedPostService";
-import reportService from "../services/reportService";
+import {
+  checkIfPostIsSaved,
+  savePost as savePostEndpoint,
+  unsavePost as unsavePostEndpoint,
+} from "../endpoints/savedPosts";
+import { createReport } from "../endpoints/reports";
 import { colors, spacing } from "../constants/theme";
 
 const formatTimeAgo = (dateString: string) => {
@@ -70,7 +74,7 @@ const PostCard = ({ post, onUpdated, onDeleted }: PostCardProps) => {
         onPress: async () => {
           setPending(true);
           try {
-            await forumService.deletePost(post.id);
+            await deletePost(post.id, user.email);
             setDeleted(true);
             onDeleted?.(post.id);
           } catch (error) {
@@ -88,7 +92,7 @@ const PostCard = ({ post, onUpdated, onDeleted }: PostCardProps) => {
     if (!user) return;
     const checkSaved = async () => {
       try {
-        const saved = await savedPostService.checkIfPostIsSaved(post.id);
+        const saved = await checkIfPostIsSaved(post.id, user.email);
         setIsSaved(saved);
       } catch (err) {
         // Silently fail is fine, button will just show "Save"
@@ -107,9 +111,9 @@ const PostCard = ({ post, onUpdated, onDeleted }: PostCardProps) => {
 
     try {
       if (wasSaved) {
-        await savedPostService.unsavePost(post.id);
+        await unsavePostEndpoint(post.id, user.email);
       } else {
-        await savedPostService.savePost({ postId: post.id });
+        await savePostEndpoint({ postId: post.id }, user.email);
       }
     } catch (error) {
       setIsSaved(wasSaved); // Revert on failure
@@ -124,7 +128,7 @@ const PostCard = ({ post, onUpdated, onDeleted }: PostCardProps) => {
     if (!user) return;
     setReportLoading(true);
     try {
-      await reportService.createReport(user.email, {
+      await createReport(user.email, {
         targetId: post.id,
         targetType: "POST",
         reasons,
@@ -148,7 +152,10 @@ const PostCard = ({ post, onUpdated, onDeleted }: PostCardProps) => {
     if (!user || user.email !== post.userEmail) return;
     setEditLoading(true);
     try {
-      const updatedPost = await forumService.updatePost(post.id, data);
+      const updatedPost = await updatePost(post.id, {
+        ...data,
+        userEmail: user.email,
+      });
       setTitle(updatedPost.title);
       setContent(updatedPost.content);
       setHashtags(updatedPost.hashtags);
@@ -180,9 +187,11 @@ const PostCard = ({ post, onUpdated, onDeleted }: PostCardProps) => {
       // Set new reaction
       setUserReaction(reactionType);
       if (reactionType === "LIKE") {
-        setLikeCount((c) => c + (prevReaction === "LIKE" ? 0 : 1));
+        // If switching from DISLIKE to LIKE, just add 1
+        // If switching from no reaction to LIKE, add 1
+        setLikeCount((c) => c + 1);
       } else {
-        // switching from LIKE to DISLIKE reduces likeCount by 1
+        // switching to DISLIKE
         if (prevReaction === "LIKE") setLikeCount((c) => Math.max(0, c - 1));
       }
     }
@@ -190,9 +199,9 @@ const PostCard = ({ post, onUpdated, onDeleted }: PostCardProps) => {
     setPending(true);
     try {
       if (prevReaction === reactionType) {
-        await reactionService.clearReaction("POST", post.id);
+        await clearReaction(user.email, "POST", post.id);
       } else {
-        await reactionService.addReaction({
+        await addReaction(user.email, {
           targetId: post.id,
           targetType: "POST",
           reactionType,

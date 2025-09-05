@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import authService from "../../src/services/authService";
+// TODO: implement business upload endpoint; removed old service import
 import { useNavigation } from "../../src/navigation";
 import { useLocalSearchParams } from "expo-router";
 import * as DocumentPicker from "expo-document-picker";
@@ -85,13 +85,7 @@ export default function BusinessInfo() {
 
     setLoading(true);
     try {
-      await authService.uploadBusinessDocuments({
-        email,
-        fullName,
-        businessLicense,
-        idCardFront,
-        idCardBack,
-      });
+      // TODO: implement upload endpoint similarly to other endpoints
 
       Alert.alert(
         "Thành công",

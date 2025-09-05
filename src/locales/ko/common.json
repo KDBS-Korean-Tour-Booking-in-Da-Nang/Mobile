@@ -1,0 +1,104 @@
+{
+  "brand": "다낭 - 한국 투어",
+  "home": {
+    "hero": {
+      "titleLead": "여행 투어",
+      "titleEmph": "다낭 - 한국",
+      "desc": "고품격 투어로 다낭의 아름다움을 발견하고 한국 문화를 경험하세요.",
+      "btnPayment": "결제",
+      "btnProfile": "프로필",
+      "btnRegister": "등록",
+      "btnLogin": "로그인"
+    },
+    "welcome": {
+      "heading": "에 오신 것을 환영합니다",
+      "subheading": "다낭 - 한국 투어"
+    },
+    "dashboard": {
+      "welcome": "여행 투어",
+      "subtitle": "다낭 - 한국",
+      "description": "고품격 투어로 다낭의 아름다움을 발견하고 한국 문화를 경험하세요.",
+      "totalTours": "총 투어 수",
+      "pending": "대기 중",
+      "completed": "완료됨",
+      "viewProfile": "프로필 보기",
+      "settings": "설정",
+      "logout": "로그아웃",
+      "loggingOut": "로그아웃 중...",
+      "role": "역할"
+    }
+  },
+  "auth": {
+    "common": {
+      "email": "이메일",
+      "password": "비밀번호",
+      "rememberMe": "로그인 기억하기",
+      "or": "또는",
+      "otp": "OTP 코드",
+      "otpPlaceholder": "000000",
+      "notReceivedCode": "코드를 받지 못하셨나요?",
+      "resend": "재전송",
+      "resendIn": "{{seconds}}초 후에 재전송",
+      "backToLogin": "로그인으로 돌아가기",
+      "backToRegister": "등록으로 돌아가기",
+      "backToForgot": "비밀번호 찾기로 돌아가기",
+      "send": "보내기",
+      "sending": "보내는 중..."
+    },
+    "login": {
+      "title": "로그인",
+      "subtitle": "다시 오신 것을 환영합니다",
+      "submit": "로그인",
+      "submitting": "로그인 중...",
+      "loginWithGoogle": "Google로 로그인",
+      "loginWithNaver": "Naver로 로그인",
+      "forgotPassword": "비밀번호를 잊으셨나요?",
+      "noAccount": "계정이 없으신가요?",
+      "registerNow": "지금 등록하세요",
+      "staffAdminLogin": "스태프/관리자 로그인",
+      "error": "로그인에 실패했습니다. 다시 시도해주세요.",
+      "oauthErrorGoogle": "Google에 연결할 수 없습니다. 다시 시도해주세요.",
+      "oauthErrorNaver": "Naver에 연결할 수 없습니다. 다시 시도해주세요.",
+      "successMessage": "로그인 성공!"
+    },
+    "register": {
+      "title": "계정 만들기",
+      "username": "사용자 이름",
+      "usernamePlaceholder": "사용자 이름을 입력하세요",
+      "password": "비밀번호",
+      "confirmPassword": "비밀번호 확인",
+      "roleSelect": "역할 선택",
+      "roleUserTitle": "사용자",
+      "roleUserDesc": "여행 투어 예약",
+      "roleBusinessTitle": "사업자",
+      "roleBusinessDesc": "서비스 제공",
+      "submit": "등록",
+      "submitting": "등록 중...",
+      "haveAccount": "이미 계정이 있으신가요?",
+      "login": "로그인",
+      "errors": {
+        "passwordMismatch": "비밀번호가 일치하지 않습니다",
+        "passwordMinLength": "비밀번호는 최소 6자 이상이어야 합니다",
+        "usernameRequired": "사용자 이름은 필수입니다",
+        "registerFailed": "등록에 실패했습니다. 다시 시도해주세요."
+      }
+    },
+    "selection": {
+      "headerTitle": "로그인 유형 선택",
+      "subtitle": "계정 유형을 선택하세요",
+      "userBusinessTitle": "사용자 / 사업자",
+      "userBusinessDesc": "개인 사용자 및 사업자 로그인",
+      "staffAdminTitle": "스태프 / 관리자",
+      "staffAdminDesc": "스태프 및 관리자 로그인"
+    }
+  },
+  "forum": {
+    "title": "포럼",
+    "placeholderCreatePost": "무슨 생각을 하고 계신가요?",
+    "searchPlaceholder": "게시물 검색...",
+    "trending": "트렌딩",
+    "comingSoon": "이 기능은 곧 제공될 예정입니다.",
+    "friendSuggestions": "친구 추천",
+    "emptyList": "게시물이 없습니다."
+  }
+}

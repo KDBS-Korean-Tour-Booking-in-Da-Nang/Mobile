@@ -6,8 +6,11 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
+  ScrollView,
+  Alert,
 } from "react-native";
-import { colors, spacing } from "../constants/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, spacing, borderRadius } from "../constants/theme";
 
 interface EditPostModalProps {
   visible: boolean;
@@ -34,55 +37,110 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
 }) => {
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
-  const [hashtags, setHashtags] = useState(initialHashtags.join(", "));
+  const [hashtags, setHashtags] = useState<string[]>(initialHashtags);
+  const [currentHashtag, setCurrentHashtag] = useState("");
 
   useEffect(() => {
     if (visible) {
       setTitle(initialTitle);
       setContent(initialContent);
-      setHashtags(initialHashtags.join(", "));
+      setHashtags(initialHashtags);
+      setCurrentHashtag("");
     }
   }, [visible, initialTitle, initialContent, initialHashtags]);
 
+  const handleAddHashtag = () => {
+    if (currentHashtag.trim() && !hashtags.includes(currentHashtag.trim())) {
+      setHashtags([...hashtags, currentHashtag.trim()]);
+      setCurrentHashtag("");
+    }
+  };
+
+  const handleRemoveHashtag = (tagToRemove: string) => {
+    setHashtags(hashtags.filter((tag) => tag !== tagToRemove));
+  };
+
   const handleSave = async () => {
-    const finalHashtags = hashtags
-      .split(",")
-      .map((h) => h.trim())
-      .filter(Boolean);
-    await onSave({
-      title: title.trim(),
-      content: content.trim(),
-      hashtags: finalHashtags,
-    });
+    if (!title.trim() || !content.trim()) {
+      Alert.alert("Lỗi", "Vui lòng nhập tiêu đề và nội dung bài viết.");
+      return;
+    }
+
+    try {
+      await onSave({
+        title: title.trim(),
+        content: content.trim(),
+        hashtags,
+      });
+    } catch {
+      Alert.alert("Lỗi", "Không thể cập nhật bài viết. Vui lòng thử lại.");
+    }
   };
 
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.header}>Chỉnh sửa bài viết</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Tiêu đề"
-            value={title}
-            onChangeText={setTitle}
-            placeholderTextColor={colors.text.secondary}
-          />
-          <TextInput
-            style={[styles.input, styles.textarea]}
-            placeholder="Nội dung"
-            value={content}
-            onChangeText={setContent}
-            placeholderTextColor={colors.text.secondary}
-            multiline
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Hashtags (cách nhau bằng dấu phẩy)"
-            value={hashtags}
-            onChangeText={setHashtags}
-            placeholderTextColor={colors.text.secondary}
-          />
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Chỉnh sửa bài viết</Text>
+            <TouchableOpacity onPress={onCancel} style={styles.closeButton}>
+              <Ionicons name="close" size={24} color={colors.text.primary} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.content}>
+            <TextInput
+              style={styles.input}
+              placeholder="Tiêu đề bài viết..."
+              value={title}
+              onChangeText={setTitle}
+              placeholderTextColor={colors.text.secondary}
+            />
+
+            <TextInput
+              style={[styles.input, styles.textarea]}
+              placeholder="Bạn đang nghĩ gì?"
+              value={content}
+              onChangeText={setContent}
+              placeholderTextColor={colors.text.secondary}
+              multiline
+            />
+
+            {/* Hashtags */}
+            <View style={styles.hashtagContainer}>
+              <View style={styles.hashtagInputContainer}>
+                <TextInput
+                  style={styles.hashtagInput}
+                  placeholder="Nhập hashtag và nhấn Enter..."
+                  value={currentHashtag}
+                  onChangeText={setCurrentHashtag}
+                  onSubmitEditing={handleAddHashtag}
+                  placeholderTextColor={colors.text.secondary}
+                />
+                <TouchableOpacity
+                  style={styles.addHashtagButton}
+                  onPress={handleAddHashtag}
+                >
+                  <Ionicons name="add" size={20} color={colors.primary.main} />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.hashtagList}>
+                {hashtags.map((tag, index) => (
+                  <View key={index} style={styles.hashtagChip}>
+                    <Text style={styles.hashtagText}>#{tag}</Text>
+                    <TouchableOpacity onPress={() => handleRemoveHashtag(tag)}>
+                      <Ionicons
+                        name="close-circle"
+                        size={16}
+                        color={colors.primary.contrast}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+
           <View style={styles.actions}>
             <TouchableOpacity
               style={[styles.btn, styles.btnGhost]}
@@ -115,44 +173,96 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    padding: spacing.lg,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
   },
   card: {
     backgroundColor: colors.surface.primary,
-    borderRadius: 12,
-    padding: spacing.lg,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "80%",
   },
   header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  headerTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    marginBottom: spacing.md,
+    fontWeight: "bold",
     color: colors.text.primary,
+  },
+  closeButton: {
+    padding: spacing.sm,
+  },
+  content: {
+    padding: spacing.lg,
   },
   input: {
     borderWidth: 1,
     borderColor: colors.border.medium,
-    borderRadius: 8,
+    borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     color: colors.text.primary,
-    backgroundColor: colors.surface.secondary,
+    backgroundColor: colors.background.secondary,
     marginBottom: spacing.md,
+    fontSize: 16,
   },
   textarea: {
     height: 120,
     textAlignVertical: "top",
   },
+  hashtagContainer: {
+    marginBottom: spacing.lg,
+  },
+  hashtagInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+  },
+  hashtagInput: {
+    flex: 1,
+    padding: spacing.md,
+    fontSize: 16,
+  },
+  addHashtagButton: {
+    padding: spacing.md,
+  },
+  hashtagList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  hashtagChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.primary.main,
+    borderRadius: borderRadius.lg,
+    padding: spacing.sm,
+    margin: spacing.xs,
+  },
+  hashtagText: {
+    color: colors.primary.contrast,
+    marginRight: spacing.sm,
+    fontWeight: "500",
+  },
   actions: {
     flexDirection: "row",
     justifyContent: "flex-end",
     gap: spacing.md as any,
+    padding: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border.light,
   },
   btn: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    borderRadius: 8,
+    borderRadius: borderRadius.md,
   },
   btnGhost: {
     backgroundColor: "transparent",

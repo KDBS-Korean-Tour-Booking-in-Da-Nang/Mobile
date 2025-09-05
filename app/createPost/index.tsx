@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from "../../src/navigation";
 import { useAuthContext } from "../../src/contexts/authContext";
-import forumService from "../../src/services/forumService";
+import { createPost } from "../../src/endpoints/forum";
 import {
   colors,
   spacing,
@@ -71,7 +71,7 @@ export default function CreatePost() {
 
     setLoading(true);
     try {
-      await forumService.createPost({
+      await createPost({
         userEmail: user.email,
         title,
         content,
@@ -125,13 +125,21 @@ export default function CreatePost() {
 
         {/* Hashtags */}
         <View style={styles.hashtagContainer}>
-          <TextInput
-            style={styles.hashtagInput}
-            placeholder="Nhập hashtag và nhấn Enter..."
-            value={currentHashtag}
-            onChangeText={setCurrentHashtag}
-            onSubmitEditing={handleAddHashtag}
-          />
+          <View style={styles.hashtagInputContainer}>
+            <TextInput
+              style={styles.hashtagInput}
+              placeholder="Nhập hashtag và nhấn Enter..."
+              value={currentHashtag}
+              onChangeText={setCurrentHashtag}
+              onSubmitEditing={handleAddHashtag}
+            />
+            <TouchableOpacity
+              style={styles.addHashtagButton}
+              onPress={handleAddHashtag}
+            >
+              <Ionicons name="add" size={20} color={colors.primary.main} />
+            </TouchableOpacity>
+          </View>
           <View style={styles.hashtagList}>
             {hashtags.map((tag, index) => (
               <View key={index} style={styles.hashtagChip}>
@@ -225,11 +233,19 @@ const styles = StyleSheet.create({
   hashtagContainer: {
     marginBottom: spacing.lg,
   },
-  hashtagInput: {
+  hashtagInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.background.secondary,
-    padding: spacing.md,
     borderRadius: borderRadius.md,
     marginBottom: spacing.md,
+  },
+  hashtagInput: {
+    flex: 1,
+    padding: spacing.md,
+  },
+  addHashtagButton: {
+    padding: spacing.md,
   },
   hashtagList: {
     flexDirection: "row",

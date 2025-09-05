@@ -1,0 +1,104 @@
+{
+  "brand": "Da Nang - Korea Tour",
+  "home": {
+    "hero": {
+      "titleLead": "Travel Tours",
+      "titleEmph": "Da Nang - Korea",
+      "desc": "Discover the beauty of Da Nang and experience Korean culture with high-quality tours.",
+      "btnPayment": "Payment",
+      "btnProfile": "Profile",
+      "btnRegister": "Register",
+      "btnLogin": "Login"
+    },
+    "welcome": {
+      "heading": "Welcome to",
+      "subheading": "Da Nang - Korea Tours"
+    },
+    "dashboard": {
+      "welcome": "Travel Tours",
+      "subtitle": "Da Nang - Korea",
+      "description": "Discover the beauty of Da Nang and experience Korean culture with high-quality tours.",
+      "totalTours": "Total Tours",
+      "pending": "Pending",
+      "completed": "Completed",
+      "viewProfile": "View Profile",
+      "settings": "Settings",
+      "logout": "Logout",
+      "loggingOut": "Logging out...",
+      "role": "Role"
+    }
+  },
+  "auth": {
+    "common": {
+      "email": "Email",
+      "password": "Password",
+      "rememberMe": "Remember me",
+      "or": "Or",
+      "otp": "OTP Code",
+      "otpPlaceholder": "000000",
+      "notReceivedCode": "Didn't receive the code?",
+      "resend": "Resend",
+      "resendIn": "Resend in {{seconds}}s",
+      "backToLogin": "Back to login",
+      "backToRegister": "Back to register",
+      "backToForgot": "Back to forgot password",
+      "send": "Send",
+      "sending": "Sending..."
+    },
+    "login": {
+      "title": "Login",
+      "subtitle": "Welcome back",
+      "submit": "Login",
+      "submitting": "Logging in...",
+      "loginWithGoogle": "Login with Google",
+      "loginWithNaver": "Login with Naver",
+      "forgotPassword": "Forgot password?",
+      "noAccount": "Don't have an account?",
+      "registerNow": "Register now",
+      "staffAdminLogin": "Staff/Admin Login",
+      "error": "Login failed. Please try again.",
+      "oauthErrorGoogle": "Could not connect to Google. Please try again.",
+      "oauthErrorNaver": "Could not connect to Naver. Please try again.",
+      "successMessage": "Login successful!"
+    },
+    "register": {
+      "title": "Create an account",
+      "username": "Username",
+      "usernamePlaceholder": "Enter your username",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "roleSelect": "Select your role",
+      "roleUserTitle": "User",
+      "roleUserDesc": "Book travel tours",
+      "roleBusinessTitle": "Business",
+      "roleBusinessDesc": "Provide services",
+      "submit": "Register",
+      "submitting": "Registering...",
+      "haveAccount": "Already have an account?",
+      "login": "Login",
+      "errors": {
+        "passwordMismatch": "Passwords do not match",
+        "passwordMinLength": "Password must be at least 6 characters",
+        "usernameRequired": "Username is required",
+        "registerFailed": "Registration failed. Please try again."
+      }
+    },
+    "selection": {
+      "headerTitle": "Choose login type",
+      "subtitle": "Please select account type to continue",
+      "userBusinessTitle": "User / Business",
+      "userBusinessDesc": "Login for individual users and businesses",
+      "staffAdminTitle": "Staff / Admin",
+      "staffAdminDesc": "Login for staff and administrators"
+    }
+  },
+  "forum": {
+    "title": "Forum",
+    "placeholderCreatePost": "What's on your mind?",
+    "searchPlaceholder": "Search posts...",
+    "trending": "Trending",
+    "comingSoon": "This feature is coming soon.",
+    "friendSuggestions": "Friend suggestions",
+    "emptyList": "No posts found."
+  }
+}

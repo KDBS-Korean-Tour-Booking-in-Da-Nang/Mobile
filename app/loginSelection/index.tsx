@@ -7,6 +7,7 @@ import {
   ScrollView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../src/navigation";
 import {
@@ -18,6 +19,7 @@ import {
 
 export default function LoginSelection() {
   const { navigate } = useNavigation();
+  const { t } = useTranslation();
 
   return (
     <ScrollView style={styles.container}>
@@ -34,15 +36,15 @@ export default function LoginSelection() {
           >
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chọn loại đăng nhập</Text>
+          <Text style={styles.headerTitle}>
+            {t("auth.selection.headerTitle")}
+          </Text>
           <View style={styles.placeholder} />
         </View>
       </LinearGradient>
 
       <View style={styles.content}>
-        <Text style={styles.subtitle}>
-          Vui lòng chọn loại tài khoản để đăng nhập
-        </Text>
+        <Text style={styles.subtitle}>{t("auth.selection.subtitle")}</Text>
 
         <View style={styles.optionsContainer}>
           {/* User/Business Option */}
@@ -54,9 +56,11 @@ export default function LoginSelection() {
               <Ionicons name="people" size={32} color={colors.primary.main} />
             </View>
             <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>User / Business</Text>
+              <Text style={styles.optionTitle}>
+                {t("auth.selection.userBusinessTitle")}
+              </Text>
               <Text style={styles.optionDescription}>
-                Đăng nhập cho người dùng cá nhân và doanh nghiệp
+                {t("auth.selection.userBusinessDesc")}
               </Text>
             </View>
             <Ionicons
@@ -75,9 +79,11 @@ export default function LoginSelection() {
               <Ionicons name="shield" size={32} color={colors.secondary.main} />
             </View>
             <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>Staff / Admin</Text>
+              <Text style={styles.optionTitle}>
+                {t("auth.selection.staffAdminTitle")}
+              </Text>
               <Text style={styles.optionDescription}>
-                Đăng nhập cho nhân viên và quản trị viên hệ thống
+                {t("auth.selection.staffAdminDesc")}
               </Text>
             </View>
             <Ionicons
@@ -89,9 +95,9 @@ export default function LoginSelection() {
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Chưa có tài khoản?</Text>
+          <Text style={styles.footerText}>{t("auth.login.noAccount")}</Text>
           <TouchableOpacity onPress={() => navigate("/signUp")}>
-            <Text style={styles.footerLink}>Đăng ký ngay</Text>
+            <Text style={styles.footerLink}>{t("auth.login.registerNow")}</Text>
           </TouchableOpacity>
         </View>
       </View>

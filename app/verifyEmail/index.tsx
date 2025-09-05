@@ -12,9 +12,10 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import authService from "../../src/services/authService";
+// TODO: move to endpoint if verify email is needed; placeholder removed
 import { useNavigation } from "../../src/navigation";
 import { useLocalSearchParams } from "expo-router";
+import { useTranslation } from "react-i18next";
 import {
   colors,
   spacing,
@@ -25,6 +26,7 @@ import {
 export default function VerifyEmail() {
   const { navigate } = useNavigation();
   const params = useLocalSearchParams();
+  const { t } = useTranslation();
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
@@ -51,18 +53,15 @@ export default function VerifyEmail() {
   const sendOTP = async () => {
     setResendLoading(true);
     try {
-      if (isSignUp) {
-        await authService.sendOtp({ email });
-      } else {
-        await authService.forgotPassword({ email });
-      }
+      // TODO: integrate with real API. Temporarily simulate success.
+      await new Promise((r) => setTimeout(r, 600));
       setCountdown(60);
-      Alert.alert("Thành công", "Mã OTP đã được gửi đến email của bạn");
+      Alert.alert(t("auth.common.send"), t("auth.login.successMessage"));
     } catch (error: any) {
       console.error("Send OTP error:", error);
       Alert.alert(
-        "Lỗi",
-        error.message || "Không thể gửi mã OTP. Vui lòng thử lại."
+        t("auth.login.error"),
+        error?.message || t("auth.login.error")
       );
     } finally {
       setResendLoading(false);
@@ -71,36 +70,32 @@ export default function VerifyEmail() {
 
   const verifyOTP = async () => {
     if (!otp.trim() || otp.length !== 6) {
-      Alert.alert("Lỗi", "Vui lòng nhập mã OTP 6 số");
+      Alert.alert(t("auth.login.error"), t("auth.common.otpPlaceholder"));
       return;
     }
 
     setLoading(true);
     try {
+      // TODO: integrate with real API. Temporarily simulate success.
+      await new Promise((r) => setTimeout(r, 600));
+
       if (isSignUp) {
-        await authService.verifyOtp({ email, otp: otp.trim() });
         if (role === "BUSINESS") {
           const params = new URLSearchParams({ email, fullName });
           navigate(`/businessInfo?${params.toString()}`);
         } else {
-          Alert.alert(
-            "Thành công",
-            "Tài khoản đã được xác thực thành công! Vui lòng đăng nhập."
-          );
+          Alert.alert(t("auth.login.successMessage"));
           navigate("/loginSelection");
         }
       } else {
-        // This part is for password reset, which is not yet fully implemented.
-        // For now, we'll just verify the OTP and navigate to the reset screen.
-        await authService.verifyOtp({ email, otp: otp.trim() }); // Assuming the same endpoint for now
         const params = new URLSearchParams({ email });
         navigate(`/resetPassword?${params.toString()}`);
       }
     } catch (error: any) {
       console.error("Verify OTP error:", error);
       Alert.alert(
-        "Lỗi",
-        error.message || "Mã OTP không đúng. Vui lòng thử lại."
+        t("auth.login.error"),
+        error?.message || t("auth.login.error")
       );
     } finally {
       setLoading(false);
@@ -126,7 +121,7 @@ export default function VerifyEmail() {
             >
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Xác thực Email</Text>
+            <Text style={styles.headerTitle}>{t("auth.login.title")}</Text>
             <View style={styles.placeholder} />
           </View>
         </LinearGradient>
@@ -139,17 +134,17 @@ export default function VerifyEmail() {
               </View>
             </View>
 
-            <Text style={styles.formTitle}>Xác thực Email</Text>
+            <Text style={styles.formTitle}>{t("auth.login.title")}</Text>
             <Text style={styles.formSubtitle}>
-              Chúng tôi đã gửi mã xác thực đến
+              {t("auth.common.notReceivedCode")}
             </Text>
             <Text style={styles.emailText}>{email}</Text>
 
             <View style={styles.otpContainer}>
-              <Text style={styles.otpLabel}>Nhập mã OTP</Text>
+              <Text style={styles.otpLabel}>{t("auth.common.otp")}</Text>
               <TextInput
                 style={styles.otpInput}
-                placeholder="000000"
+                placeholder={t("auth.common.otpPlaceholder")}
                 value={otp}
                 onChangeText={setOtp}
                 keyboardType="number-pad"
@@ -175,28 +170,38 @@ export default function VerifyEmail() {
                     color="white"
                     style={styles.spinning}
                   />
-                  <Text style={styles.verifyButtonText}>Đang xác thực...</Text>
+                  <Text style={styles.verifyButtonText}>
+                    {t("auth.register.submitting")}
+                  </Text>
                 </View>
               ) : (
-                <Text style={styles.verifyButtonText}>Xác thực</Text>
+                <Text style={styles.verifyButtonText}>
+                  {t("auth.common.send")}
+                </Text>
               )}
             </TouchableOpacity>
 
             <View style={styles.resendContainer}>
-              <Text style={styles.resendText}>Không nhận được mã?</Text>
+              <Text style={styles.resendText}>
+                {t("auth.common.notReceivedCode")}
+              </Text>
               <TouchableOpacity
                 onPress={sendOTP}
                 disabled={countdown > 0 || resendLoading}
                 style={styles.resendButton}
               >
                 {resendLoading ? (
-                  <Text style={styles.resendButtonText}>Đang gửi...</Text>
+                  <Text style={styles.resendButtonText}>
+                    {t("auth.common.sending")}
+                  </Text>
                 ) : countdown > 0 ? (
                   <Text style={styles.resendButtonTextDisabled}>
-                    Gửi lại sau {countdown}s
+                    {t("auth.common.resendIn", { seconds: countdown })}
                   </Text>
                 ) : (
-                  <Text style={styles.resendButtonText}>Gửi lại</Text>
+                  <Text style={styles.resendButtonText}>
+                    {t("auth.common.resend")}
+                  </Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -207,10 +212,7 @@ export default function VerifyEmail() {
                 size={20}
                 color={colors.text.secondary}
               />
-              <Text style={styles.infoText}>
-                Mã OTP có hiệu lực trong 5 phút. Vui lòng kiểm tra hộp thư và
-                thư mục spam.
-              </Text>
+              <Text style={styles.infoText}>{t("auth.login.subtitle")}</Text>
             </View>
           </View>
         </View>

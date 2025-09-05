@@ -2,7 +2,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const API_BASE_URL = __DEV__
-  ? "https://2dc573f3a009.ngrok-free.app"
+  ? "https://8002b8712600.ngrok-free.app"
   : "https://kdbs.com/api";
 
 const api = axios.create({
@@ -17,8 +17,10 @@ api.interceptors.request.use(
   async (config) => {
     try {
       const token = await AsyncStorage.getItem("authToken");
+      console.log("API Request - Token:", token ? "Present" : "Missing");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+        console.log("API Request - Authorization header set");
       }
     } catch (error) {
       console.error("Error getting token:", error);

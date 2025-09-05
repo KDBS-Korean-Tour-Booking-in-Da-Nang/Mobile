@@ -14,6 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../src/navigation";
 import { useLogin } from "../../src/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import {
   colors,
   spacing,
@@ -24,6 +25,7 @@ import {
 export default function AdminLogin() {
   const { navigate } = useNavigation();
   const { login } = useLogin();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,7 +33,7 @@ export default function AdminLogin() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin");
+      Alert.alert(t("auth.login.error"), t("auth.login.error"));
       return;
     }
 
@@ -41,17 +43,20 @@ export default function AdminLogin() {
       const response = await login(email.trim(), password, "ADMIN");
 
       if (response && response.result) {
-        Alert.alert("Thành công", "Đăng nhập admin thành công!");
+        Alert.alert(
+          t("auth.login.successMessage"),
+          t("auth.login.successMessage")
+        );
         navigate("/forum");
       } else {
-        Alert.alert(
-          "Lỗi",
-          "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."
-        );
+        Alert.alert(t("auth.login.error"), t("auth.login.error"));
       }
     } catch (error: any) {
       console.error("Login error:", error);
-      Alert.alert("Lỗi", error.message || "Không thể kết nối đến máy chủ.");
+      Alert.alert(
+        t("auth.login.error"),
+        error.message || t("auth.login.error")
+      );
     } finally {
       setLoading(false);
     }
@@ -76,7 +81,9 @@ export default function AdminLogin() {
             >
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Staff / Admin</Text>
+            <Text style={styles.headerTitle}>
+              {t("auth.selection.staffAdminTitle")}
+            </Text>
             <View style={styles.placeholder} />
           </View>
         </LinearGradient>
@@ -93,11 +100,11 @@ export default function AdminLogin() {
               </View>
             </View>
 
-            <Text style={styles.formTitle}>Đăng nhập Admin</Text>
-            <Text style={styles.formSubtitle}>Truy cập hệ thống quản trị</Text>
+            <Text style={styles.formTitle}>{t("auth.login.title")}</Text>
+            <Text style={styles.formSubtitle}>{t("auth.login.subtitle")}</Text>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Email</Text>
+              <Text style={styles.inputLabel}>{t("auth.common.email")}</Text>
               <View style={styles.inputWrapper}>
                 <Ionicons
                   name="mail-outline"
@@ -106,7 +113,7 @@ export default function AdminLogin() {
                 />
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Nhập email admin"
+                  placeholder={t("auth.common.email")}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -117,7 +124,7 @@ export default function AdminLogin() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Mật khẩu</Text>
+              <Text style={styles.inputLabel}>{t("auth.common.password")}</Text>
               <View style={styles.inputWrapper}>
                 <Ionicons
                   name="lock-closed-outline"
@@ -126,7 +133,7 @@ export default function AdminLogin() {
                 />
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Nhập mật khẩu"
+                  placeholder={t("auth.common.password")}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -149,7 +156,9 @@ export default function AdminLogin() {
               style={styles.forgotPassword}
               onPress={() => navigate("/forgot")}
             >
-              <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+              <Text style={styles.forgotPasswordText}>
+                {t("auth.login.forgotPassword")}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -168,10 +177,14 @@ export default function AdminLogin() {
                     color="white"
                     style={styles.spinning}
                   />
-                  <Text style={styles.loginButtonText}>Đang đăng nhập...</Text>
+                  <Text style={styles.loginButtonText}>
+                    {t("auth.login.submitting")}
+                  </Text>
                 </View>
               ) : (
-                <Text style={styles.loginButtonText}>Đăng nhập Admin</Text>
+                <Text style={styles.loginButtonText}>
+                  {t("auth.login.submit")}
+                </Text>
               )}
             </TouchableOpacity>
 
@@ -181,9 +194,7 @@ export default function AdminLogin() {
                 size={20}
                 color={colors.secondary.main}
               />
-              <Text style={styles.securityNoteText}>
-                Truy cập được bảo mật bằng mã hóa SSL
-              </Text>
+              <Text style={styles.securityNoteText}>SSL secured access</Text>
             </View>
           </View>
         </View>

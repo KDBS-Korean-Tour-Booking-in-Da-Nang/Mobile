@@ -34,8 +34,55 @@ export default function UserProfile() {
           ) : (
             <View style={styles.avatar} />
           )}
-          <Text style={styles.username}>{user?.username }</Text>
-          <Text style={styles.email}>{user?.email }</Text>
+          <Text style={styles.username}>{user?.username}</Text>
+          <Text style={styles.email}>{user?.email}</Text>
+        </View>
+
+        <View style={styles.section}>
+          {user?.createdAt ? (
+            <View style={styles.row}>
+              <Ionicons
+                name="time-outline"
+                size={20}
+                color={colors.text.secondary}
+              />
+              <Text style={styles.rowText}>
+                Tạo ngày: {new Date(user.createdAt).toLocaleDateString()}
+              </Text>
+            </View>
+          ) : null}
+          {user?.birthdate ? (
+            <View style={styles.row}>
+              <Ionicons
+                name="calendar-outline"
+                size={20}
+                color={colors.text.secondary}
+              />
+              <Text style={styles.rowText}>
+                Ngày sinh: {new Date(user.birthdate).toLocaleDateString()}
+              </Text>
+            </View>
+          ) : null}
+          {user?.gender ? (
+            <View style={styles.row}>
+              <Ionicons
+                name="person-outline"
+                size={20}
+                color={colors.text.secondary}
+              />
+              <Text style={styles.rowText}>Giới tính: {user.gender}</Text>
+            </View>
+          ) : null}
+          {user?.phone ? (
+            <View style={styles.row}>
+              <Ionicons
+                name="call-outline"
+                size={20}
+                color={colors.text.secondary}
+              />
+              <Text style={styles.rowText}>Số điện thoại: {user.phone}</Text>
+            </View>
+          ) : null}
         </View>
 
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
@@ -89,6 +136,23 @@ const styles = StyleSheet.create({
   email: {
     fontSize: 16,
     color: colors.text.secondary,
+  },
+  section: {
+    marginTop: spacing.md,
+    marginHorizontal: spacing.lg,
+    backgroundColor: colors.surface.primary,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    gap: 10,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  rowText: {
+    fontSize: 16,
+    color: colors.text.primary,
   },
   logoutButton: {
     margin: spacing.lg,

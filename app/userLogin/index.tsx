@@ -13,9 +13,9 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../src/navigation";
-import { useLogin } from "../../src/hooks/useAuth";
 import { useAuthContext } from "../../src/contexts/authContext";
 import { useGoogleAuth } from "../../src/hooks/useGoogleAuth";
+import { useTranslation } from "react-i18next";
 import {
   colors,
   spacing,
@@ -25,8 +25,8 @@ import {
 
 export default function UserLogin() {
   const { navigate, replaceToForum } = useNavigation();
-  const { login } = useLogin();
-  const { checkAuthStatus } = useAuthContext();
+  const { login, checkAuthStatus } = useAuthContext();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,27 +34,20 @@ export default function UserLogin() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin");
+      Alert.alert(t("auth.login.error"), t("auth.login.error"));
       return;
     }
 
     setLoading(true);
     try {
-      const response = await login(email.trim(), password, "USER");
-
-      if (response && response.result) {
-        await checkAuthStatus();
-        // The navigation will be handled by the root layout
-      } else {
-        // The useLogin hook sets an error state, but we can also show an alert.
-        Alert.alert(
-          "Lỗi",
-          "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."
-        );
-      }
+      await login(email.trim(), password, "USER");
+      await checkAuthStatus();
     } catch (error: any) {
       console.error("Login error:", error);
-      Alert.alert("Lỗi", error.message || "Không thể kết nối đến máy chủ.");
+      Alert.alert(
+        t("auth.login.error"),
+        error.message || t("auth.login.error")
+      );
     } finally {
       setLoading(false);
     }
@@ -79,18 +72,20 @@ export default function UserLogin() {
             >
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>User / Business</Text>
+            <Text style={styles.headerTitle}>
+              {t("auth.selection.userBusinessTitle")}
+            </Text>
             <View style={styles.placeholder} />
           </View>
         </LinearGradient>
 
         <View style={styles.content}>
           <View style={styles.formContainer}>
-            <Text style={styles.formTitle}>Đăng nhập</Text>
-            <Text style={styles.formSubtitle}>Chào mừng bạn quay trở lại</Text>
+            <Text style={styles.formTitle}>{t("auth.login.title")}</Text>
+            <Text style={styles.formSubtitle}>{t("auth.login.subtitle")}</Text>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Email</Text>
+              <Text style={styles.inputLabel}>{t("auth.common.email")}</Text>
               <View style={styles.inputWrapper}>
                 <Ionicons
                   name="mail-outline"
@@ -99,7 +94,7 @@ export default function UserLogin() {
                 />
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Nhập email của bạn"
+                  placeholder={t("auth.common.email")}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -110,7 +105,7 @@ export default function UserLogin() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Mật khẩu</Text>
+              <Text style={styles.inputLabel}>{t("auth.common.password")}</Text>
               <View style={styles.inputWrapper}>
                 <Ionicons
                   name="lock-closed-outline"
@@ -119,7 +114,7 @@ export default function UserLogin() {
                 />
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Nhập mật khẩu"
+                  placeholder={t("auth.common.password")}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -142,7 +137,9 @@ export default function UserLogin() {
               style={styles.forgotPassword}
               onPress={() => navigate("/forgot")}
             >
-              <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+              <Text style={styles.forgotPasswordText}>
+                {t("auth.login.forgotPassword")}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -161,28 +158,38 @@ export default function UserLogin() {
                     color="white"
                     style={styles.spinning}
                   />
-                  <Text style={styles.loginButtonText}>Đang đăng nhập...</Text>
+                  <Text style={styles.loginButtonText}>
+                    {t("auth.login.submitting")}
+                  </Text>
                 </View>
               ) : (
-                <Text style={styles.loginButtonText}>Đăng nhập</Text>
+                <Text style={styles.loginButtonText}>
+                  {t("auth.login.submit")}
+                </Text>
               )}
             </TouchableOpacity>
 
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>Hoặc</Text>
+              <Text style={styles.dividerText}>{t("auth.common.or")}</Text>
               <View style={styles.dividerLine} />
             </View>
 
             <TouchableOpacity style={styles.googleButton}>
               <Ionicons name="logo-google" size={20} color="#DB4437" />
-              <Text style={styles.googleButtonText}>Đăng nhập với Google</Text>
+              <Text style={styles.googleButtonText}>
+                {t("auth.login.loginWithGoogle")}
+              </Text>
             </TouchableOpacity>
 
             <View style={styles.signupContainer}>
-              <Text style={styles.signupText}>Chưa có tài khoản? </Text>
+              <Text style={styles.signupText}>
+                {t("auth.login.noAccount")}{" "}
+              </Text>
               <TouchableOpacity onPress={() => navigate("/signUp")}>
-                <Text style={styles.signupLink}>Đăng ký ngay</Text>
+                <Text style={styles.signupLink}>
+                  {t("auth.login.registerNow")}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

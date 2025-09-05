@@ -12,6 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSignUp } from "../../src/hooks/useAuth";
 import { Button } from "../../src/components/Button";
 import { Input } from "../../src/components/Input";
+import { useTranslation } from "react-i18next";
 import {
   colors,
   spacing,
@@ -22,6 +23,7 @@ import {
 export default function SignUp() {
   const { navigate } = useNavigation();
   const { signUp } = useSignUp();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -34,17 +36,17 @@ export default function SignUp() {
 
   const handleSignUp = async () => {
     if (!email || !password || !confirmPassword || !fullName || !selectedRole) {
-      setError("Vui lòng nhập đầy đủ thông tin");
+      setError(t("auth.login.error"));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Mật khẩu xác nhận không khớp");
+      setError(t("auth.register.errors.passwordMismatch"));
       return;
     }
 
     if (password.length < 6) {
-      setError("Mật khẩu phải có ít nhất 6 ký tự");
+      setError(t("auth.register.errors.passwordMinLength"));
       return;
     }
 
@@ -63,10 +65,10 @@ export default function SignUp() {
           )}&role=${selectedRole}&isSignUp=true`
         );
       } else {
-        setError("Đăng ký thất bại. Vui lòng thử lại.");
+        setError(t("auth.register.errors.registerFailed"));
       }
     } catch (error: any) {
-      setError(error.message || "Đăng ký thất bại. Vui lòng thử lại.");
+      setError(error.message || t("auth.register.errors.registerFailed"));
     } finally {
       setLoading(false);
     }
@@ -83,42 +85,42 @@ export default function SignUp() {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <Text style={styles.headerTitle}>Đăng ký</Text>
-        <Text style={styles.headerSubtitle}>Tạo tài khoản mới</Text>
+        <Text style={styles.headerTitle}>{t("auth.register.title")}</Text>
+        <Text style={styles.headerSubtitle}>{t("auth.register.title")}</Text>
       </LinearGradient>
 
       <View style={styles.formContainer}>
-        <Text style={styles.formTitle}>Thông tin đăng ký</Text>
+        <Text style={styles.formTitle}>{t("auth.register.title")}</Text>
 
         {/* Hiển thị lỗi nếu có */}
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <Input
-          label="Họ và tên"
-          placeholder="Nhập họ và tên đầy đủ"
+          label={t("auth.register.username")}
+          placeholder={t("auth.register.usernamePlaceholder")}
           value={fullName}
           onChangeText={setFullName}
         />
 
         <Input
-          label="Email"
-          placeholder="Nhập email của bạn"
+          label={t("auth.common.email")}
+          placeholder={t("auth.common.email")}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
         />
 
         <Input
-          label="Mật khẩu"
-          placeholder="Nhập mật khẩu (ít nhất 6 ký tự)"
+          label={t("auth.common.password")}
+          placeholder={t("auth.register.submitting")}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
 
         <Input
-          label="Xác nhận mật khẩu"
-          placeholder="Nhập lại mật khẩu"
+          label={t("auth.register.confirmPassword")}
+          placeholder={t("auth.register.confirmPassword")}
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry
@@ -126,7 +128,7 @@ export default function SignUp() {
 
         {/* Role Selection */}
         <View style={styles.roleContainer}>
-          <Text style={styles.roleTitle}>Chọn loại tài khoản:</Text>
+          <Text style={styles.roleTitle}>{t("auth.register.roleSelect")}</Text>
 
           <View style={styles.roleButtons}>
             <TouchableOpacity
@@ -144,7 +146,9 @@ export default function SignUp() {
               >
                 👤 User
               </Text>
-              <Text style={styles.roleDescription}>Người dùng cá nhân</Text>
+              <Text style={styles.roleDescription}>
+                {t("auth.register.roleUserTitle")}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -162,13 +166,17 @@ export default function SignUp() {
               >
                 🏢 Business
               </Text>
-              <Text style={styles.roleDescription}>Doanh nghiệp</Text>
+              <Text style={styles.roleDescription}>
+                {t("auth.register.roleBusinessTitle")}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <Button
-          title={loading ? "Đang đăng ký..." : "Đăng ký"}
+          title={
+            loading ? t("auth.register.submitting") : t("auth.register.submit")
+          }
           onPress={handleSignUp}
           loading={loading}
           style={styles.signupButton}
@@ -176,9 +184,11 @@ export default function SignUp() {
 
         <View style={styles.linksContainer}>
           <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Đã có tài khoản? </Text>
+            <Text style={styles.loginText}>
+              {t("auth.register.haveAccount")}{" "}
+            </Text>
             <TouchableOpacity onPress={() => navigate("/loginSelection")}>
-              <Text style={styles.loginLink}>Đăng nhập ngay</Text>
+              <Text style={styles.loginLink}>{t("auth.login.title")}</Text>
             </TouchableOpacity>
           </View>
         </View>

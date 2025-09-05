@@ -11,6 +11,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../src/navigation";
+import { useTranslation } from "react-i18next";
 import {
   colors,
   spacing,
@@ -22,6 +23,7 @@ const { width } = Dimensions.get("window");
 
 export default function Home() {
   const { navigate } = useNavigation();
+  const { t } = useTranslation();
 
   // Mock data cho tour du lịch Đà Nẵng
   const featuredTours = [
@@ -90,7 +92,7 @@ export default function Home() {
             <View style={styles.logo}>
               <Text style={styles.logoText}>TK</Text>
             </View>
-            <Text style={styles.appName}>Đà Nẵng - Korea Tour</Text>
+            <Text style={styles.appName}>{t("brand")}</Text>
           </View>
 
           <View style={styles.headerActions}>
@@ -99,14 +101,18 @@ export default function Home() {
               onPress={() => navigate("/loginSelection")}
             >
               <Ionicons name="log-in-outline" size={20} color="white" />
-              <Text style={styles.authButtonText}>Đăng nhập</Text>
+              <Text style={styles.authButtonText}>
+                {t("home.hero.btnLogin")}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.authButton, styles.registerButton]}
               onPress={() => navigate("/signUp")}
             >
               <Ionicons name="person-add-outline" size={20} color="white" />
-              <Text style={styles.authButtonText}>Đăng ký</Text>
+              <Text style={styles.authButtonText}>
+                {t("home.hero.btnRegister")}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -125,14 +131,9 @@ export default function Home() {
           style={styles.heroOverlay}
         >
           <View style={styles.heroContent}>
-            <Text style={styles.heroTitle}>Khám phá Đà Nẵng</Text>
-            <Text style={styles.heroSubtitle}>
-              Thành phố đáng sống nhất Việt Nam
-            </Text>
-            <Text style={styles.heroDescription}>
-              Trải nghiệm vẻ đẹp của biển Mỹ Khê, khám phá bán đảo Sơn Trà và
-              thưởng thức ẩm thực địa phương
-            </Text>
+            <Text style={styles.heroTitle}>{t("home.hero.titleLead")}</Text>
+            <Text style={styles.heroSubtitle}>{t("home.hero.titleEmph")}</Text>
+            <Text style={styles.heroDescription}>{t("home.hero.desc")}</Text>
           </View>
         </LinearGradient>
       </View>
@@ -140,9 +141,11 @@ export default function Home() {
       {/* Featured Tours Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Tour Nổi Bật</Text>
+          <Text style={styles.sectionTitle}>{t("home.dashboard.welcome")}</Text>
           <TouchableOpacity>
-            <Text style={styles.seeAllText}>Xem tất cả</Text>
+            <Text style={styles.seeAllText}>
+              {t("home.dashboard.viewProfile")}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -174,9 +177,13 @@ export default function Home() {
       {/* News Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Tin Tức & Sự Kiện</Text>
+          <Text style={styles.sectionTitle}>
+            {t("home.dashboard.description")}
+          </Text>
           <TouchableOpacity>
-            <Text style={styles.seeAllText}>Xem tất cả</Text>
+            <Text style={styles.seeAllText}>
+              {t("home.dashboard.settings")}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -198,15 +205,15 @@ export default function Home() {
           colors={colors.gradient.secondary as [string, string]}
           style={styles.ctaContainer}
         >
-          <Text style={styles.ctaTitle}>Sẵn sàng khám phá?</Text>
-          <Text style={styles.ctaSubtitle}>
-            Đăng ký ngay để nhận ưu đãi đặc biệt
-          </Text>
+          <Text style={styles.ctaTitle}>{t("home.welcome.heading")}</Text>
+          <Text style={styles.ctaSubtitle}>{t("home.welcome.subheading")}</Text>
           <TouchableOpacity
             style={styles.ctaButton}
             onPress={() => navigate("/signUp")}
           >
-            <Text style={styles.ctaButtonText}>Đăng ký miễn phí</Text>
+            <Text style={styles.ctaButtonText}>
+              {t("home.hero.btnRegister")}
+            </Text>
           </TouchableOpacity>
         </LinearGradient>
       </View>

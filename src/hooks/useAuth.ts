@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import authService from "../services/authService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // This hook remains for login form logic
 export const useLogin = () => {
@@ -10,8 +10,9 @@ export const useLogin = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await authService.login({ email, password, role });
-      return response;
+      // Deprecated: prefer AuthContext.login; kept for compatibility if used elsewhere
+      const res = await fetch("/api/auth/login");
+      return (res as any) || null;
     } catch (err: any) {
       setError(err.message);
       throw err;
@@ -32,8 +33,8 @@ export const useAuthStatus = () => {
     const checkStatus = async () => {
       setLoading(true);
       try {
-        const authenticated = await authService.isAuthenticated();
-        setIsAuthenticated(authenticated);
+        const token = await AsyncStorage.getItem("authToken");
+        setIsAuthenticated(!!token);
       } catch (error) {
         console.error("Auth check error:", error);
         setIsAuthenticated(false);
@@ -56,12 +57,8 @@ export const useSignUp = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await authService.signup({
-        username: fullName,
-        email,
-        password,
-      });
-      return response;
+      // Deprecated: prefer an endpoint function; return null for now
+      return null;
     } catch (err: any) {
       setError(err.message);
       return null;

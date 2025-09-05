@@ -82,6 +82,23 @@
         "usernameRequired": "Tên người dùng không được để trống",
         "registerFailed": "Đăng ký thất bại. Vui lòng thử lại."
       }
+    },
+    "selection": {
+      "headerTitle": "Chọn loại đăng nhập",
+      "subtitle": "Vui lòng chọn loại tài khoản để đăng nhập",
+      "userBusinessTitle": "User / Business",
+      "userBusinessDesc": "Đăng nhập cho người dùng cá nhân và doanh nghiệp",
+      "staffAdminTitle": "Staff / Admin",
+      "staffAdminDesc": "Đăng nhập cho nhân viên và quản trị viên hệ thống"
     }
+  },
+  "forum": {
+    "title": "Diễn đàn",
+    "placeholderCreatePost": "Bạn đang nghĩ gì?",
+    "searchPlaceholder": "Tìm kiếm bài viết...",
+    "trending": "Xu hướng",
+    "comingSoon": "Tính năng này sẽ sớm ra mắt.",
+    "friendSuggestions": "Gợi ý kết bạn",
+    "emptyList": "Không tìm thấy bài viết nào."
   }
 }

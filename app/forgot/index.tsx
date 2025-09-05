@@ -14,6 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../src/navigation";
 import { useForgotPassword } from "../../src/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import {
   colors,
   spacing,
@@ -24,18 +25,19 @@ import {
 export default function ForgotPassword() {
   const { navigate } = useNavigation();
   const { forgotPassword } = useForgotPassword();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleForgotPassword = async () => {
     if (!email.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập email của bạn");
+      Alert.alert(t("auth.login.error"), t("auth.common.email"));
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      Alert.alert("Lỗi", "Vui lòng nhập email hợp lệ");
+      Alert.alert(t("auth.login.error"), t("auth.login.error"));
       return;
     }
 
@@ -50,18 +52,15 @@ export default function ForgotPassword() {
         });
 
         navigate(`/verifyEmail?${params.toString()}`);
-        Alert.alert(
-          "Thành công",
-          "Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra và nhập mã để đặt lại mật khẩu."
-        );
+        Alert.alert(t("auth.common.send"), t("auth.login.successMessage"));
       } else {
-        Alert.alert("Lỗi", "Không thể gửi yêu cầu. Vui lòng thử lại.");
+        Alert.alert(t("auth.login.error"), t("auth.login.error"));
       }
     } catch (error: any) {
       console.error("Forgot password error:", error);
       Alert.alert(
-        "Lỗi",
-        error.message || "Không thể kết nối đến máy chủ. Vui lòng thử lại."
+        t("auth.login.error"),
+        error.message || t("auth.login.error")
       );
     } finally {
       setLoading(false);
@@ -87,7 +86,9 @@ export default function ForgotPassword() {
             >
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Quên mật khẩu</Text>
+            <Text style={styles.headerTitle}>
+              {t("auth.login.forgotPassword")}
+            </Text>
             <View style={styles.placeholder} />
           </View>
         </LinearGradient>
@@ -100,13 +101,13 @@ export default function ForgotPassword() {
               </View>
             </View>
 
-            <Text style={styles.formTitle}>Quên mật khẩu?</Text>
-            <Text style={styles.formSubtitle}>
-              Nhập email của bạn để nhận mã OTP đặt lại mật khẩu
+            <Text style={styles.formTitle}>
+              {t("auth.login.forgotPassword")}
             </Text>
+            <Text style={styles.formSubtitle}>{t("auth.common.send")}</Text>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Email</Text>
+              <Text style={styles.inputLabel}>{t("auth.common.email")}</Text>
               <View style={styles.inputWrapper}>
                 <Ionicons
                   name="mail-outline"
@@ -115,7 +116,7 @@ export default function ForgotPassword() {
                 />
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Nhập email của bạn"
+                  placeholder={t("auth.common.email")}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -141,10 +142,14 @@ export default function ForgotPassword() {
                     color="white"
                     style={styles.spinning}
                   />
-                  <Text style={styles.submitButtonText}>Đang gửi...</Text>
+                  <Text style={styles.submitButtonText}>
+                    {t("auth.common.sending")}
+                  </Text>
                 </View>
               ) : (
-                <Text style={styles.submitButtonText}>Gửi mã OTP</Text>
+                <Text style={styles.submitButtonText}>
+                  {t("auth.common.send")}
+                </Text>
               )}
             </TouchableOpacity>
 
@@ -154,15 +159,12 @@ export default function ForgotPassword() {
                 size={20}
                 color={colors.text.secondary}
               />
-              <Text style={styles.infoText}>
-                Mã OTP sẽ được gửi đến email của bạn. Vui lòng kiểm tra hộp thư
-                và thư mục spam.
-              </Text>
+              <Text style={styles.infoText}>{t("auth.common.otp")}</Text>
             </View>
 
             <View style={styles.linksContainer}>
               <TouchableOpacity onPress={() => navigate("/loginSelection")}>
-                <Text style={styles.backLink}>← Quay lại đăng nhập</Text>
+                <Text style={styles.backLink}>← {t("auth.login.title")}</Text>
               </TouchableOpacity>
             </View>
           </View>

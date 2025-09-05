@@ -7,10 +7,12 @@ import {
   StyleSheet,
   FlatList,
 } from "react-native";
-import commentService, {
+import {
+  getCommentsForPost,
+  createComment,
   CommentResponse,
   CreateCommentRequest,
-} from "../services/commentService";
+} from "../endpoints/comments";
 import { useAuthContext } from "../contexts/authContext";
 import { colors, spacing } from "../constants/theme";
 
@@ -40,7 +42,7 @@ const CommentSection = ({ postId, onAdded }: CommentSectionProps) => {
     const fetchComments = async () => {
       setIsLoading(true);
       try {
-        const fetchedComments = await commentService.getCommentsForPost(postId);
+        const fetchedComments = await getCommentsForPost(postId);
         setComments(fetchedComments);
       } catch (error) {
         console.error("Failed to fetch comments:", error);
@@ -64,11 +66,7 @@ const CommentSection = ({ postId, onAdded }: CommentSectionProps) => {
     };
 
     try {
-      // Pass the user object to the service
-      const createdComment = await commentService.createComment(
-        commentData,
-        user
-      );
+      const createdComment = await createComment(commentData);
       setComments([createdComment, ...comments]); // Add to top of the list
       setNewComment("");
       onAdded?.(createdComment);
