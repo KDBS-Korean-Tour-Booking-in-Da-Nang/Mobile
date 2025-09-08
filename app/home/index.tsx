@@ -12,12 +12,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../src/navigation";
 import { useTranslation } from "react-i18next";
-import {
-  colors,
-  spacing,
-  borderRadius,
-  typography,
-} from "../../src/constants/theme";
+import { colors, spacing, borderRadius } from "../../src/constants/theme";
+import MainLayout from "../../src/components/MainLayout";
 
 const { width } = Dimensions.get("window");
 
@@ -79,145 +75,115 @@ export default function Home() {
   ];
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header với gradient và nút đăng nhập/đăng ký */}
-      <LinearGradient
-        colors={colors.gradient.primary as [string, string]}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <View style={styles.headerContent}>
-          <View style={styles.logoContainer}>
-            <View style={styles.logo}>
-              <Text style={styles.logoText}>TK</Text>
-            </View>
-            <Text style={styles.appName}>{t("brand")}</Text>
-          </View>
-
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.authButton}
-              onPress={() => navigate("/loginSelection")}
-            >
-              <Ionicons name="log-in-outline" size={20} color="white" />
-              <Text style={styles.authButtonText}>
-                {t("home.hero.btnLogin")}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.authButton, styles.registerButton]}
-              onPress={() => navigate("/signUp")}
-            >
-              <Ionicons name="person-add-outline" size={20} color="white" />
-              <Text style={styles.authButtonText}>
-                {t("home.hero.btnRegister")}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </LinearGradient>
-
-      {/* Hero Section với hình ảnh biển Đà Nẵng */}
-      <View style={styles.heroSection}>
-        <Image
-          source={{
-            uri: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=400&fit=crop",
-          }}
-          style={styles.heroImage}
-        />
+    <MainLayout>
+      <ScrollView style={styles.container}>
+        {/* Header với gradient (đã bỏ nút đăng nhập/đăng ký) */}
         <LinearGradient
-          colors={["transparent", "rgba(0,0,0,0.7)"]}
-          style={styles.heroOverlay}
+          colors={colors.gradient.primary as [string, string]}
+          style={styles.header}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         >
-          <View style={styles.heroContent}>
-            <Text style={styles.heroTitle}>{t("home.hero.titleLead")}</Text>
-            <Text style={styles.heroSubtitle}>{t("home.hero.titleEmph")}</Text>
-            <Text style={styles.heroDescription}>{t("home.hero.desc")}</Text>
+          <View style={styles.headerContent}>
+            <View style={styles.logoContainer}>
+              <View style={styles.logo}>
+                <Text style={styles.logoText}>TK</Text>
+              </View>
+              <Text style={styles.appName}>{t("brand")}</Text>
+            </View>
+
+            <View style={styles.headerActions} />
           </View>
         </LinearGradient>
-      </View>
 
-      {/* Featured Tours Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t("home.dashboard.welcome")}</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeAllText}>
-              {t("home.dashboard.viewProfile")}
-            </Text>
-          </TouchableOpacity>
+        {/* Hero Section với hình ảnh biển Đà Nẵng */}
+        <View style={styles.heroSection}>
+          <Image
+            source={{
+              uri: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=400&fit=crop",
+            }}
+            style={styles.heroImage}
+          />
+          <LinearGradient
+            colors={["transparent", "rgba(0,0,0,0.7)"]}
+            style={styles.heroOverlay}
+          >
+            <View style={styles.heroContent}>
+              <Text style={styles.heroTitle}>{t("home.hero.titleLead")}</Text>
+              <Text style={styles.heroSubtitle}>
+                {t("home.hero.titleEmph")}
+              </Text>
+              <Text style={styles.heroDescription}>{t("home.hero.desc")}</Text>
+            </View>
+          </LinearGradient>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.toursContainer}
-        >
-          {featuredTours.map((tour) => (
-            <TouchableOpacity key={tour.id} style={styles.tourCard}>
-              <Image source={{ uri: tour.image }} style={styles.tourImage} />
-              <View style={styles.tourContent}>
-                <Text style={styles.tourTitle}>{tour.title}</Text>
-                <Text style={styles.tourLocation}>{tour.location}</Text>
-                <View style={styles.tourMeta}>
-                  <View style={styles.ratingContainer}>
-                    <Ionicons name="star" size={16} color="#FFD700" />
-                    <Text style={styles.ratingText}>{tour.rating}</Text>
+        {/* Featured Tours Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              {t("home.dashboard.welcome")}
+            </Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAllText}>
+                {t("home.dashboard.viewProfile")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.toursContainer}
+          >
+            {featuredTours.map((tour) => (
+              <TouchableOpacity key={tour.id} style={styles.tourCard}>
+                <Image source={{ uri: tour.image }} style={styles.tourImage} />
+                <View style={styles.tourContent}>
+                  <Text style={styles.tourTitle}>{tour.title}</Text>
+                  <Text style={styles.tourLocation}>{tour.location}</Text>
+                  <View style={styles.tourMeta}>
+                    <View style={styles.ratingContainer}>
+                      <Ionicons name="star" size={16} color="#FFD700" />
+                      <Text style={styles.ratingText}>{tour.rating}</Text>
+                    </View>
+                    <Text style={styles.tourDuration}>{tour.duration}</Text>
                   </View>
-                  <Text style={styles.tourDuration}>{tour.duration}</Text>
+                  <Text style={styles.tourPrice}>{tour.price} VNĐ</Text>
                 </View>
-                <Text style={styles.tourPrice}>{tour.price} VNĐ</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* News Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              {t("home.dashboard.description")}
+            </Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAllText}>
+                {t("home.dashboard.settings")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {newsItems.map((news) => (
+            <TouchableOpacity key={news.id} style={styles.newsCard}>
+              <Image source={{ uri: news.image }} style={styles.newsImage} />
+              <View style={styles.newsContent}>
+                <Text style={styles.newsTitle}>{news.title}</Text>
+                <Text style={styles.newsSummary}>{news.summary}</Text>
+                <Text style={styles.newsDate}>{news.date}</Text>
               </View>
             </TouchableOpacity>
           ))}
-        </ScrollView>
-      </View>
-
-      {/* News Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            {t("home.dashboard.description")}
-          </Text>
-          <TouchableOpacity>
-            <Text style={styles.seeAllText}>
-              {t("home.dashboard.settings")}
-            </Text>
-          </TouchableOpacity>
         </View>
 
-        {newsItems.map((news) => (
-          <TouchableOpacity key={news.id} style={styles.newsCard}>
-            <Image source={{ uri: news.image }} style={styles.newsImage} />
-            <View style={styles.newsContent}>
-              <Text style={styles.newsTitle}>{news.title}</Text>
-              <Text style={styles.newsSummary}>{news.summary}</Text>
-              <Text style={styles.newsDate}>{news.date}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* CTA Section */}
-      <View style={styles.ctaSection}>
-        <LinearGradient
-          colors={colors.gradient.secondary as [string, string]}
-          style={styles.ctaContainer}
-        >
-          <Text style={styles.ctaTitle}>{t("home.welcome.heading")}</Text>
-          <Text style={styles.ctaSubtitle}>{t("home.welcome.subheading")}</Text>
-          <TouchableOpacity
-            style={styles.ctaButton}
-            onPress={() => navigate("/signUp")}
-          >
-            <Text style={styles.ctaButtonText}>
-              {t("home.hero.btnRegister")}
-            </Text>
-          </TouchableOpacity>
-        </LinearGradient>
-      </View>
-    </ScrollView>
+        {/* CTA Section removed (bỏ nút đăng ký) */}
+      </ScrollView>
+    </MainLayout>
   );
 }
 
@@ -433,7 +399,7 @@ const styles = StyleSheet.create({
   },
   ctaSection: {
     padding: spacing.lg,
-    marginBottom: spacing.xl,
+    marginBottom: 100,
   },
   ctaContainer: {
     borderRadius: borderRadius.lg,

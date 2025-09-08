@@ -29,7 +29,7 @@ function RootLayoutNav() {
     if (isAuthenticated) {
       router.replace("/forum");
     } else {
-      router.replace("/home");
+      router.replace("/loginSelection");
     }
   }, [isAuthenticated, loading, router]);
 

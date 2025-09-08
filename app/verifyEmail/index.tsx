@@ -12,16 +12,11 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-// TODO: move to endpoint if verify email is needed; placeholder removed
+import api from "../../src/services/api";
 import { useNavigation } from "../../src/navigation";
 import { useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
-import {
-  colors,
-  spacing,
-  borderRadius,
-  typography,
-} from "../../src/constants/theme";
+import { colors, spacing, borderRadius } from "../../src/constants/theme";
 
 export default function VerifyEmail() {
   const { navigate } = useNavigation();
@@ -38,8 +33,10 @@ export default function VerifyEmail() {
   const isSignUp = params.isSignUp === "true";
 
   useEffect(() => {
-    // Tự động gửi OTP khi component mount
-    sendOTP();
+    // Always send one OTP on entry to ensure delivery
+    (async () => {
+      await sendOTP();
+    })();
   }, []);
 
   useEffect(() => {
@@ -53,15 +50,22 @@ export default function VerifyEmail() {
   const sendOTP = async () => {
     setResendLoading(true);
     try {
-      // TODO: integrate with real API. Temporarily simulate success.
-      await new Promise((r) => setTimeout(r, 600));
-      setCountdown(60);
-      Alert.alert(t("auth.common.send"), t("auth.login.successMessage"));
+      const resp = await api.post("/api/users/regenerate-otp", { email });
+      const data = resp?.data;
+      if (data?.code === 1000 || data?.code === 0) {
+        setCountdown(60);
+      } else {
+        Alert.alert(
+          t("auth.login.error"),
+          data?.message || t("auth.login.error")
+        );
+      }
     } catch (error: any) {
-      console.error("Send OTP error:", error);
       Alert.alert(
         t("auth.login.error"),
-        error?.message || t("auth.login.error")
+        error?.response?.data?.message ||
+          error?.message ||
+          t("auth.login.error")
       );
     } finally {
       setResendLoading(false);
@@ -76,26 +80,35 @@ export default function VerifyEmail() {
 
     setLoading(true);
     try {
-      // TODO: integrate with real API. Temporarily simulate success.
-      await new Promise((r) => setTimeout(r, 600));
-
-      if (isSignUp) {
-        if (role === "BUSINESS") {
-          const params = new URLSearchParams({ email, fullName });
-          navigate(`/businessInfo?${params.toString()}`);
+      const resp = await api.post("/api/users/verify-email", {
+        email,
+        otpCode: otp,
+      });
+      const data = resp?.data;
+      if ((data?.code === 1000 || data?.code === 0) && data?.result === true) {
+        if (isSignUp) {
+          if (role === "BUSINESS") {
+            const params = new URLSearchParams({ email, fullName });
+            navigate(`/businessInfo?${params.toString()}`);
+          } else {
+            navigate("/loginSelection");
+          }
         } else {
-          Alert.alert(t("auth.login.successMessage"));
-          navigate("/loginSelection");
+          const params = new URLSearchParams({ email });
+          navigate(`/resetPassword?${params.toString()}`);
         }
       } else {
-        const params = new URLSearchParams({ email });
-        navigate(`/resetPassword?${params.toString()}`);
+        Alert.alert(
+          t("auth.login.error"),
+          data?.message || t("auth.login.error")
+        );
       }
     } catch (error: any) {
-      console.error("Verify OTP error:", error);
       Alert.alert(
         t("auth.login.error"),
-        error?.message || t("auth.login.error")
+        error?.response?.data?.message ||
+          error?.message ||
+          t("auth.login.error")
       );
     } finally {
       setLoading(false);

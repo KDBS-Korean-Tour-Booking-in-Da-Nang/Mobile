@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Alert,
   TouchableOpacity,
 } from "react-native";
 import { useNavigation } from "../../src/navigation";
@@ -13,12 +12,7 @@ import { useSignUp } from "../../src/hooks/useAuth";
 import { Button } from "../../src/components/Button";
 import { Input } from "../../src/components/Input";
 import { useTranslation } from "react-i18next";
-import {
-  colors,
-  spacing,
-  borderRadius,
-  typography,
-} from "../../src/constants/theme";
+import { colors, spacing, borderRadius } from "../../src/constants/theme";
 
 export default function SignUp() {
   const { navigate } = useNavigation();
@@ -54,7 +48,7 @@ export default function SignUp() {
     setLoading(true);
 
     try {
-      const response = await signUp(email, password, fullName);
+      const response = await signUp(email, password, fullName, selectedRole);
 
       if (response) {
         navigate(
@@ -185,7 +179,7 @@ export default function SignUp() {
         <View style={styles.linksContainer}>
           <View style={styles.loginContainer}>
             <Text style={styles.loginText}>
-              {t("auth.register.haveAccount")}{" "}
+              {t("auth.register.haveAccount")} {""}
             </Text>
             <TouchableOpacity onPress={() => navigate("/loginSelection")}>
               <Text style={styles.loginLink}>{t("auth.login.title")}</Text>

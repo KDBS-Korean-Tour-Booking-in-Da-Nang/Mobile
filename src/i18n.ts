@@ -17,8 +17,7 @@ const languageDetector = {
       const savedLanguage = await AsyncStorage.getItem(LANGUAGE_KEY);
       const language = savedLanguage || "vi";
       callback(language);
-    } catch (error) {
-      console.error("Error detecting language:", error);
+    } catch {
       callback("vi");
     }
   },
@@ -26,9 +25,7 @@ const languageDetector = {
   cacheUserLanguage: async (language: string) => {
     try {
       await AsyncStorage.setItem(LANGUAGE_KEY, language);
-    } catch (error) {
-      console.error("Error caching language:", error);
-    }
+    } catch {}
   },
 };
 
@@ -62,10 +59,7 @@ i18next
 i18next.on("languageChanged", async (lng) => {
   try {
     await AsyncStorage.setItem(LANGUAGE_KEY, lng);
-    console.log("i18next: languageChanged", lng);
-  } catch (error) {
-    console.error("Error caching language change:", error);
-  }
+  } catch {}
 });
 
 export default i18next;

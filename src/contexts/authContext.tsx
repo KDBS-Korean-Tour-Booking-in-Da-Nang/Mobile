@@ -89,13 +89,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (email: string, password: string, role: string) => {
     dispatch({ type: "INIT" });
     try {
-      const response = await api.post("/api/auth/login", { email, password, role });
-      const { token, user } = response.data.result as { token: string; user: User };
+      // Backend accepts { email, password }; ignore role here
+      const response = await api.post("/api/auth/login", { email, password });
+      // Backend returns AuthenticationResponse { token, authenticated, user }
+      // Some environments may wrap it in { result: AuthenticationResponse }
+      const payload = (response?.data?.result ?? response?.data) as {
+        token?: string;
+        authenticated?: boolean;
+        user?: User;
+      };
+      const token = payload?.token as string;
+      const user = payload?.user as User;
       await AsyncStorage.setItem("authToken", token);
       await AsyncStorage.setItem("userData", JSON.stringify(user));
       dispatch({ type: "LOGIN_SUCCESS", payload: { token, user } });
     } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || "Login failed";
+      const backendMessage = err?.response?.data?.message;
+      const message = backendMessage || err?.message || "Login failed";
       dispatch({ type: "ERROR", payload: message });
       throw new Error(message);
     }

@@ -30,12 +30,7 @@ export default function LoginSelection() {
         end={{ x: 1, y: 1 }}
       >
         <View style={styles.headerContent}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigate("/home")}
-          >
-            <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
+          <View style={styles.placeholder} />
           <Text style={styles.headerTitle}>
             {t("auth.selection.headerTitle")}
           </Text>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "../services/api";
 
 // This hook remains for login form logic
 export const useLogin = () => {
@@ -10,9 +11,9 @@ export const useLogin = () => {
     setLoading(true);
     setError(null);
     try {
-      // Deprecated: prefer AuthContext.login; kept for compatibility if used elsewhere
-      const res = await fetch("/api/auth/login");
-      return (res as any) || null;
+      // Align with AuthContext and backend contract
+      const response = await api.post("/api/auth/login", { email, password });
+      return response?.data ?? null;
     } catch (err: any) {
       setError(err.message);
       throw err;
@@ -36,7 +37,6 @@ export const useAuthStatus = () => {
         const token = await AsyncStorage.getItem("authToken");
         setIsAuthenticated(!!token);
       } catch (error) {
-        console.error("Auth check error:", error);
         setIsAuthenticated(false);
       } finally {
         setLoading(false);
@@ -53,15 +53,26 @@ export const useSignUp = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    fullName: string,
+    role: "USER" | "BUSINESS"
+  ) => {
     setLoading(true);
     setError(null);
     try {
-      // Deprecated: prefer an endpoint function; return null for now
-      return null;
+      // Align with Website: use /api/users/register and send username, email, password
+      const response = await api.post("/api/users/register", {
+        username: fullName,
+        email,
+        password,
+      });
+      // Treat any 2xx as success; some backends return a boolean or message
+      return response?.data ?? true;
     } catch (err: any) {
       setError(err.message);
-      return null;
+      throw err;
     } finally {
       setLoading(false);
     }
