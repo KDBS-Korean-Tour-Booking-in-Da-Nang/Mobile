@@ -2,7 +2,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const API_BASE_URL = __DEV__
-  ? "http://172.16.0.115:8080"
+  ? "http://26.111.41.111:8080"
   : "https://kdbs.com/api";
 
 const api = axios.create({

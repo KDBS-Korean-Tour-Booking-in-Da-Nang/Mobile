@@ -14,6 +14,7 @@ import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { NavigationProvider } from "../src/navigation";
 import { AuthProvider, useAuthContext } from "../src/contexts/authContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -22,20 +23,26 @@ function RootLayoutNav() {
   const router = useRouter();
 
   useEffect(() => {
-    if (loading) {
-      return; // Wait for the auth state to be determined
-    }
-
-    if (isAuthenticated) {
-      router.replace("/forum");
-    } else {
-      router.replace("/loginSelection");
-    }
+    const redirect = async () => {
+      if (loading) return;
+      const hasSeen = await AsyncStorage.getItem("hasSeenOnboarding");
+      if (!hasSeen) {
+        router.replace("/onboarding" as any);
+        return;
+      }
+      if (isAuthenticated) {
+        router.replace("/forum");
+      } else {
+        router.replace("/loginSelection");
+      }
+    };
+    redirect();
   }, [isAuthenticated, loading, router]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="home" />
+      <Stack.Screen name="onboarding" />
       <Stack.Screen name="loginSelection" />
       <Stack.Screen name="userLogin" />
       <Stack.Screen name="adminLogin" />
