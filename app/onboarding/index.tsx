@@ -24,7 +24,7 @@ const { width } = Dimensions.get("window");
 const ONBOARD_BG = "#1A8EEA"; // updated per request
 
 export default function Onboarding() {
-  const { replaceToLoginSelection } = useNavigation();
+  const { navigate } = useNavigation();
   const [index, setIndex] = useState(0);
   const listRef = useRef<FlatList<Slide>>(null as any);
 
@@ -73,7 +73,7 @@ export default function Onboarding() {
 
   const handleGetStarted = async () => {
     await AsyncStorage.setItem("hasSeenOnboarding", "true");
-    replaceToLoginSelection();
+    navigate("/userLogin");
   };
 
   const renderItem = ({ item }: { item: Slide }) => (

@@ -173,5 +173,12 @@
     "home": "Home",
     "forum": "Forum",
     "profile": "Profile"
+  },
+  "common": {
+    "seeAll": "See all",
+    "search": "Search",
+    "welcome": "Welcome",
+    "hotTopic": "Hot Topic",
+    "article": "Article"
   }
 }

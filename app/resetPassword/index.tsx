@@ -10,16 +10,11 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../src/navigation";
 import { useLocalSearchParams } from "expo-router";
-import {
-  colors,
-  spacing,
-  borderRadius,
-  typography,
-} from "../../src/constants/theme";
+import api from "../../src/services/api";
+import { spacing, borderRadius, colors } from "../../src/constants/theme";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function ResetPassword() {
   const { navigate } = useNavigation();
@@ -31,6 +26,7 @@ export default function ResetPassword() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const email = params.email as string;
+  const otp = (params.otpCode as string) || "";
 
   const handleResetPassword = async () => {
     // Validation
@@ -51,37 +47,27 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      const response = await fetch(
-        "http://localhost:8080/api/auth/reset-password",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: email,
-            newPassword: newPassword,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok && (data.code === 1000 || data.code === 0)) {
+      const resp = await api.post("/api/auth/forgot-password/reset", {
+        email,
+        otpCode: otp,
+        newPassword,
+      });
+      const ok = resp?.data?.code === 1000 || resp?.status === 200;
+      if (ok) {
         Alert.alert(
           "Thành công",
           "Mật khẩu đã được đặt lại thành công! Vui lòng đăng nhập với mật khẩu mới.",
           [
             {
               text: "OK",
-              onPress: () => navigate("/loginSelection"),
+              onPress: () => navigate("/userLogin"),
             },
           ]
         );
       } else {
         Alert.alert(
           "Lỗi",
-          data.message || "Không thể đặt lại mật khẩu. Vui lòng thử lại."
+          resp?.data?.message || "Không thể đặt lại mật khẩu. Vui lòng thử lại."
         );
       }
     } catch (error) {
@@ -98,23 +84,7 @@ export default function ResetPassword() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <LinearGradient
-          colors={colors.gradient.primary as [string, string]}
-          style={styles.header}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={styles.headerContent}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => navigate("/verifyEmail")}
-            >
-              <Ionicons name="arrow-back" size={24} color="white" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Đặt lại mật khẩu</Text>
-            <View style={styles.placeholder} />
-          </View>
-        </LinearGradient>
+        {/* Header removed */}
 
         <View style={styles.content}>
           <View style={styles.formContainer}>
@@ -248,11 +218,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
   },
-  header: {
-    paddingTop: 50,
-    paddingBottom: spacing.xl,
-    paddingHorizontal: spacing.lg,
-  },
+  header: { display: "none" },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
@@ -269,10 +235,7 @@ const styles = StyleSheet.create({
   placeholder: {
     width: 40,
   },
-  content: {
-    flex: 1,
-    padding: spacing.lg,
-  },
+  content: { flex: 1, padding: spacing.lg },
   formContainer: {
     flex: 1,
     justifyContent: "center",

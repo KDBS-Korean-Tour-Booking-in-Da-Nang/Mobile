@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,14 +9,16 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  Dimensions,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
-import api from "../../src/services/api";
 import { useNavigation } from "../../src/navigation";
 import { useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { colors, spacing, borderRadius } from "../../src/constants/theme";
+import api from "../../src/services/api";
+import { spacing, borderRadius } from "../../src/constants/theme";
+
+const { width } = Dimensions.get("window");
 
 export default function VerifyEmail() {
   const { navigate } = useNavigation();
@@ -27,45 +29,54 @@ export default function VerifyEmail() {
   const [resendLoading, setResendLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
-  const email = params.email as string;
-  const fullName = params.fullName as string;
-  const role = params.role as string;
+  const email = (params.email as string) || "";
+  const fullName = (params.fullName as string) || "";
+  const role = (params.role as string) || "USER";
   const isSignUp = params.isSignUp === "true";
 
   useEffect(() => {
-    // Always send one OTP on entry to ensure delivery
-    (async () => {
-      await sendOTP();
-    })();
+    sendOTP();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     let timer: any;
-    if (countdown > 0) {
+    if (countdown > 0)
       timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-    }
     return () => clearTimeout(timer);
   }, [countdown]);
 
   const sendOTP = async () => {
+    if (!email) return;
     setResendLoading(true);
     try {
-      const resp = await api.post("/api/users/regenerate-otp", { email });
-      const data = resp?.data;
-      if (data?.code === 1000 || data?.code === 0) {
-        setCountdown(60);
+      if (isSignUp) {
+        // Sign up flow
+        const resp = await api.post("/api/users/regenerate-otp", { email });
+        if (resp?.data?.code === 1000 || resp?.data?.code === 0)
+          setCountdown(60);
+        else
+          Alert.alert(
+            t("auth.login.error"),
+            resp?.data?.message || t("auth.login.error")
+          );
       } else {
-        Alert.alert(
-          t("auth.login.error"),
-          data?.message || t("auth.login.error")
-        );
+        // Forgot password flow
+        const resp = await api.post("/api/auth/forgot-password/request", {
+          email,
+        });
+        if (resp?.data?.code === 1000 || resp?.data?.message?.includes("OTP"))
+          setCountdown(60);
+        else
+          Alert.alert(
+            t("auth.login.error"),
+            resp?.data?.message || t("auth.login.error")
+          );
       }
-    } catch (error: any) {
+    } catch (err: any) {
       Alert.alert(
         t("auth.login.error"),
-        error?.response?.data?.message ||
-          error?.message ||
-          t("auth.login.error")
+        err?.response?.data?.message || err?.message || t("auth.login.error")
       );
     } finally {
       setResendLoading(false);
@@ -77,39 +88,47 @@ export default function VerifyEmail() {
       Alert.alert(t("auth.login.error"), t("auth.common.otpPlaceholder"));
       return;
     }
-
     setLoading(true);
     try {
-      const resp = await api.post("/api/users/verify-email", {
-        email,
-        otpCode: otp,
-      });
-      const data = resp?.data;
-      if ((data?.code === 1000 || data?.code === 0) && data?.result === true) {
-        if (isSignUp) {
-          if (role === "BUSINESS") {
-            const params = new URLSearchParams({ email, fullName });
-            navigate(`/businessInfo?${params.toString()}`);
-          } else {
-            navigate("/loginSelection");
-          }
-        } else {
-          const params = new URLSearchParams({ email });
-          navigate(`/resetPassword?${params.toString()}`);
-        }
+      let ok = false;
+      if (isSignUp) {
+        const resp = await api.post("/api/users/verify-email", {
+          email,
+          otpCode: otp,
+        });
+        ok =
+          (resp?.data?.code === 1000 || resp?.data?.code === 0) &&
+          resp?.data?.result === true;
       } else {
-        Alert.alert(
-          t("auth.login.error"),
-          data?.message || t("auth.login.error")
+        const resp = await api.post(
+          "/api/auth/forgot-password/verify-otp",
+          undefined,
+          { params: { email, otpCode: otp } }
+        );
+        ok = Boolean(resp?.data?.result ?? resp?.data);
+      }
+
+      if (!ok) throw new Error("Verify failed");
+
+      if (isSignUp) {
+        if (role === "BUSINESS")
+          navigate(
+            `/businessInfo?${new URLSearchParams({
+              email,
+              fullName,
+            }).toString()}`
+          );
+        else navigate("/userLogin");
+      } else {
+        navigate(
+          `/resetPassword?${new URLSearchParams({
+            email,
+            otpCode: otp,
+          }).toString()}`
         );
       }
-    } catch (error: any) {
-      Alert.alert(
-        t("auth.login.error"),
-        error?.response?.data?.message ||
-          error?.message ||
-          t("auth.login.error")
-      );
+    } catch (err: any) {
+      Alert.alert(t("auth.login.error"), err?.message || t("auth.login.error"));
     } finally {
       setLoading(false);
     }
@@ -121,112 +140,62 @@ export default function VerifyEmail() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <LinearGradient
-          colors={colors.gradient.primary as [string, string]}
-          style={styles.header}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={styles.headerContent}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => navigate("/loginSelection")}
-            >
-              <Ionicons name="arrow-back" size={24} color="white" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>{t("auth.login.title")}</Text>
-            <View style={styles.placeholder} />
+        <View style={styles.illustrationContainer}>
+          <Image
+            source={require("../../assets/images/otp-set.png")}
+            style={styles.illustration}
+            resizeMode="contain"
+          />
+        </View>
+
+        <View style={styles.formCard}>
+          <Text style={styles.formTitle}>OTP Verification</Text>
+          <Text style={styles.formSubtitle}>
+            Please enter a code from email
+          </Text>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Your code</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="******"
+              value={otp}
+              onChangeText={setOtp}
+              keyboardType="number-pad"
+              maxLength={6}
+            />
           </View>
-        </LinearGradient>
 
-        <View style={styles.content}>
-          <View style={styles.formContainer}>
-            <View style={styles.iconContainer}>
-              <View style={styles.iconWrapper}>
-                <Ionicons name="mail" size={48} color={colors.primary.main} />
-              </View>
-            </View>
-
-            <Text style={styles.formTitle}>{t("auth.login.title")}</Text>
-            <Text style={styles.formSubtitle}>
-              {t("auth.common.notReceivedCode")}
+          <TouchableOpacity
+            style={[
+              styles.verifyButton,
+              loading && styles.verifyButtonDisabled,
+            ]}
+            onPress={verifyOTP}
+            disabled={loading}
+          >
+            <Text style={styles.verifyButtonText}>
+              {loading ? "..." : "Verification"}
             </Text>
-            <Text style={styles.emailText}>{email}</Text>
+          </TouchableOpacity>
 
-            <View style={styles.otpContainer}>
-              <Text style={styles.otpLabel}>{t("auth.common.otp")}</Text>
-              <TextInput
-                style={styles.otpInput}
-                placeholder={t("auth.common.otpPlaceholder")}
-                value={otp}
-                onChangeText={setOtp}
-                keyboardType="number-pad"
-                maxLength={6}
-                textAlign="center"
-                autoFocus
-              />
-            </View>
-
+          <View style={styles.resendRow}>
             <TouchableOpacity
-              style={[
-                styles.verifyButton,
-                loading && styles.verifyButtonDisabled,
-              ]}
-              onPress={verifyOTP}
-              disabled={loading}
+              onPress={sendOTP}
+              disabled={countdown > 0 || resendLoading}
             >
-              {loading ? (
-                <View style={styles.loadingContainer}>
-                  <Ionicons
-                    name="reload"
-                    size={20}
-                    color="white"
-                    style={styles.spinning}
-                  />
-                  <Text style={styles.verifyButtonText}>
-                    {t("auth.register.submitting")}
-                  </Text>
-                </View>
-              ) : (
-                <Text style={styles.verifyButtonText}>
-                  {t("auth.common.send")}
-                </Text>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.resendContainer}>
-              <Text style={styles.resendText}>
-                {t("auth.common.notReceivedCode")}
-              </Text>
-              <TouchableOpacity
-                onPress={sendOTP}
-                disabled={countdown > 0 || resendLoading}
-                style={styles.resendButton}
+              <Text
+                style={
+                  countdown > 0 ? styles.resendDisabled : styles.resendLink
+                }
               >
-                {resendLoading ? (
-                  <Text style={styles.resendButtonText}>
-                    {t("auth.common.sending")}
-                  </Text>
-                ) : countdown > 0 ? (
-                  <Text style={styles.resendButtonTextDisabled}>
-                    {t("auth.common.resendIn", { seconds: countdown })}
-                  </Text>
-                ) : (
-                  <Text style={styles.resendButtonText}>
-                    {t("auth.common.resend")}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.infoContainer}>
-              <Ionicons
-                name="information-circle-outline"
-                size={20}
-                color={colors.text.secondary}
-              />
-              <Text style={styles.infoText}>{t("auth.login.subtitle")}</Text>
-            </View>
+                {resendLoading
+                  ? t("auth.common.sending")
+                  : countdown > 0
+                  ? t("auth.common.resendIn", { seconds: countdown })
+                  : t("auth.common.resend")}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -235,155 +204,68 @@ export default function VerifyEmail() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1, backgroundColor: "#1A8EEA" },
+  scrollContent: { flexGrow: 1 },
+  illustrationContainer: {
     flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  header: {
+    alignItems: "center",
+    justifyContent: "center",
     paddingTop: 50,
-    paddingBottom: spacing.xl,
+  },
+  illustration: { width: width * 0.8, height: width * 0.8 },
+  formCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     paddingHorizontal: spacing.lg,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  backButton: {
-    padding: spacing.sm,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "white",
-  },
-  placeholder: {
-    width: 40,
-  },
-  content: {
-    flex: 1,
-    padding: spacing.lg,
-  },
-  formContainer: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  iconContainer: {
-    alignItems: "center",
-    marginBottom: spacing.xl,
-  },
-  iconWrapper: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.background.secondary,
-    alignItems: "center",
-    justifyContent: "center",
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
+    marginTop: -140,
   },
   formTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: colors.text.primary,
+    fontSize: 30,
+    fontWeight: "800",
+    color: "#000",
     marginBottom: spacing.sm,
-    textAlign: "center",
+    textAlign: "left",
   },
   formSubtitle: {
     fontSize: 16,
-    color: colors.text.secondary,
-    textAlign: "center",
-    marginBottom: spacing.xs,
+    color: "#000",
+    marginBottom: spacing.xl,
+    textAlign: "left",
   },
-  emailText: {
+  inputContainer: { marginBottom: spacing.lg },
+  inputLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.primary.main,
-    textAlign: "center",
-    marginBottom: spacing.xl,
-  },
-  otpContainer: {
-    marginBottom: spacing.xl,
-  },
-  otpLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.text.primary,
+    color: "#000",
     marginBottom: spacing.sm,
-    textAlign: "center",
   },
-  otpInput: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: colors.text.primary,
-    backgroundColor: colors.surface.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.lg,
+  input: {
+    backgroundColor: "#fff",
+    borderRadius: 32,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
-    borderWidth: 2,
-    borderColor: colors.border.medium,
-    textAlign: "center",
-    letterSpacing: 8,
+    fontSize: 16,
+    color: "#000",
+    borderWidth: 1,
+    borderColor: "#000",
   },
   verifyButton: {
-    backgroundColor: colors.primary.main,
-    borderRadius: borderRadius.md,
+    backgroundColor: "#000",
+    borderRadius: 28,
     paddingVertical: spacing.md,
     alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  verifyButtonDisabled: {
-    opacity: 0.6,
-  },
-  loadingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  spinning: {
-    marginRight: spacing.sm,
-  },
-  verifyButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  resendContainer: {
-    flexDirection: "row",
+    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
+    height: 56,
     justifyContent: "center",
-    alignItems: "center",
-    marginBottom: spacing.xl,
   },
-  resendText: {
-    fontSize: 16,
-    color: colors.text.secondary,
-    marginRight: spacing.sm,
-  },
-  resendButton: {
-    padding: spacing.sm,
-  },
-  resendButtonText: {
-    fontSize: 16,
-    color: colors.primary.main,
-    fontWeight: "600",
-  },
-  resendButtonTextDisabled: {
-    fontSize: 16,
-    color: colors.text.disabled,
-    fontWeight: "600",
-  },
-  infoContainer: {
-    flexDirection: "row",
-    backgroundColor: colors.background.secondary,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    alignItems: "flex-start",
-  },
-  infoText: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    marginLeft: spacing.sm,
-    flex: 1,
-    lineHeight: 20,
-  },
+  verifyButtonDisabled: { opacity: 0.6 },
+  verifyButtonText: { color: "#fff", fontWeight: "700" },
+  resendRow: { alignItems: "center", marginTop: spacing.lg },
+  resendLink: { color: "#000", fontSize: 14, fontWeight: "500" },
+  resendDisabled: { color: "#9CA3AF", fontSize: 14, fontWeight: "500" },
 });

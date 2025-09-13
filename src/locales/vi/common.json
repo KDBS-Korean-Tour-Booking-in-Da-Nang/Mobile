@@ -173,5 +173,12 @@
     "home": "Trang chủ",
     "forum": "Diễn đàn",
     "profile": "Cá nhân"
+  },
+  "common": {
+    "seeAll": "Xem tất cả",
+    "search": "Tìm kiếm",
+    "welcome": "Chào mừng",
+    "hotTopic": "Chủ đề nóng",
+    "article": "Bài viết"
   }
 }

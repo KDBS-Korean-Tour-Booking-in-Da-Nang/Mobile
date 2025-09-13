@@ -173,5 +173,12 @@
     "home": "홈",
     "forum": "포럼",
     "profile": "개인"
+  },
+  "common": {
+    "seeAll": "모두 보기",
+    "search": "검색",
+    "welcome": "환영합니다",
+    "hotTopic": "인기 주제",
+    "article": "기사"
   }
 }

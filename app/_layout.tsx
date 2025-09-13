@@ -33,7 +33,7 @@ function RootLayoutNav() {
       if (isAuthenticated) {
         router.replace("/forum");
       } else {
-        router.replace("/loginSelection");
+        router.replace("/userLogin");
       }
     };
     redirect();

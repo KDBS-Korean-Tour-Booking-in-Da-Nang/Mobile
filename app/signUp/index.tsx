@@ -5,14 +5,17 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
+  Image,
+  Dimensions,
 } from "react-native";
 import { useNavigation } from "../../src/navigation";
-import { LinearGradient } from "expo-linear-gradient";
 import { useSignUp } from "../../src/hooks/useAuth";
-import { Button } from "../../src/components/Button";
-import { Input } from "../../src/components/Input";
 import { useTranslation } from "react-i18next";
-import { colors, spacing, borderRadius } from "../../src/constants/theme";
+import { spacing } from "../../src/constants/theme";
+import { Ionicons } from "@expo/vector-icons";
+
+const { width } = Dimensions.get("window");
 
 export default function SignUp() {
   const { navigate } = useNavigation();
@@ -22,14 +25,11 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [selectedRole, setSelectedRole] = useState<"USER" | "BUSINESS" | null>(
-    null
-  );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSignUp = async () => {
-    if (!email || !password || !confirmPassword || !fullName || !selectedRole) {
+    if (!email || !password || !confirmPassword || !fullName) {
       setError(t("auth.login.error"));
       return;
     }
@@ -48,15 +48,13 @@ export default function SignUp() {
     setLoading(true);
 
     try {
-      const response = await signUp(email, password, fullName, selectedRole);
+      const response = await signUp(email, password, fullName, "USER");
 
       if (response) {
         navigate(
           `/verifyEmail?email=${encodeURIComponent(
             email
-          )}&fullName=${encodeURIComponent(
-            fullName
-          )}&role=${selectedRole}&isSignUp=true`
+          )}&fullName=${encodeURIComponent(fullName)}&role=USER&isSignUp=true`
         );
       } else {
         setError(t("auth.register.errors.registerFailed"));
@@ -73,118 +71,95 @@ export default function SignUp() {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
-      <LinearGradient
-        colors={colors.gradient.primary as [string, string]}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <Text style={styles.headerTitle}>{t("auth.register.title")}</Text>
-        <Text style={styles.headerSubtitle}>{t("auth.register.title")}</Text>
-      </LinearGradient>
-
-      <View style={styles.formContainer}>
-        <Text style={styles.formTitle}>{t("auth.register.title")}</Text>
-
-        {/* Hiển thị lỗi nếu có */}
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-        <Input
-          label={t("auth.register.username")}
-          placeholder={t("auth.register.usernamePlaceholder")}
-          value={fullName}
-          onChangeText={setFullName}
+      {/* Top Illustration */}
+      <View style={styles.illustrationContainer}>
+        <Image
+          source={require("../../assets/images/signup.png")}
+          style={styles.illustration}
+          resizeMode="contain"
         />
+      </View>
 
-        <Input
-          label={t("auth.common.email")}
-          placeholder={t("auth.common.email")}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-        />
+      {/* Form Card overlapping -140 */}
+      <View style={styles.formCard}>
+        <Text style={styles.formTitle}>Sign Up</Text>
+        <Text style={styles.formSubtitle}>Create an account, it’s free</Text>
 
-        <Input
-          label={t("auth.common.password")}
-          placeholder={t("auth.register.submitting")}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-
-        <Input
-          label={t("auth.register.confirmPassword")}
-          placeholder={t("auth.register.confirmPassword")}
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-        />
-
-        {/* Role Selection */}
-        <View style={styles.roleContainer}>
-          <Text style={styles.roleTitle}>{t("auth.register.roleSelect")}</Text>
-
-          <View style={styles.roleButtons}>
-            <TouchableOpacity
-              style={[
-                styles.roleButton,
-                selectedRole === "USER" && styles.roleButtonSelected,
-              ]}
-              onPress={() => setSelectedRole("USER")}
-            >
-              <Text
-                style={[
-                  styles.roleButtonText,
-                  selectedRole === "USER" && styles.roleButtonTextSelected,
-                ]}
-              >
-                👤 User
-              </Text>
-              <Text style={styles.roleDescription}>
-                {t("auth.register.roleUserTitle")}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.roleButton,
-                selectedRole === "BUSINESS" && styles.roleButtonSelected,
-              ]}
-              onPress={() => setSelectedRole("BUSINESS")}
-            >
-              <Text
-                style={[
-                  styles.roleButtonText,
-                  selectedRole === "BUSINESS" && styles.roleButtonTextSelected,
-                ]}
-              >
-                🏢 Business
-              </Text>
-              <Text style={styles.roleDescription}>
-                {t("auth.register.roleBusinessTitle")}
-              </Text>
-            </TouchableOpacity>
-          </View>
+        {/* Username */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Username</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Your name"
+            value={fullName}
+            onChangeText={setFullName}
+          />
         </View>
 
-        <Button
-          title={
-            loading ? t("auth.register.submitting") : t("auth.register.submit")
-          }
-          onPress={handleSignUp}
-          loading={loading}
-          style={styles.signupButton}
-        />
+        {/* Email */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="youremails@yahoo.com"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        </View>
 
-        <View style={styles.linksContainer}>
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>
-              {t("auth.register.haveAccount")} {""}
-            </Text>
-            <TouchableOpacity onPress={() => navigate("/loginSelection")}>
-              <Text style={styles.loginLink}>{t("auth.login.title")}</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Password */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Password</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="********"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoCapitalize="none"
+          />
+        </View>
+
+        {/* Sign Up Button */}
+        <TouchableOpacity
+          style={styles.signUpButton}
+          onPress={handleSignUp}
+          disabled={loading}
+        >
+          <Text style={styles.signUpButtonText}>Sign Up</Text>
+        </TouchableOpacity>
+
+        {/* Divider */}
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>OR</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        {/* Social */}
+        <View style={styles.socialButtonsContainer}>
+          <TouchableOpacity style={styles.socialButton}>
+            <Image
+              source={require("../../assets/images/google.png")}
+              style={styles.socialIcon}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.socialButton}>
+            <Image
+              source={require("../../assets/images/naver.png")}
+              style={styles.socialIcon}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footerRow}>
+          <Text style={styles.footerText}>Have account?</Text>
+          <TouchableOpacity onPress={() => navigate("/userLogin")}>
+            <Text style={styles.footerLink}> Sign In</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>
@@ -192,101 +167,109 @@ export default function SignUp() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1, backgroundColor: "#1A8EEA" },
+  contentContainer: { flexGrow: 1 },
+  illustrationContainer: {
     flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  contentContainer: {
-    flexGrow: 1,
-  },
-  header: {
-    paddingTop: spacing.xxl * 2,
-    paddingBottom: spacing.xxl,
-    paddingHorizontal: spacing.lg,
     alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 50,
   },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: "700" as const,
-    color: colors.primary.contrast,
-    marginBottom: spacing.sm,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: colors.primary.contrast,
-    opacity: 0.9,
-  },
-  formContainer: {
+  illustration: { width: width * 0.8, height: width * 0.8 },
+
+  formCard: {
     flex: 1,
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
+    marginTop: -160,
   },
+
   formTitle: {
-    fontSize: 24,
-    fontWeight: "600" as const,
-    color: colors.text.primary,
-    marginBottom: spacing.lg,
-    textAlign: "center",
+    fontSize: 30,
+    fontWeight: "800",
+    color: "#000",
+    marginBottom: spacing.sm,
+    textAlign: "left",
   },
-  errorText: {
-    color: "red",
-    marginBottom: spacing.md,
-    textAlign: "center",
-  },
-  roleContainer: {
-    marginVertical: spacing.lg,
-  },
-  roleTitle: {
+  formSubtitle: {
     fontSize: 16,
-    fontWeight: "600" as const,
-    color: colors.text.primary,
-    marginBottom: spacing.md,
+    color: "#000",
+    marginBottom: spacing.xl,
+    textAlign: "left",
   },
-  roleButtons: {
-    gap: spacing.md,
-  },
-  roleButton: {
-    padding: spacing.lg,
-    borderWidth: 2,
-    borderColor: colors.border.light,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.background.secondary || "#F9FAFB",
-  },
-  roleButtonSelected: {
-    borderColor: colors.primary.main,
-    backgroundColor: colors.primary.light || "#E3F2FD",
-  },
-  roleButtonText: {
-    fontSize: 18,
-    fontWeight: "600" as const,
-    color: colors.text.primary,
+
+  inputContainer: { marginBottom: spacing.md },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000",
     marginBottom: spacing.xs,
   },
-  roleButtonTextSelected: {
-    color: colors.primary.main,
+  input: {
+    backgroundColor: "#fff",
+    borderRadius: 32,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    fontSize: 16,
+    color: "#000",
+    borderWidth: 1,
+    borderColor: "#000",
   },
-  roleDescription: {
-    fontSize: 14,
-    color: colors.text.secondary,
-  },
-  signupButton: {
-    marginTop: spacing.lg,
-  },
-  linksContainer: {
+
+  signUpButton: {
+    backgroundColor: "#000",
+    borderRadius: 28,
+    paddingVertical: spacing.md,
     alignItems: "center",
-    marginTop: spacing.lg,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
+    height: 56,
+    justifyContent: "center",
   },
-  loginContainer: {
+  signUpButtonText: { color: "#fff", fontWeight: "700" },
+
+  divider: {
     flexDirection: "row",
     alignItems: "center",
+    marginVertical: spacing.sm,
   },
-  loginText: {
-    color: colors.text.secondary,
+  dividerLine: { flex: 1, height: 1, backgroundColor: "#000" },
+  dividerText: {
+    marginHorizontal: spacing.md,
+    color: "#000",
     fontSize: 14,
+    fontWeight: "500",
   },
-  loginLink: {
-    color: colors.primary.main,
-    fontSize: 14,
-    fontWeight: "600" as const,
+
+  socialButtonsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.xl,
   },
+  socialButton: {
+    width: 56,
+    height: 44,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#000",
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: spacing.md,
+  },
+  socialIcon: { width: 24, height: 24 },
+  socialIconPlaceholder: { width: 24, height: 24 },
+
+  footerRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  footerText: { fontSize: 16, color: "#9CA3AF" },
+  footerLink: { fontSize: 16, color: "#000", fontWeight: "700" },
 });
