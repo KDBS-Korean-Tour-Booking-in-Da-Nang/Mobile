@@ -15,7 +15,7 @@
       "subheading": "다낭 - 한국 투어"
     },
     "dashboard": {
-      "welcome": "여행 투어",
+      "welcome": "인기 투어",
       "subtitle": "다낭 - 한국",
       "description": "고품격 투어로 다낭의 아름다움을 발견하고 한국 문화를 경험하세요.",
       "totalTours": "총 투어 수",
@@ -172,6 +172,8 @@
   "nav": {
     "home": "홈",
     "forum": "포럼",
+    "tour": "투어",
+    "article": "기사",
     "profile": "개인"
   },
   "common": {

@@ -12,7 +12,7 @@ interface NavigationContextType {
   goToUserLogin: () => void;
   goToAdminLogin: () => void;
   goToSignUp: () => void;
-  goToForum: () => void;
+  goToForum: (postId?: number) => void;
   goToVerifyEmail: (params?: string) => void;
   goToResetPassword: (params?: string) => void;
   goToBusinessInfo: (params?: string) => void;
@@ -53,7 +53,8 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({
   const goToUserLogin = () => navigate("/userLogin");
   const goToAdminLogin = () => navigate("/adminLogin");
   const goToSignUp = () => navigate("/signUp");
-  const goToForum = () => navigate("/forum");
+  const goToForum = (postId?: number) =>
+    navigate(`/forum${postId ? `?postId=${postId}` : ""}`);
   const goToVerifyEmail = (params?: string) =>
     navigate(`/verifyEmail${params ? `?${params}` : ""}`);
   const goToResetPassword = (params?: string) =>
@@ -217,7 +218,8 @@ export const useAuthNavigation = () => {
       navigate(`/resetPassword${params ? `?${params}` : ""}`),
     goToBusinessInfo: (params?: string) =>
       navigate(`/businessInfo${params ? `?${params}` : ""}`),
-    goToForum: () => replace("/forum"),
+    goToForum: (postId?: number) =>
+      replace(`/forum${postId ? `?postId=${postId}` : ""}`),
     goToHome: () => replace("/home"),
   };
 };

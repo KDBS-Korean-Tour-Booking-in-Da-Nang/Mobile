@@ -13,6 +13,10 @@ type User = {
   birthdate?: string;
   gender?: string;
   phone?: string;
+  isPremium?: boolean;
+  dob?: string;
+  cccd?: string;
+  balance?: number;
 };
 
 type AuthState = {

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,13 +7,13 @@ import {
   FlatList,
   RefreshControl,
   ActivityIndicator,
-  Image,
   Alert,
   TextInput,
+  TouchableWithoutFeedback,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useAuthContext } from "../../src/contexts/authContext";
 import { useTranslation } from "react-i18next";
 import {
@@ -27,83 +27,40 @@ import {
 } from "../../src/endpoints/forum";
 import PostCard from "../../src/components/PostCard";
 import CreatePostModal from "../../src/components/CreatePostModal";
-import SearchBar from "../../src/components/SearchBar";
 import MainLayout from "../../src/components/MainLayout";
 
 export default function Forum() {
   const { user, loading: authLoading } = useAuthContext();
   const { t } = useTranslation();
+  const params = useLocalSearchParams();
+  const targetPostId = params.postId ? Number(params.postId) : null;
   const [posts, setPosts] = useState<PostResponse[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingPost, setEditingPost] = useState<PostResponse | null>(null);
-  const [selectedHashtags, setSelectedHashtags] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [savedPosts, setSavedPosts] = useState<SavedPostResponse[]>([]);
   const [viewingSaved, setViewingSaved] = useState(false);
   const [viewingMyPosts, setViewingMyPosts] = useState(false);
-  const [hashtagQuery, setHashtagQuery] = useState("");
 
-  // Derive popular hashtags from current feed (top 10) and counts
-  const hashtagCountEntries = useMemo(() => {
-    const counts: Record<string, number> = {};
-    posts.forEach((p) => {
-      if (!p) return;
-      (p.hashtags || []).forEach((h) => {
-        const key = (h || "").trim();
-        if (!key) return;
-        counts[key] = (counts[key] || 0) + 1;
-      });
-    });
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10);
-  }, [posts]);
+  // Navigation scroll effects
+  const [isNavVisible, setIsNavVisible] = useState(true);
+  const [navPosition, setNavPosition] = useState<"bottom" | "top">("bottom");
+  const lastScrollY = useRef(0);
+  const scrollDistance = useRef(0);
+  const scrollThreshold = 50;
+  const flatListRef = useRef<FlatList>(null);
 
-  const popularHashtags = useMemo(
-    () => hashtagCountEntries.map(([h]) => h),
-    [hashtagCountEntries]
-  );
-  const popularHashtagCounts = useMemo(
-    () => Object.fromEntries(hashtagCountEntries) as Record<string, number>,
-    [hashtagCountEntries]
-  );
-
-  // User-used hashtags (from posts authored by current user in the feed)
-  const myHashtags = useMemo(() => {
-    if (!user?.username) return [] as string[];
-    const set = new Set<string>();
-    posts.forEach((p) => {
-      if (p && p.username === user.username) {
-        (p.hashtags || []).forEach((h) => {
-          if (h && h.trim()) set.add(h);
-        });
-      }
-    });
-    return Array.from(set).slice(0, 20);
-  }, [posts, user?.username]);
-
-  const unifiedHashtags = useMemo(() => {
-    const set = new Set<string>();
-    popularHashtags.forEach((h) => set.add(h));
-    myHashtags.forEach((h) => set.add(h));
-    return Array.from(set);
-  }, [popularHashtags, myHashtags]);
-
-  const filteredHashtags = useMemo(() => {
-    const base = popularHashtags;
-    if (!hashtagQuery.trim()) return base;
-    const q = hashtagQuery.trim().toLowerCase();
-    return base.filter((h) => h.toLowerCase().includes(q));
-  }, [popularHashtags, hashtagQuery]);
+  // Search dropdown
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
 
   const loadPosts = useCallback(
-    async (page: number = 0, keyword: string = "", hashtags: string[] = []) => {
+    async (page: number = 0, keyword: string = "") => {
       try {
         if (page === 0) {
           setDataLoading(true);
@@ -113,7 +70,6 @@ export default function Forum() {
 
         const response = await searchPosts({
           keyword: keyword || undefined,
-          hashtags: hashtags.length > 0 ? hashtags : undefined,
           page,
           size: 10,
           sort: "createdAt,desc",
@@ -154,21 +110,36 @@ export default function Forum() {
     }, [authLoading, user, loadPosts]) // Dependencies for the effect
   );
 
+  // Function to scroll to specific post
+  const scrollToPost = useCallback(
+    (postId: number) => {
+      if (flatListRef.current && posts.length > 0) {
+        const postIndex = posts.findIndex((post) => post.id === postId);
+        if (postIndex !== -1) {
+          // Add a small delay to ensure the list is fully rendered
+          setTimeout(() => {
+            flatListRef.current?.scrollToIndex({
+              index: postIndex,
+              animated: true,
+              viewPosition: 0.5, // Center the post in the view
+            });
+          }, 500);
+        }
+      }
+    },
+    [posts]
+  );
+
   useEffect(() => {
     loadPosts();
   }, [loadPosts]);
 
-  // Load saved posts when opening sidebar (lazy)
+  // Scroll to target post when posts are loaded and targetPostId is provided
   useEffect(() => {
-    (async () => {
-      if (!isSidebarOpen) return;
-      if (!user?.email) return;
-      try {
-        const data = await getMySavedPosts();
-        setSavedPosts(data);
-      } catch {}
-    })();
-  }, [isSidebarOpen, user?.email]);
+    if (targetPostId && posts.length > 0 && !dataLoading) {
+      scrollToPost(targetPostId);
+    }
+  }, [targetPostId, posts, dataLoading, scrollToPost]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -204,20 +175,19 @@ export default function Forum() {
       setPosts(data);
     } else {
       // Refresh normal feed
-      await loadPosts(0, searchQuery, selectedHashtags);
+      await loadPosts(0, searchQuery);
     }
     setRefreshing(false);
-  }, [loadPosts, searchQuery, selectedHashtags, viewingSaved, viewingMyPosts]);
+  }, [loadPosts, searchQuery, viewingSaved, viewingMyPosts]);
 
   const handleLoadMore = useCallback(async () => {
     if (!isLoadingMore && hasMorePosts && !viewingSaved && !viewingMyPosts) {
-      await loadPosts(currentPage + 1, searchQuery, selectedHashtags);
+      await loadPosts(currentPage + 1, searchQuery);
     }
   }, [
     loadPosts,
     currentPage,
     searchQuery,
-    selectedHashtags,
     isLoadingMore,
     hasMorePosts,
     viewingSaved,
@@ -229,24 +199,11 @@ export default function Forum() {
       setSearchQuery(keyword);
       setCurrentPage(0);
       setPosts([]); // Clear existing posts before search
-      loadPosts(0, keyword, selectedHashtags);
+      loadPosts(0, keyword);
       setViewingSaved(false);
       setViewingMyPosts(false);
     },
-    [loadPosts, selectedHashtags]
-  );
-
-  const handleHashtagFilter = useCallback(
-    (hashtags: string[]) => {
-      setSelectedHashtags(hashtags);
-      setCurrentPage(0);
-      setPosts([]); // Clear existing posts before filter
-      loadPosts(0, searchQuery, hashtags);
-      setViewingSaved(false);
-      setViewingMyPosts(false);
-      setIsSidebarOpen(false);
-    },
-    [loadPosts, searchQuery]
+    [loadPosts]
   );
 
   const handlePostCreated = useCallback((newPost: PostResponse) => {
@@ -376,20 +333,12 @@ export default function Forum() {
         .filter((p): p is PostResponse => !!p);
       setPosts(mapped);
       setViewingSaved(true);
+      setViewingMyPosts(false);
       setHasMorePosts(false);
-      setIsSidebarOpen(false);
     } catch {
       Alert.alert(t("forum.errorTitle"), t("forum.cannotLoadSavedPosts"));
     }
   }, [savedPosts, user?.email, t]);
-
-  const clearSavedView = useCallback(() => {
-    if (viewingSaved) {
-      setViewingSaved(false);
-      setCurrentPage(0);
-      loadPosts(0, searchQuery, selectedHashtags);
-    }
-  }, [viewingSaved, loadPosts, searchQuery, selectedHashtags]);
 
   const openMyPosts = useCallback(async () => {
     if (!user?.email) {
@@ -402,19 +351,97 @@ export default function Forum() {
       setViewingMyPosts(true);
       setViewingSaved(false);
       setHasMorePosts(false);
-      setIsSidebarOpen(false);
     } catch {
       Alert.alert(t("forum.errorTitle"), t("forum.cannotLoadMyPosts"));
     }
   }, [user?.email, t]);
 
-  const clearMyPostsView = useCallback(() => {
-    if (viewingMyPosts) {
-      setViewingMyPosts(false);
-      setCurrentPage(0);
-      loadPosts(0, searchQuery, selectedHashtags);
-    }
-  }, [viewingMyPosts, loadPosts, searchQuery, selectedHashtags]);
+  const clearAllViews = useCallback(() => {
+    setViewingMyPosts(false);
+    setViewingSaved(false);
+    setCurrentPage(0);
+    loadPosts(0, searchQuery);
+  }, [loadPosts, searchQuery]);
+
+  // Generate search suggestions from posts
+  const generateSearchSuggestions = useCallback(
+    (query: string) => {
+      if (!query.trim()) {
+        setSearchSuggestions([]);
+        return;
+      }
+
+      const suggestions: string[] = [];
+      const queryLower = query.toLowerCase();
+
+      // Get hashtags from posts
+      const hashtags = new Set<string>();
+      posts.forEach((post) => {
+        post.hashtags?.forEach((tag) => {
+          if (tag.toLowerCase().includes(queryLower)) {
+            hashtags.add(`#${tag}`);
+          }
+        });
+      });
+
+      // Get words from titles and content
+      const words = new Set<string>();
+      posts.forEach((post) => {
+        const titleWords = post.title?.toLowerCase().split(/\s+/) || [];
+        const contentWords = post.content?.toLowerCase().split(/\s+/) || [];
+
+        [...titleWords, ...contentWords].forEach((word) => {
+          if (word.length > 2 && word.includes(queryLower)) {
+            words.add(word);
+          }
+        });
+      });
+
+      // Combine and limit suggestions
+      suggestions.push(...Array.from(hashtags).slice(0, 3));
+      suggestions.push(...Array.from(words).slice(0, 5));
+
+      setSearchSuggestions(suggestions.slice(0, 8));
+    },
+    [posts]
+  );
+
+  // Handle scroll for navigation effects
+  const handleScroll = useCallback(
+    (event: any) => {
+      const currentScrollY = event.nativeEvent.contentOffset.y;
+      const scrollDifference = Math.abs(currentScrollY - lastScrollY.current);
+
+      if (scrollDifference > scrollThreshold) {
+        if (currentScrollY > lastScrollY.current) {
+          // Scrolling down
+          scrollDistance.current += scrollDifference;
+          if (scrollDistance.current > 300 && navPosition === "bottom") {
+            // Move nav to top after scrolling down 300px
+            setNavPosition("top");
+            setIsNavVisible(true);
+          } else if (scrollDistance.current > 100) {
+            // Hide nav when scrolling down
+            setIsNavVisible(false);
+          }
+        } else {
+          // Scrolling up
+          scrollDistance.current = Math.max(
+            0,
+            scrollDistance.current - scrollDifference
+          );
+          if (scrollDistance.current < 200 && navPosition === "top") {
+            // Move nav back to bottom when scrolling up
+            setNavPosition("bottom");
+          }
+          // Show nav when scrolling up
+          setIsNavVisible(true);
+        }
+        lastScrollY.current = currentScrollY;
+      }
+    },
+    [navPosition]
+  );
 
   // Function to load full post details when needed
   const loadFullPostDetails = useCallback(async (postId: number) => {
@@ -456,11 +483,11 @@ export default function Forum() {
         <Ionicons name="document-text-outline" size={64} color="#ccc" />
         <Text style={styles.emptyTitle}>{t("forum.emptyList")}</Text>
         <Text style={styles.emptySubtitle}>
-          {searchQuery || selectedHashtags.length > 0
+          {searchQuery
             ? t("forum.emptyNoMatch")
             : t("forum.emptyPromptFirstShare")}
         </Text>
-        {!searchQuery && selectedHashtags.length === 0 && (
+        {!searchQuery && (
           <TouchableOpacity
             style={styles.createFirstPostButton}
             onPress={openCreateModal}
@@ -484,234 +511,170 @@ export default function Forum() {
   }
 
   return (
-    <MainLayout>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.menuButton}
-            onPress={() => setIsSidebarOpen(true)}
-          >
-            <Ionicons name="menu" size={24} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>
-            {searchQuery && searchQuery.trim()
-              ? t("forum.searchResultsFor", { keyword: searchQuery.trim() })
-              : viewingSaved
-              ? t("forum.viewingSavedBanner")
-              : viewingMyPosts
-              ? t("forum.viewingMyPostsBanner")
-              : selectedHashtags.length > 0
-              ? t("forum.filterHashtagBanner", { hashtag: selectedHashtags[0] })
-              : t("forum.title")}
-          </Text>
-          <TouchableOpacity style={styles.notificationButton}>
-            <Ionicons name="notifications-outline" size={24} color="#333" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Search Bar removed (search exists in sidebar) */}
-
-        {/* Create Post Button moved into FlatList header to scroll away */}
-
-        {/* Posts Feed */}
-        <FlatList
-          ListHeaderComponent={
-            <TouchableOpacity
-              style={styles.createPostButton}
-              onPress={openCreateModal}
-            >
-              <View style={styles.createPostContent}>
-                <Image
-                  source={{
-                    uri:
-                      user?.avatar ||
-                      "https://i.pinimg.com/736x/61/62/2e/61622ec8899cffaa687a8342a84ea525.jpg",
+    <MainLayout isNavVisible={isNavVisible} navPosition={navPosition}>
+      <TouchableWithoutFeedback onPress={() => setShowSearchDropdown(false)}>
+        <View style={styles.container}>
+          {/* Header with Search Bar */}
+          <View style={styles.header}>
+            <View style={styles.searchContainer}>
+              <View style={styles.searchBox}>
+                <Ionicons name="search" size={18} color="#6c757d" />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search for hashtags, keywords"
+                  placeholderTextColor="#6c757d"
+                  value={searchQuery}
+                  onChangeText={(text) => {
+                    setSearchQuery(text);
+                    if (text.trim() === "") {
+                      clearAllViews();
+                      setShowSearchDropdown(false);
+                    } else {
+                      generateSearchSuggestions(text);
+                      setShowSearchDropdown(true);
+                    }
                   }}
-                  style={styles.userAvatar}
-                />
-                <Text style={styles.createPostText}>
-                  {t("forum.placeholderCreatePost")}
-                </Text>
-              </View>
-              <Ionicons name="camera" size={24} color="#666" />
-            </TouchableOpacity>
-          }
-          data={(posts || []).filter((p) => p && typeof p.id === "number")}
-          renderItem={({ item }) => (item ? renderPost({ item }) : null)}
-          keyExtractor={(item, index) => `${item?.id ?? "unknown"}-${index}`}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={["#007AFF"]}
-              tintColor="#007AFF"
-            />
-          }
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.1}
-          ListFooterComponent={renderFooter}
-          ListEmptyComponent={renderEmpty}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.feedContainer}
-        />
-
-        {/* Create Post Modal */}
-        <CreatePostModal
-          isOpen={showCreateModal}
-          onClose={() => {
-            setShowCreateModal(false);
-            setEditingPost(null);
-          }}
-          onPostCreated={handlePostCreated}
-          editPost={editingPost}
-        />
-
-        {/* Sidebar Overlay */}
-        {isSidebarOpen && (
-          <View style={styles.sidebarOverlay}>
-            <View style={styles.sidebar}>
-              <View style={styles.sidebarHeader}>
-                <Text style={styles.sidebarTitle}>{t("forum.explore")}</Text>
-                <TouchableOpacity onPress={() => setIsSidebarOpen(false)}>
-                  <Ionicons name="close" size={22} color="#333" />
-                </TouchableOpacity>
-              </View>
-
-              {/* Quick search */}
-              <View style={{ marginBottom: 12 }}>
-                <SearchBar
-                  onSearch={(kw) => {
-                    setSearchQuery(kw);
-                    handleSearch(kw);
-                    setViewingSaved(false);
-                    setViewingMyPosts(false);
-                    setIsSidebarOpen(false);
+                  onFocus={() => {
+                    if (searchQuery.trim()) {
+                      setShowSearchDropdown(true);
+                    }
                   }}
-                  onHashtagFilter={() => {}}
+                  onSubmitEditing={() => {
+                    handleSearch(searchQuery);
+                    setShowSearchDropdown(false);
+                  }}
                 />
               </View>
 
-              {/* Hashtag explorer */}
-              <Text style={styles.sidebarSection}>
-                {t("forum.featuredHashtags")}
-              </Text>
-              <View style={{ marginBottom: 8 }}>
-                <View style={styles.hashtagSearchBox}>
-                  <Ionicons name="search" color="#666" size={16} />
-                  <Text style={{ width: 6 }} />
-                  <TextInput
-                    placeholder={t("forum.searchHashtagPlaceholder")}
-                    value={hashtagQuery}
-                    onChangeText={setHashtagQuery}
-                    style={{ flex: 1 }}
-                  />
-                </View>
-              </View>
-              <View style={styles.hashtagList}>
-                {filteredHashtags.length === 0 && (
-                  <Text style={styles.emptySmall}>{t("forum.noHashtag")}</Text>
-                )}
-                {filteredHashtags.map((h) => (
-                  <TouchableOpacity
-                    key={`hash-${h}`}
-                    style={styles.hashtagPill}
-                    onPress={() => {
-                      handleHashtagFilter([h]);
-                      setViewingSaved(false);
-                      setViewingMyPosts(false);
-                    }}
-                  >
-                    <View
-                      style={{ flexDirection: "row", alignItems: "center" }}
-                    >
-                      <Text style={styles.hashtagText}>#{h}</Text>
-                      <View style={styles.hashtagCountBadge}>
-                        <Text style={styles.hashtagCountText}>
-                          {popularHashtagCounts[h] ?? 0}
-                        </Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* My posts */}
-              {user && (
-                <View style={{ marginTop: 16 }}>
-                  <Text style={styles.sidebarSection}>
-                    {t("forum.myPosts")}
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.savedBtn}
-                    onPress={() => {
-                      openMyPosts();
-                      setViewingSaved(false);
-                    }}
-                  >
-                    <Ionicons name="person" size={18} color="#007AFF" />
-                    <Text style={styles.savedBtnText}>
-                      {t("forum.viewMyPosts")}
-                    </Text>
-                  </TouchableOpacity>
-                  {viewingMyPosts && (
+              {/* Search Dropdown */}
+              {showSearchDropdown && searchSuggestions.length > 0 && (
+                <View style={styles.searchDropdown}>
+                  {searchSuggestions.map((suggestion, index) => (
                     <TouchableOpacity
-                      style={styles.clearBtn}
+                      key={index}
+                      style={styles.suggestionItem}
                       onPress={() => {
-                        clearMyPostsView();
-                        setViewingSaved(false);
+                        setSearchQuery(suggestion.replace("#", ""));
+                        handleSearch(suggestion.replace("#", ""));
+                        setShowSearchDropdown(false);
                       }}
                     >
-                      <Text style={styles.clearBtnText}>
-                        {t("forum.backToFeed")}
-                      </Text>
+                      <Ionicons
+                        name={
+                          suggestion.startsWith("#") ? "pricetag" : "search"
+                        }
+                        size={16}
+                        color="#6c757d"
+                      />
+                      <Text style={styles.suggestionText}>{suggestion}</Text>
                     </TouchableOpacity>
-                  )}
-                </View>
-              )}
-
-              {/* Saved posts */}
-              {user && (
-                <View style={{ marginTop: 16 }}>
-                  <Text style={styles.sidebarSection}>
-                    {t("forum.savedPosts")}
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.savedBtn}
-                    onPress={() => {
-                      openSavedPosts();
-                      setViewingMyPosts(false);
-                    }}
-                  >
-                    <Ionicons name="bookmark" size={18} color="#007AFF" />
-                    <Text style={styles.savedBtnText}>
-                      {t("forum.viewSaved")}
-                    </Text>
-                  </TouchableOpacity>
-                  {viewingSaved && (
-                    <TouchableOpacity
-                      style={styles.clearBtn}
-                      onPress={() => {
-                        clearSavedView();
-                        setViewingMyPosts(false);
-                      }}
-                    >
-                      <Text style={styles.clearBtnText}>
-                        {t("forum.backToFeed")}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+                  ))}
                 </View>
               )}
             </View>
-            <TouchableOpacity
-              style={styles.overlayBackdrop}
-              activeOpacity={1}
-              onPress={() => setIsSidebarOpen(false)}
-            />
           </View>
-        )}
-      </View>
+
+          {/* Navigation Buttons */}
+          <View style={styles.navButtonsContainer}>
+            {(viewingMyPosts || viewingSaved) && (
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={clearAllViews}
+              >
+                <Ionicons name="arrow-back" size={24} color="#1088AE" />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={[
+                styles.navButton,
+                viewingMyPosts && styles.navButtonActive,
+              ]}
+              onPress={() => {
+                if (viewingMyPosts) {
+                  clearAllViews();
+                } else {
+                  openMyPosts();
+                }
+              }}
+            >
+              <Text
+                style={[
+                  styles.navButtonText,
+                  viewingMyPosts && styles.navButtonTextActive,
+                ]}
+              >
+                My Posts
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.navButton, viewingSaved && styles.navButtonActive]}
+              onPress={() => {
+                if (viewingSaved) {
+                  clearAllViews();
+                } else {
+                  openSavedPosts();
+                }
+              }}
+            >
+              <Text
+                style={[
+                  styles.navButtonText,
+                  viewingSaved && styles.navButtonTextActive,
+                ]}
+              >
+                Saved Posts
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Posts Feed */}
+          <FlatList
+            ref={flatListRef}
+            data={(posts || []).filter((p) => p && typeof p.id === "number")}
+            renderItem={({ item }) => (item ? renderPost({ item }) : null)}
+            keyExtractor={(item, index) => `${item?.id ?? "unknown"}-${index}`}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                colors={["#007AFF"]}
+                tintColor="#007AFF"
+              />
+            }
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.1}
+            ListFooterComponent={renderFooter}
+            ListEmptyComponent={renderEmpty}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.feedContainer}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            onScrollToIndexFailed={(info) => {
+              // Handle scroll to index failure
+              console.log("Scroll to index failed:", info);
+            }}
+          />
+
+          {/* Create Post Button - Fixed at Bottom */}
+          <TouchableOpacity
+            style={styles.createPostButton}
+            onPress={openCreateModal}
+          >
+            <Text style={styles.createPostButtonText}>Create a post</Text>
+          </TouchableOpacity>
+
+          {/* Create Post Modal */}
+          <CreatePostModal
+            isOpen={showCreateModal}
+            onClose={() => {
+              setShowCreateModal(false);
+              setEditingPost(null);
+            }}
+            onPostCreated={handlePostCreated}
+            editPost={editingPost}
+          />
+        </View>
+      </TouchableWithoutFeedback>
     </MainLayout>
   );
 }
@@ -719,88 +682,135 @@ export default function Forum() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f8f9fa",
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: 50,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  menuButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  contextBanner: {
-    backgroundColor: "#eef6ff",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0ecff",
-  },
-  contextBannerText: {
-    color: "#0366d6",
-  },
-  notificationButton: {
-    padding: 8,
+    backgroundColor: "#E3F2FD",
+    paddingTop: 35,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
   },
   searchContainer: {
-    marginTop: 16,
-    paddingHorizontal: 16,
+    marginTop: 8,
   },
-  createPostButton: {
+  searchBox: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#fff",
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 8,
+    backgroundColor: "#ffffff",
+    borderRadius: 25,
+    paddingHorizontal: 16,
+    height: 48,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  searchInput: {
+    marginLeft: 12,
+    color: "#212529",
+    fontSize: 16,
+    fontWeight: "400",
+    flex: 1,
+  },
+  searchDropdown: {
+    position: "absolute",
+    top: 60,
+    left: 0,
+    right: 0,
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 1000,
+    maxHeight: 200,
+  },
+  suggestionItem: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f8f9fa",
   },
-  createPostContent: {
+  suggestionText: {
+    marginLeft: 12,
+    fontSize: 14,
+    color: "#212529",
+    flex: 1,
+  },
+  navButtonsContainer: {
     flexDirection: "row",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
     alignItems: "center",
-    flex: 1,
   },
-  userAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  backButton: {
     marginRight: 12,
+    padding: 8,
   },
-  createPostText: {
-    fontSize: 16,
-    color: "#666",
+  navButton: {
     flex: 1,
+    backgroundColor: "#ffffff",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    marginHorizontal: 4,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    alignItems: "center",
+  },
+  navButtonActive: {
+    backgroundColor: "#1088AE",
+    borderColor: "#1088AE",
+  },
+  navButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#007AFF",
+  },
+  navButtonTextActive: {
+    color: "#ffffff",
+  },
+  createPostButton: {
+    position: "absolute",
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: "#1088AE",
+    paddingVertical: 16,
+    borderRadius: 25,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  createPostButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#ffffff",
   },
   feedContainer: {
-    paddingBottom: 80,
+    paddingBottom: 100,
+    paddingTop: 8,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f8f9fa",
   },
   loadingText: {
     marginTop: 12,
@@ -849,116 +859,5 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 14,
     color: "#666",
-  },
-  sidebarOverlay: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    zIndex: 999,
-    elevation: 999,
-  },
-  overlayBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.2)",
-  },
-  sidebar: {
-    width: 300,
-    backgroundColor: "#fff",
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 24,
-    borderRightWidth: 1,
-    borderRightColor: "#eee",
-    zIndex: 1000,
-    elevation: 1000,
-  },
-  sidebarHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  sidebarTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#333",
-  },
-  sidebarSection: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-    marginTop: 8,
-    marginBottom: 6,
-  },
-  hashtagList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginBottom: 8,
-  },
-  hashtagPill: {
-    backgroundColor: "#E3F2FD",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 14,
-    marginRight: 6,
-    marginBottom: 6,
-  },
-  hashtagText: {
-    color: "#007AFF",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  hashtagCountBadge: {
-    marginLeft: 6,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: "#007AFF",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 4,
-  },
-  hashtagCountText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "700",
-    lineHeight: 12,
-  },
-  hashtagSearchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f5f7fb",
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  emptySmall: {
-    color: "#888",
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  savedBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#F0F8FF",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  savedBtnText: {
-    color: "#007AFF",
-    fontWeight: "600",
-  },
-  clearBtn: {
-    marginTop: 8,
-    paddingVertical: 8,
-  },
-  clearBtnText: {
-    color: "#666",
-    textDecorationLine: "underline",
   },
 });

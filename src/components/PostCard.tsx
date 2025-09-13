@@ -8,6 +8,7 @@ import {
   Alert,
   ScrollView,
   Dimensions,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -59,6 +60,8 @@ const PostCard: React.FC<PostCardProps> = ({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [hasReported, setHasReported] = useState(false);
+  const [showFullContent, setShowFullContent] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   // Load full post details if missing images or hashtags (for saved posts)
   useEffect(() => {
@@ -469,223 +472,314 @@ const PostCard: React.FC<PostCardProps> = ({
     );
   };
 
+  // Function to truncate content to 2 lines
+  const getTruncatedContent = (content: string) => {
+    const words = content.split(" ");
+    const maxWords = 20; // Approximate 2 lines
+    if (words.length <= maxWords) return content;
+    return words.slice(0, maxWords).join(" ") + "...";
+  };
+
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.userInfo}>
-          <Image
-            source={{
-              uri:
-                post.userAvatar ||
-                "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.pinterest.com%2Fpin%2F300404237650498609%2F&psig=AOvVaw2FuMEvODdlA_lCA6G3gQp9&ust=1757299985491000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCIiX4t3SxY8DFQAAAAAdAAAAABAE ",
-            }}
-            style={styles.avatar}
-          />
-          <View style={styles.userDetails}>
-            <Text style={styles.username}>{post.username}</Text>
-            <Text style={styles.timestamp}>{formatDate(post.createdAt)}</Text>
-          </View>
-        </View>
-
-        {isOwner && (
-          <View style={styles.ownerActions}>
-            <TouchableOpacity
-              onPress={() => onEdit?.(post)}
-              style={styles.actionButton}
-            >
-              <Ionicons name="create-outline" size={20} color="#666" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleDelete}
-              style={styles.actionButton}
-            >
-              <Ionicons name="trash-outline" size={20} color="#ff4444" />
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {!isOwner && (
-          <TouchableOpacity onPress={handleReport} style={styles.actionButton}>
-            <Ionicons name="flag-outline" size={20} color="#666" />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Content */}
-      <View style={styles.content}>
-        <Text style={styles.title}>{post.title}</Text>
-        <Text style={styles.body}>{post.content}</Text>
-
-        {/* Hashtags */}
-        {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
-          <View style={styles.hashtagsContainer}>
-            {post.hashtags.map((hashtag, index) => (
-              <Text
-                key={`${post.id}-hashtag-${index}-${hashtag}`}
-                style={styles.hashtag}
-              >
-                #{hashtag}
-              </Text>
-            ))}
-          </View>
-        )}
-
-        {/* Images */}
-        {Array.isArray(post.imageUrls) && post.imageUrls.length > 0 && (
-          <View style={styles.imagesContainer}>
-            {renderImages(post.imageUrls)}
-          </View>
-        )}
-      </View>
-
-      {/* Stats */}
-      {(likeCount > 0 || dislikeCount > 0) && (
-        <View style={styles.statsRow}>
-          <Text style={styles.statsText}>
-            {t("forum.likesLabel", { count: likeCount })}
-          </Text>
-          <Text style={styles.statsDot}>·</Text>
-          <Text style={styles.statsText}>
-            {t("forum.dislikesLabel", { count: dislikeCount })}
-          </Text>
-        </View>
-      )}
-
-      {/* Actions */}
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={[styles.actionButton, isLiked && styles.activeAction]}
-          onPress={() => handleReaction("LIKE")}
-          disabled={isLoading}
-        >
-          <Ionicons
-            name={isLiked ? "heart" : "heart-outline"}
-            size={20}
-            color={isLiked ? "#ff4444" : "#666"}
-          />
-          <Text style={[styles.actionText, isLiked && styles.activeActionText]}>
-            {likeCount}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, isDisliked && styles.activeAction]}
-          onPress={() => handleReaction("DISLIKE")}
-          disabled={isLoading}
-        >
-          <Ionicons
-            name={isDisliked ? "thumbs-down" : "thumbs-down-outline"}
-            size={20}
-            color={isDisliked ? "#ff4444" : "#666"}
-          />
-          <Text
-            style={[styles.actionText, isDisliked && styles.activeActionText]}
-          >
-            {dislikeCount}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionButton} onPress={toggleComments}>
-          <Ionicons name="chatbubble-outline" size={20} color="#666" />
-          <Text style={styles.actionText}>{commentCount}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, isSaved && styles.activeAction]}
-          onPress={handleSave}
-          disabled={isLoading}
-        >
-          <Ionicons
-            name={isSaved ? "bookmark" : "bookmark-outline"}
-            size={20}
-            color={isSaved ? "#007AFF" : "#666"}
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Comments Section */}
-      {showComments && (
-        <CommentSection
-          postId={post.id}
-          comments={comments}
-          onCommentAdded={(comment) => {
-            setComments((prev) => [...prev, comment]);
-            setCommentCount((prev) => prev + 1);
-          }}
-          onCommentUpdated={(updatedComment) => {
-            setComments((prev) =>
-              prev.map((c) =>
-                c.forumCommentId === updatedComment.forumCommentId
-                  ? updatedComment
-                  : c
-              )
-            );
-          }}
-          onCommentDeleted={(commentId) => {
-            setComments((prev) =>
-              prev.filter((c) => c.forumCommentId !== commentId)
-            );
-            setCommentCount((prev) => Math.max(0, prev - 1));
-          }}
-        />
-      )}
-
-      {/* Report Modal */}
-      <ReportModal
-        visible={reportVisible}
-        onSubmit={submitReport}
-        onCancel={() => setReportVisible(false)}
-        loading={reportLoading}
-      />
-
-      {previewOpen && (
-        <View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.95)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            contentOffset={{ x: width * previewIndex, y: 0 }}
-            style={{ flexGrow: 0 }}
-          >
-            {post.imageUrls.map((img, idx) => (
-              <View
-                key={`${post.id}-prev-${idx}`}
-                style={{
-                  width,
-                  height: Dimensions.get("window").height,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Image
-                  source={{ uri: img }}
-                  style={{ width, height: Dimensions.get("window").height }}
-                  resizeMode="contain"
-                />
+    <TouchableWithoutFeedback onPress={() => setShowMenu(false)}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.userInfo}>
+            <Image
+              source={{
+                uri:
+                  post.userAvatar ||
+                  "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.pinterest.com%2Fpin%2F300404237650498609%2F&psig=AOvVaw2FuMEvODdlA_lCA6G3gQp9&ust=1757299985491000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCIiX4t3SxY8DFQAAAAAdAAAAABAE ",
+              }}
+              style={styles.avatar}
+            />
+            <View style={styles.userDetails}>
+              <View style={styles.usernameRow}>
+                <Text style={styles.username}>{post.username}</Text>
+                <Text style={styles.timestamp}>
+                  • {formatDate(post.createdAt)}
+                </Text>
               </View>
-            ))}
-          </ScrollView>
+              <Text style={styles.title}>{post.title}</Text>
+            </View>
+          </View>
+
+          {/* Menu Button */}
           <TouchableOpacity
-            onPress={() => setPreviewOpen(false)}
-            style={{ position: "absolute", top: 40, right: 20, padding: 8 }}
+            onPress={() => setShowMenu(!showMenu)}
+            style={styles.menuButton}
           >
-            <Ionicons name="close" size={28} color="#fff" />
+            <Ionicons name="ellipsis-vertical" size={20} color="#666" />
           </TouchableOpacity>
         </View>
-      )}
-    </View>
+
+        {/* Content */}
+        <View style={styles.content}>
+          <Text style={styles.body}>
+            {showFullContent ? post.content : getTruncatedContent(post.content)}
+          </Text>
+          {post.content.length > 100 && !showFullContent && (
+            <TouchableOpacity onPress={() => setShowFullContent(true)}>
+              <Text style={styles.seeMoreText}>See More</Text>
+            </TouchableOpacity>
+          )}
+          {showFullContent && post.content.length > 100 && (
+            <TouchableOpacity onPress={() => setShowFullContent(false)}>
+              <Text style={styles.seeMoreText}>See Less</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Hashtags */}
+          {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
+            <View style={styles.hashtagsContainer}>
+              {post.hashtags.map((hashtag, index) => {
+                // Convert hashtag to valid format (no spaces, no Vietnamese diacritics)
+                const validHashtag = hashtag
+                  .toLowerCase()
+                  .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, "a")
+                  .replace(/[èéẹẻẽêềếệểễ]/g, "e")
+                  .replace(/[ìíịỉĩ]/g, "i")
+                  .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, "o")
+                  .replace(/[ùúụủũưừứựửữ]/g, "u")
+                  .replace(/[ỳýỵỷỹ]/g, "y")
+                  .replace(/[đ]/g, "d")
+                  .replace(/[^a-z0-9]/g, "")
+                  .replace(/\s+/g, "");
+
+                return (
+                  <Text
+                    key={`${post.id}-hashtag-${index}-${hashtag}`}
+                    style={styles.hashtag}
+                  >
+                    #{validHashtag}
+                  </Text>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Images */}
+          {Array.isArray(post.imageUrls) && post.imageUrls.length > 0 && (
+            <View style={styles.imagesContainer}>
+              {renderImages(post.imageUrls)}
+            </View>
+          )}
+        </View>
+
+        {/* Menu Dropdown */}
+        {showMenu && (
+          <View style={styles.menuDropdown}>
+            {isOwner ? (
+              // Owner menu options
+              <>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => {
+                    setShowMenu(false);
+                    onEdit?.(post);
+                  }}
+                >
+                  <Ionicons name="create-outline" size={18} color="#666" />
+                  <Text style={styles.menuItemText}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => {
+                    setShowMenu(false);
+                    handleSave();
+                  }}
+                >
+                  <Ionicons
+                    name={isSaved ? "bookmark" : "bookmark-outline"}
+                    size={18}
+                    color={isSaved ? "#007AFF" : "#666"}
+                  />
+                  <Text
+                    style={[
+                      styles.menuItemText,
+                      isSaved && styles.menuItemTextActive,
+                    ]}
+                  >
+                    {isSaved ? "Unsave" : "Save"}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.menuItem, styles.menuItemDanger]}
+                  onPress={() => {
+                    setShowMenu(false);
+                    handleDelete();
+                  }}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#ff4444" />
+                  <Text style={styles.menuItemTextDanger}>Delete</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              // Non-owner menu options
+              <>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => {
+                    setShowMenu(false);
+                    handleSave();
+                  }}
+                >
+                  <Ionicons
+                    name={isSaved ? "bookmark" : "bookmark-outline"}
+                    size={18}
+                    color={isSaved ? "#007AFF" : "#666"}
+                  />
+                  <Text
+                    style={[
+                      styles.menuItemText,
+                      isSaved && styles.menuItemTextActive,
+                    ]}
+                  >
+                    {isSaved ? "Unsave" : "Save"}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.menuItem, styles.menuItemDanger]}
+                  onPress={() => {
+                    setShowMenu(false);
+                    handleReport();
+                  }}
+                >
+                  <Ionicons name="flag-outline" size={18} color="#ff4444" />
+                  <Text style={styles.menuItemTextDanger}>Report</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        )}
+
+        {/* Actions */}
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => handleReaction("LIKE")}
+            disabled={isLoading}
+          >
+            <Ionicons
+              name={isLiked ? "arrow-up" : "arrow-up-outline"}
+              size={20}
+              color={isLiked ? "#007AFF" : "#666"}
+            />
+            <Text style={[styles.actionText, isLiked && { color: "#007AFF" }]}>
+              {likeCount}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => handleReaction("DISLIKE")}
+            disabled={isLoading}
+          >
+            <Ionicons
+              name={isDisliked ? "arrow-down" : "arrow-down-outline"}
+              size={20}
+              color={isDisliked ? "#ff4444" : "#666"}
+            />
+            <Text
+              style={[styles.actionText, isDisliked && { color: "#ff4444" }]}
+            >
+              {dislikeCount}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={toggleComments}
+          >
+            <Ionicons name="chatbubbles-outline" size={20} color="#666" />
+            <Text style={styles.actionText}>{commentCount}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Comments Section */}
+        {showComments && (
+          <CommentSection
+            postId={post.id}
+            comments={comments}
+            onCommentAdded={(comment) => {
+              setComments((prev) => [...prev, comment]);
+              setCommentCount((prev) => prev + 1);
+            }}
+            onCommentUpdated={(updatedComment) => {
+              setComments((prev) =>
+                prev.map((c) =>
+                  c.forumCommentId === updatedComment.forumCommentId
+                    ? updatedComment
+                    : c
+                )
+              );
+            }}
+            onCommentDeleted={(commentId) => {
+              setComments((prev) =>
+                prev.filter((c) => c.forumCommentId !== commentId)
+              );
+              setCommentCount((prev) => Math.max(0, prev - 1));
+            }}
+          />
+        )}
+
+        {/* Report Modal */}
+        <ReportModal
+          visible={reportVisible}
+          onSubmit={submitReport}
+          onCancel={() => setReportVisible(false)}
+          loading={reportLoading}
+        />
+
+        {previewOpen && (
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.95)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              contentOffset={{ x: width * previewIndex, y: 0 }}
+              style={{ flexGrow: 0 }}
+            >
+              {post.imageUrls.map((img, idx) => (
+                <View
+                  key={`${post.id}-prev-${idx}`}
+                  style={{
+                    width,
+                    height: Dimensions.get("window").height,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <Image
+                    source={{ uri: img }}
+                    style={{ width, height: Dimensions.get("window").height }}
+                    resizeMode="contain"
+                  />
+                </View>
+              ))}
+            </ScrollView>
+            <TouchableOpacity
+              onPress={() => setPreviewOpen(false)}
+              style={{ position: "absolute", top: 40, right: 20, padding: 8 }}
+            >
+              <Ionicons name="close" size={28} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -725,6 +819,10 @@ const styles = StyleSheet.create({
   userDetails: {
     flex: 1,
   },
+  usernameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   username: {
     fontSize: 16,
     fontWeight: "600",
@@ -733,10 +831,53 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 12,
     color: "#666",
-    marginTop: 2,
+    marginLeft: 4,
   },
-  ownerActions: {
+  menuButton: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  menuDropdown: {
+    position: "absolute",
+    top: 50,
+    right: 10,
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 1000,
+    minWidth: 120,
+  },
+  menuItem: {
     flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f8f9fa",
+  },
+  menuItemDanger: {
+    borderBottomWidth: 0,
+  },
+  menuItemText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: "#333",
+    flex: 1,
+  },
+  menuItemTextActive: {
+    color: "#007AFF",
+  },
+  menuItemTextDanger: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: "#ff4444",
+    flex: 1,
   },
   actionButton: {
     flexDirection: "row",
@@ -749,16 +890,22 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#333",
-    marginBottom: 8,
+    marginTop: 2,
   },
   body: {
     fontSize: 14,
     color: "#666",
     lineHeight: 20,
     marginBottom: 8,
+  },
+  seeMoreText: {
+    fontSize: 14,
+    color: "#007AFF",
+    fontWeight: "500",
+    marginTop: 4,
   },
   hashtagsContainer: {
     flexDirection: "row",
@@ -767,8 +914,8 @@ const styles = StyleSheet.create({
   },
   hashtag: {
     fontSize: 12,
-    color: "#007AFF",
-    backgroundColor: "#E3F2FD",
+    color: "#000000",
+    backgroundColor: "#a1d3ff",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -791,31 +938,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#f0f0f0",
   },
-  statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    paddingHorizontal: 8,
-    marginTop: 6,
-  },
-  statsText: {
-    fontSize: 12,
-    color: "#666",
-  },
-  statsDot: {
-    marginHorizontal: 6,
-    color: "#888",
-  },
   actionText: {
     fontSize: 12,
     color: "#666",
     marginLeft: 4,
-  },
-  activeAction: {
-    backgroundColor: "#f0f8ff",
-  },
-  activeActionText: {
-    color: "#007AFF",
   },
 });
 

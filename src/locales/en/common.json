@@ -15,7 +15,7 @@
       "subheading": "Da Nang - Korea Tours"
     },
     "dashboard": {
-      "welcome": "Travel Tours",
+      "welcome": "Popular Tour",
       "subtitle": "Da Nang - Korea",
       "description": "Discover the beauty of Da Nang and experience Korean culture with high-quality tours.",
       "totalTours": "Total Tours",
@@ -172,6 +172,8 @@
   "nav": {
     "home": "Home",
     "forum": "Forum",
+    "tour": "Tour",
+    "article": "Article",
     "profile": "Profile"
   },
   "common": {

@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../src/navigation";
 import { useTranslation } from "react-i18next";
 import { colors, spacing, borderRadius } from "../../src/constants/theme";
-import MainLayout from "../../src/components/MainLayout";
+import ScrollableLayout from "../../src/components/ScrollableLayout";
 import { useAuthContext } from "../../src/contexts/authContext";
 import {
   getAllPosts,
@@ -144,7 +144,7 @@ export default function Home() {
       rating: 4.8,
       image:
         "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=250&fit=crop",
-      location: "Biển Mỹ Khê, Đà Nẵng",
+      location: "Đà Nẵng",
     },
     {
       id: 2,
@@ -153,7 +153,7 @@ export default function Home() {
       rating: 4.9,
       image:
         "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop",
-      location: "Bán đảo Sơn Trà, Đà Nẵng",
+      location: "Đà Nẵng",
     },
     {
       id: 3,
@@ -162,7 +162,7 @@ export default function Home() {
       rating: 4.7,
       image:
         "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=250&fit=crop",
-      location: "Ngũ Hành Sơn, Đà Nẵng",
+      location: "Đà Nẵng",
     },
   ];
 
@@ -240,8 +240,8 @@ export default function Home() {
   }, []);
 
   return (
-    <MainLayout>
-      <ScrollView style={styles.container}>
+    <ScrollableLayout>
+      <View style={styles.container}>
         {/* Header: Welcome + username (left), language + settings (right) */}
         <View style={styles.topHeader}>
           <View>
@@ -297,18 +297,13 @@ export default function Home() {
                 <View style={styles.tourContent}>
                   <Text style={styles.tourTitle}>{tour.title}</Text>
                   <View style={styles.tourRow}>
-                    <View
-                      style={{ flexDirection: "row", alignItems: "center" }}
-                    >
+                    <View style={styles.locationContainer}>
                       <Ionicons
                         name="location-outline"
                         size={14}
                         color={colors.text.secondary}
                       />
-                      <Text style={styles.tourLocation}>
-                        {" "}
-                        {removeDiacritics(tour.location).toLowerCase()}
-                      </Text>
+                      <Text style={styles.tourLocation}>{tour.location}</Text>
                     </View>
                     <View style={styles.ratingContainer}>
                       <Ionicons name="star" size={16} color="#FFD700" />
@@ -331,13 +326,17 @@ export default function Home() {
           </View>
 
           {hotPosts.map((post) => (
-            <TouchableOpacity key={post.id} style={styles.newsCard}>
+            <TouchableOpacity
+              key={post.id}
+              style={styles.newsCard}
+              onPress={() => navigate(`/forum?postId=${post.id}`)}
+            >
               <View style={styles.avatarCircle}>
                 <Ionicons name="person" size={20} color={colors.text.primary} />
               </View>
               <View style={styles.newsContent}>
                 <Text style={styles.newsTitle}>{post.title}</Text>
-                <View style={{ flexDirection: "row", gap: 6 }}>
+                <View style={styles.hashtagsContainer}>
                   {post.hashtags.slice(0, 3).map((tag, index) => (
                     <Text key={index} style={styles.tag}>
                       #{tag}
@@ -384,8 +383,8 @@ export default function Home() {
             ))}
           </ScrollView>
         </View>
-      </ScrollView>
-    </MainLayout>
+      </View>
+    </ScrollableLayout>
   );
 }
 
@@ -396,7 +395,7 @@ const styles = StyleSheet.create({
   },
   topHeader: {
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 50,
     paddingBottom: 12,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -647,6 +646,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text.secondary,
     marginBottom: spacing.sm,
+    marginTop: 8,
   },
   tourMeta: {
     flexDirection: "row",
@@ -659,6 +659,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: spacing.sm,
+  },
+  locationContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   ratingContainer: {
     flexDirection: "row",
@@ -705,6 +710,13 @@ const styles = StyleSheet.create({
   },
   newsContent: {
     flex: 1,
+    marginRight: 8,
+  },
+  hashtagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 4,
   },
   newsTitle: {
     fontSize: 16,

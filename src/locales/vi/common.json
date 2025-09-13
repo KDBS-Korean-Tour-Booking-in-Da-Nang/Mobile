@@ -15,7 +15,7 @@
       "subheading": "Tour du lịch Đà Nẵng - Korea"
     },
     "dashboard": {
-      "welcome": "Tour du lịch",
+      "welcome": "Tour phổ biến",
       "subtitle": "Đà Nẵng - Korea",
       "description": "Khám phá vẻ đẹp của Đà Nẵng và trải nghiệm văn hóa Hàn Quốc với những tour du lịch chất lượng cao.",
       "totalTours": "Tổng số tour",
@@ -172,6 +172,8 @@
   "nav": {
     "home": "Trang chủ",
     "forum": "Diễn đàn",
+    "tour": "Tour",
+    "article": "Bài viết",
     "profile": "Cá nhân"
   },
   "common": {
