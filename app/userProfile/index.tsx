@@ -11,6 +11,7 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { useNavigation } from "../../src/navigation";
 import { useAuthContext } from "../../src/contexts/authContext";
 import { colors, spacing } from "../../src/constants/theme";
@@ -22,6 +23,7 @@ import {
 
 export default function UserProfile() {
   const { goBack } = useNavigation();
+  const { t } = useTranslation();
   const { user, logout } = useAuthContext();
   const [isEditMode, setIsEditMode] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -112,7 +114,7 @@ export default function UserProfile() {
           <TouchableOpacity onPress={goBack}>
             <Ionicons name="arrow-back" size={28} color={colors.text.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Thông tin cá nhân</Text>
+          <Text style={styles.headerTitle}>{t("profile.title")}</Text>
           <TouchableOpacity onPress={() => setIsEditMode(!isEditMode)}>
             <Ionicons
               name={isEditMode ? "checkmark" : "create-outline"}
@@ -144,7 +146,7 @@ export default function UserProfile() {
               )}
             </View>
             <Text style={styles.username}>
-              {user?.username || "Chưa cập nhật"}
+              {user?.username || t("profile.notUpdated")}
             </Text>
             {user?.isPremium && (
               <View style={styles.premiumBadge}>
@@ -156,7 +158,7 @@ export default function UserProfile() {
 
           {/* Personal Information */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Thông tin cá nhân</Text>
+            <Text style={styles.sectionTitle}>{t("profile.basicInfo")}</Text>
 
             <View style={styles.infoCard}>
               <TouchableOpacity
@@ -168,11 +170,13 @@ export default function UserProfile() {
               >
                 <View style={styles.infoLeft}>
                   <Ionicons name="person-outline" size={20} color="#1088AE" />
-                  <Text style={styles.infoLabel}>Tên người dùng</Text>
+                  <Text style={styles.infoLabel}>
+                    {t("profile.labels.fullName")}
+                  </Text>
                 </View>
                 <View style={styles.infoRight}>
                   <Text style={styles.infoValue}>
-                    {user?.username || "Chưa cập nhật"}
+                    {user?.username || t("profile.notUpdated")}
                   </Text>
                   {isEditMode && (
                     <Ionicons name="chevron-forward" size={16} color="#ccc" />
@@ -191,7 +195,9 @@ export default function UserProfile() {
               >
                 <View style={styles.infoLeft}>
                   <Ionicons name="mail-outline" size={20} color="#1088AE" />
-                  <Text style={styles.infoLabel}>Email</Text>
+                  <Text style={styles.infoLabel}>
+                    {t("profile.labels.email")}
+                  </Text>
                 </View>
                 <View style={styles.infoRight}>
                   <Text style={styles.infoValue}>

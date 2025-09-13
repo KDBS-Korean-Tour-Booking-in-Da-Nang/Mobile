@@ -182,5 +182,100 @@
     "welcome": "Welcome",
     "hotTopic": "Hot Topic",
     "article": "Article"
+  },
+  "onboarding": {
+    "title1": "Plan Your Trip",
+    "desc1": "Create your dream trip with ease. Choose a destination, find the perfect place to stay, and create an itinerary that suits your preferences.",
+    "title2": "Get the Best Deal",
+    "desc2": "Save time and money by finding the best travel deals. We provide a range of exclusive promotions and discounts to make your trip more affordable.",
+    "title3": "Explore Local Attractions",
+    "desc3": "Discover local culture and traditions. We'll help you explore hidden gems and experience the best that each destination has to offer.",
+    "skip": "Skip",
+    "next": "Next",
+    "getStarted": "Get Started"
+  },
+  "business": {
+    "title": "Business Information",
+    "subtitle": "Please upload required documents for admin approval of your business account.",
+    "form": {
+      "businessLicense": "Business License (PDF) *",
+      "idFront": "ID Front (JPG/PNG) *",
+      "idBack": "ID Back (JPG/PNG) *"
+    },
+    "selectedPrefix": "✅ Selected:",
+    "important": {
+      "title": "Important notes:",
+      "i1": "• Business license must be PDF",
+      "i2": "• ID must be clear, not blurry or obscured",
+      "i3": "• Real photo, not a screenshot or scan",
+      "i4": "• Ensure good lighting when taking ID photo",
+      "i5": "• Each file must not exceed 25MB",
+      "i6": "• Approval usually takes 1-3 business days"
+    },
+    "back": "Back",
+    "submit": "Confirm and submit",
+    "submitting": "Submitting...",
+    "success": "Business information submitted successfully!",
+    "error": "Error",
+    "fileSizeError": "File size cannot exceed 25MB",
+    "uploadError": "File upload error. Please try again.",
+    "submitError": "Error submitting information. Please try again."
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "subtitle": "Manage tour system",
+    "welcome": "Welcome Admin!",
+    "description": "This is the management page for staff and administrators"
+  },
+  "profile": {
+    "title": "Personal Profile",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "logout": "Logout",
+    "basicInfo": "Basic information",
+    "accountInfo": "Account information",
+    "labels": {
+      "fullName": "Full name",
+      "email": "Email",
+      "phone": "Phone",
+      "dob": "Date of birth",
+      "gender": "Gender",
+      "cccd": "ID number",
+      "id": "ID",
+      "role": "Role",
+      "premium": "Premium",
+      "joinedAt": "Joined at"
+    },
+    "notUpdated": "Not updated",
+    "premiumYes": "Upgraded",
+    "premiumNo": "Not upgraded",
+    "editModalTitle": "Edit information",
+    "genderOptions": {
+      "unknown": "Not set",
+      "male": "Male",
+      "female": "Female",
+      "other": "Other"
+    },
+    "saveChanges": "Save changes",
+    "updateSuccess": "Updated successfully!",
+    "updateError": "Update error. Please try again."
+  },
+  "createPost": {
+    "title": "Create new post",
+    "titlePlaceholder": "Post title...",
+    "contentPlaceholder": "What's on your mind?",
+    "hashtagsTitle": "Hashtags",
+    "hashtagPlaceholder": "Enter hashtag...",
+    "addHashtag": "Add",
+    "imagesTitle": "Images",
+    "addImage": "Add image",
+    "submitPost": "Post",
+    "submittingPost": "Processing...",
+    "titleRequired": "Please enter post title",
+    "contentRequired": "Please enter post content",
+    "cannotCreateUpdate": "Cannot create/update post",
+    "success": "Post published successfully!",
+    "error": "Post error. Please try again."
   }
 }

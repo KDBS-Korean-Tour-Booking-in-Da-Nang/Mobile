@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import {
   colors,
   spacing,
@@ -10,6 +11,8 @@ import {
 } from "../../src/constants/theme";
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
+  
   return (
     <ScrollView style={styles.container}>
       <LinearGradient
@@ -18,14 +21,14 @@ export default function AdminDashboard() {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <Text style={styles.headerTitle}>Admin Dashboard</Text>
-        <Text style={styles.headerSubtitle}>Quản lý hệ thống tour du lịch</Text>
+        <Text style={styles.headerTitle}>{t("admin.title")}</Text>
+        <Text style={styles.headerSubtitle}>{t("admin.subtitle")}</Text>
       </LinearGradient>
 
       <View style={styles.content}>
-        <Text style={styles.welcomeText}>Chào mừng Admin!</Text>
+        <Text style={styles.welcomeText}>{t("admin.welcome")}</Text>
         <Text style={styles.description}>
-          Đây là trang quản lý dành cho nhân viên và quản trị viên
+          {t("admin.description")}
         </Text>
       </View>
     </ScrollView>

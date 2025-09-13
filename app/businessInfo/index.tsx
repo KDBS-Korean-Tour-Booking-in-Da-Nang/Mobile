@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 // TODO: implement business upload endpoint; removed old service import
 import { useNavigation } from "../../src/navigation";
 import { useLocalSearchParams } from "expo-router";
@@ -24,6 +25,7 @@ import {
 
 export default function BusinessInfo() {
   const { navigate } = useNavigation();
+  const { t } = useTranslation();
   const params = useLocalSearchParams();
   const [loading, setLoading] = useState(false);
   const [businessLicense, setBusinessLicense] = useState<any>(null);
@@ -44,7 +46,7 @@ export default function BusinessInfo() {
         if (!result.canceled && result.assets[0]) {
           const file = result.assets[0];
           if (file.size && file.size > 25 * 1024 * 1024) {
-            Alert.alert("Lỗi", "File không được vượt quá 25MB");
+            Alert.alert(t("business.error"), t("business.fileSizeError"));
             return;
           }
           setBusinessLicense(file);
@@ -60,7 +62,7 @@ export default function BusinessInfo() {
         if (!result.canceled && result.assets[0]) {
           const file = result.assets[0];
           if (file.fileSize && file.fileSize > 25 * 1024 * 1024) {
-            Alert.alert("Lỗi", "File không được vượt quá 25MB");
+            Alert.alert(t("business.error"), t("business.fileSizeError"));
             return;
           }
 
@@ -73,13 +75,16 @@ export default function BusinessInfo() {
       }
     } catch (error) {
       console.error("Pick file error:", error);
-      Alert.alert("Lỗi", "Không thể chọn file. Vui lòng thử lại.");
+      Alert.alert(t("business.error"), t("business.uploadError"));
     }
   };
 
   const handleSubmit = async () => {
     if (!businessLicense || !idCardFront || !idCardBack) {
-      Alert.alert("Lỗi", "Vui lòng upload đầy đủ các tài liệu bắt buộc");
+      Alert.alert(
+        t("business.error"),
+        "Vui lòng upload đầy đủ các tài liệu bắt buộc"
+      );
       return;
     }
 
@@ -120,17 +125,14 @@ export default function BusinessInfo() {
           >
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Thông tin doanh nghiệp</Text>
+          <Text style={styles.headerTitle}>{t("business.title")}</Text>
           <View style={styles.placeholder} />
         </View>
       </LinearGradient>
 
       <View style={styles.content}>
         <View style={styles.infoContainer}>
-          <Text style={styles.infoTitle}>
-            Vui lòng upload các tài liệu cần thiết để admin có thể duyệt tài
-            khoản doanh nghiệp của bạn.
-          </Text>
+          <Text style={styles.infoTitle}>{t("business.subtitle")}</Text>
         </View>
 
         <View style={styles.uploadSection}>
@@ -146,7 +148,7 @@ export default function BusinessInfo() {
               />
               <View style={styles.uploadInfo}>
                 <Text style={styles.uploadTitle}>
-                  Giấy phép kinh doanh (PDF) *
+                  {t("business.form.businessLicense")}
                 </Text>
                 <Text style={styles.uploadDesc}>
                   Upload file PDF giấy phép kinh doanh
@@ -178,7 +180,7 @@ export default function BusinessInfo() {
               <Ionicons name="card" size={24} color={colors.primary.main} />
               <View style={styles.uploadInfo}>
                 <Text style={styles.uploadTitle}>
-                  Mặt trước CCCD (JPG/PNG) *
+                  {t("business.form.idFront")}
                 </Text>
                 <Text style={styles.uploadDesc}>Chụp ảnh mặt trước CCCD</Text>
               </View>
@@ -207,7 +209,7 @@ export default function BusinessInfo() {
             <View style={styles.uploadHeader}>
               <Ionicons name="card" size={24} color={colors.primary.main} />
               <View style={styles.uploadInfo}>
-                <Text style={styles.uploadTitle}>Mặt sau CCCD (JPG/PNG) *</Text>
+                <Text style={styles.uploadTitle}>{t("business.form.idBack")}</Text>
                 <Text style={styles.uploadDesc}>Chụp ảnh mặt sau CCCD</Text>
               </View>
             </View>
@@ -232,19 +234,19 @@ export default function BusinessInfo() {
         </View>
 
         <View style={styles.notesContainer}>
-          <Text style={styles.notesTitle}>Lưu ý quan trọng:</Text>
+          <Text style={styles.notesTitle}>{t("business.important.title")}</Text>
           <View style={styles.notesList}>
             <Text style={styles.noteItem}>
-              • Giấy phép kinh doanh phải là file PDF
+              {t("business.important.i1")}
             </Text>
             <Text style={styles.noteItem}>
-              • CCCD phải rõ ràng, không bị mờ hoặc che khuất
+              {t("business.important.i2")}
             </Text>
             <Text style={styles.noteItem}>
-              • CCCD phải là ảnh thật, không phải ảnh màn hình hoặc scan
+              {t("business.important.i3")}
             </Text>
             <Text style={styles.noteItem}>
-              • Đảm bảo ánh sáng tốt khi chụp CCCD
+              {t("business.important.i4")}
             </Text>
             <Text style={styles.noteItem}>
               • Mỗi file không được vượt quá 25MB

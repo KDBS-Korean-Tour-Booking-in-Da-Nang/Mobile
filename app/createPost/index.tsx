@@ -11,19 +11,16 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from "../../src/navigation";
 import { useAuthContext } from "../../src/contexts/authContext";
 import { createPost } from "../../src/endpoints/forum";
-import {
-  colors,
-  spacing,
-  borderRadius,
-  typography,
-} from "../../src/constants/theme";
+import { colors, spacing, borderRadius } from "../../src/constants/theme";
 
 export default function CreatePost() {
   const { goBack } = useNavigation();
+  const { t } = useTranslation();
   const { user } = useAuthContext();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -64,8 +61,13 @@ export default function CreatePost() {
       return;
     }
 
-    if (!title.trim() || !content.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập tiêu đề và nội dung bài viết.");
+    if (!title.trim()) {
+      Alert.alert(t("createPost.error"), t("createPost.titleRequired"));
+      return;
+    }
+
+    if (!content.trim()) {
+      Alert.alert(t("createPost.error"), t("createPost.contentRequired"));
       return;
     }
 
@@ -79,13 +81,13 @@ export default function CreatePost() {
         images,
       });
 
-      Alert.alert("Thành công", "Bài viết của bạn đã được đăng!", [
+      Alert.alert(t("createPost.success"), t("createPost.success"), [
         { text: "OK", onPress: () => goBack() },
       ]);
     } catch (error: any) {
       Alert.alert(
-        "Lỗi",
-        error.message || "Không thể tạo bài viết. Vui lòng thử lại."
+        t("createPost.error"),
+        error.message || t("createPost.cannotCreateUpdate")
       );
     } finally {
       setLoading(false);
@@ -98,26 +100,30 @@ export default function CreatePost() {
         <TouchableOpacity onPress={goBack}>
           <Ionicons name="close" size={28} color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Tạo bài viết mới</Text>
+        <Text style={styles.headerTitle}>{t("createPost.title")}</Text>
         <TouchableOpacity
           style={[styles.postButton, loading && styles.postButtonDisabled]}
           onPress={handleCreatePost}
           disabled={loading}
         >
-          <Text style={styles.postButtonText}>Đăng</Text>
+          <Text style={styles.postButtonText}>
+            {loading
+              ? t("createPost.submittingPost")
+              : t("createPost.submitPost")}
+          </Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.formContainer}>
         <TextInput
           style={styles.titleInput}
-          placeholder="Tiêu đề bài viết..."
+          placeholder={t("createPost.titlePlaceholder")}
           value={title}
           onChangeText={setTitle}
         />
         <TextInput
           style={styles.contentInput}
-          placeholder="Bạn đang nghĩ gì?"
+          placeholder={t("createPost.contentPlaceholder")}
           value={content}
           onChangeText={setContent}
           multiline
@@ -128,7 +134,7 @@ export default function CreatePost() {
           <View style={styles.hashtagInputContainer}>
             <TextInput
               style={styles.hashtagInput}
-              placeholder="Nhập hashtag và nhấn Enter..."
+              placeholder={t("createPost.hashtagPlaceholder")}
               value={currentHashtag}
               onChangeText={setCurrentHashtag}
               onSubmitEditing={handleAddHashtag}
@@ -159,7 +165,7 @@ export default function CreatePost() {
         {/* Image Picker */}
         <TouchableOpacity style={styles.imagePicker} onPress={handlePickImage}>
           <Ionicons name="camera" size={24} color={colors.text.secondary} />
-          <Text style={styles.imagePickerText}>Thêm ảnh</Text>
+          <Text style={styles.imagePickerText}>{t("createPost.addImage")}</Text>
         </TouchableOpacity>
 
         {/* Selected Images Preview */}

@@ -93,7 +93,7 @@ export default function Onboarding() {
         </Text>
         <TouchableOpacity style={styles.primaryButton} onPress={goNext}>
           <Text style={styles.primaryButtonText}>
-            {index === slides.length - 1 ? "Finish" : "Next"}
+            {index === slides.length - 1 ? "Get Started" : "Next"}
           </Text>
         </TouchableOpacity>
         <View style={styles.dotsRow}>

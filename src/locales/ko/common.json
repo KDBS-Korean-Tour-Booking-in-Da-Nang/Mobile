@@ -182,5 +182,100 @@
     "welcome": "환영합니다",
     "hotTopic": "인기 주제",
     "article": "기사"
+  },
+  "onboarding": {
+    "title1": "여행 계획하기",
+    "desc1": "쉽게 꿈의 여행을 만들어보세요. 목적지를 선택하고, 완벽한 숙소를 찾고, 당신의 취향에 맞는 여행 일정을 만드세요.",
+    "title2": "최고의 할인 혜택 받기",
+    "desc2": "최고의 여행 할인을 찾아 시간과 돈을 절약하세요. 여행을 더 저렴하게 만들어주는 다양한 독점 프로모션과 할인을 제공합니다.",
+    "title3": "현지 명소 탐험하기",
+    "desc3": "현지 문화와 전통을 발견하세요. 숨겨진 보석 같은 장소를 탐험하고 각 목적지가 제공하는 최고의 경험을 할 수 있도록 도와드립니다.",
+    "skip": "건너뛰기",
+    "next": "다음",
+    "getStarted": "시작하기"
+  },
+  "business": {
+    "title": "사업자 정보",
+    "subtitle": "사업자 계정 승인을 위해 필요한 서류를 업로드하세요.",
+    "form": {
+      "businessLicense": "사업자 등록증 (PDF) *",
+      "idFront": "신분증 앞면 (JPG/PNG) *",
+      "idBack": "신분증 뒷면 (JPG/PNG) *"
+    },
+    "selectedPrefix": "✅ 선택됨:",
+    "important": {
+      "title": "중요 안내:",
+      "i1": "• 사업자 등록증은 PDF여야 합니다",
+      "i2": "• 신분증은 선명해야 하며 가려지지 않아야 합니다",
+      "i3": "• 스크린샷/스캔이 아닌 실제 사진이어야 합니다",
+      "i4": "• 촬영 시 충분한 조명을 확보하세요",
+      "i5": "• 각 파일은 25MB를 초과할 수 없습니다",
+      "i6": "• 승인에는 보통 1-3 영업일이 소요됩니다"
+    },
+    "back": "뒤로",
+    "submit": "확인 및 제출",
+    "submitting": "제출 중...",
+    "success": "사업자 정보가 성공적으로 제출되었습니다!",
+    "error": "오류",
+    "fileSizeError": "파일 크기는 25MB를 초과할 수 없습니다",
+    "uploadError": "파일 업로드 오류. 다시 시도하세요.",
+    "submitError": "정보 제출 오류. 다시 시도하세요."
+  },
+  "admin": {
+    "title": "관리자 대시보드",
+    "subtitle": "투어 시스템 관리",
+    "welcome": "관리자님 환영합니다!",
+    "description": "스태프와 관리자를 위한 관리 페이지입니다"
+  },
+  "profile": {
+    "title": "개인 프로필",
+    "edit": "수정",
+    "save": "저장",
+    "cancel": "취소",
+    "logout": "로그아웃",
+    "basicInfo": "기본 정보",
+    "accountInfo": "계정 정보",
+    "labels": {
+      "fullName": "이름",
+      "email": "이메일",
+      "phone": "전화번호",
+      "dob": "생년월일",
+      "gender": "성별",
+      "cccd": "신분증 번호",
+      "id": "ID",
+      "role": "역할",
+      "premium": "프리미엄",
+      "joinedAt": "가입일"
+    },
+    "notUpdated": "미입력",
+    "premiumYes": "업그레이드됨",
+    "premiumNo": "업그레이드 안됨",
+    "editModalTitle": "정보 수정",
+    "genderOptions": {
+      "unknown": "미설정",
+      "male": "남성",
+      "female": "여성",
+      "other": "기타"
+    },
+    "saveChanges": "변경 사항 저장",
+    "updateSuccess": "성공적으로 업데이트되었습니다!",
+    "updateError": "업데이트 오류. 다시 시도하세요."
+  },
+  "createPost": {
+    "title": "새 게시물 작성",
+    "titlePlaceholder": "게시물 제목...",
+    "contentPlaceholder": "무슨 생각을 하고 계신가요?",
+    "hashtagsTitle": "해시태그",
+    "hashtagPlaceholder": "해시태그 입력...",
+    "addHashtag": "추가",
+    "imagesTitle": "이미지",
+    "addImage": "이미지 추가",
+    "submitPost": "게시",
+    "submittingPost": "처리 중...",
+    "titleRequired": "게시물 제목을 입력하세요",
+    "contentRequired": "게시물 내용을 입력하세요",
+    "cannotCreateUpdate": "게시물을 생성/수정할 수 없습니다",
+    "success": "게시물이 성공적으로 게시되었습니다!",
+    "error": "게시 오류. 다시 시도하세요."
   }
 }
