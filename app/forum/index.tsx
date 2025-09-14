@@ -49,9 +49,7 @@ export default function Forum() {
 
   // Navigation scroll effects
   const [isNavVisible, setIsNavVisible] = useState(true);
-  const [navPosition, setNavPosition] = useState<"bottom" | "top">("bottom");
   const lastScrollY = useRef(0);
-  const scrollDistance = useRef(0);
   const scrollThreshold = 50;
   const flatListRef = useRef<FlatList>(null);
 
@@ -406,42 +404,22 @@ export default function Forum() {
     [posts]
   );
 
-  // Handle scroll for navigation effects
-  const handleScroll = useCallback(
-    (event: any) => {
-      const currentScrollY = event.nativeEvent.contentOffset.y;
-      const scrollDifference = Math.abs(currentScrollY - lastScrollY.current);
+  // Handle scroll for navigation effects - hide when scrolling down, show when scrolling up
+  const handleScroll = useCallback((event: any) => {
+    const currentScrollY = event.nativeEvent.contentOffset.y;
+    const scrollDifference = Math.abs(currentScrollY - lastScrollY.current);
 
-      if (scrollDifference > scrollThreshold) {
-        if (currentScrollY > lastScrollY.current) {
-          // Scrolling down
-          scrollDistance.current += scrollDifference;
-          if (scrollDistance.current > 300 && navPosition === "bottom") {
-            // Move nav to top after scrolling down 300px
-            setNavPosition("top");
-            setIsNavVisible(true);
-          } else if (scrollDistance.current > 100) {
-            // Hide nav when scrolling down
-            setIsNavVisible(false);
-          }
-        } else {
-          // Scrolling up
-          scrollDistance.current = Math.max(
-            0,
-            scrollDistance.current - scrollDifference
-          );
-          if (scrollDistance.current < 200 && navPosition === "top") {
-            // Move nav back to bottom when scrolling up
-            setNavPosition("bottom");
-          }
-          // Show nav when scrolling up
-          setIsNavVisible(true);
-        }
-        lastScrollY.current = currentScrollY;
+    if (scrollDifference > scrollThreshold) {
+      if (currentScrollY > lastScrollY.current) {
+        // Scrolling down - hide navbar
+        setIsNavVisible(false);
+      } else {
+        // Scrolling up - show navbar
+        setIsNavVisible(true);
       }
-    },
-    [navPosition]
-  );
+      lastScrollY.current = currentScrollY;
+    }
+  }, []);
 
   // Function to load full post details when needed
   const loadFullPostDetails = useCallback(async (postId: number) => {
@@ -511,7 +489,7 @@ export default function Forum() {
   }
 
   return (
-    <MainLayout isNavVisible={isNavVisible} navPosition={navPosition}>
+    <MainLayout isNavVisible={isNavVisible}>
       <TouchableWithoutFeedback onPress={() => setShowSearchDropdown(false)}>
         <View style={styles.container}>
           {/* Header with Search Bar */}
@@ -685,13 +663,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8f9fa",
   },
   header: {
-    backgroundColor: "#E3F2FD",
+    backgroundColor: "#d4e8ff",
     paddingTop: 35,
-    paddingBottom: 16,
+    paddingBottom: 8,
     paddingHorizontal: 20,
   },
   searchContainer: {
     marginTop: 8,
+    marginBottom: 0,
   },
   searchBox: {
     flexDirection: "row",
@@ -749,8 +728,8 @@ const styles = StyleSheet.create({
   navButtonsContainer: {
     flexDirection: "row",
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: "#ffffff",
+    paddingVertical: 8,
+    backgroundColor: "#d4e8ff",
     borderBottomWidth: 1,
     borderBottomColor: "#e9ecef",
     alignItems: "center",
@@ -771,8 +750,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   navButtonActive: {
-    backgroundColor: "#1088AE",
-    borderColor: "#1088AE",
+    backgroundColor: "#9dcdf8",
+    borderColor: "#9dcdf8",
   },
   navButtonText: {
     fontSize: 16,
@@ -780,14 +759,14 @@ const styles = StyleSheet.create({
     color: "#007AFF",
   },
   navButtonTextActive: {
-    color: "#ffffff",
+    color: "#1088ae",
   },
   createPostButton: {
     position: "absolute",
     bottom: 20,
     left: 20,
     right: 20,
-    backgroundColor: "#1088AE",
+    backgroundColor: "#a1d3ff",
     paddingVertical: 16,
     borderRadius: 25,
     alignItems: "center",
@@ -800,7 +779,7 @@ const styles = StyleSheet.create({
   createPostButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#ffffff",
+    color: "#000000",
   },
   feedContainer: {
     paddingBottom: 100,

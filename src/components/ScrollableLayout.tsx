@@ -8,9 +8,7 @@ interface ScrollableLayoutProps {
 
 const ScrollableLayout: React.FC<ScrollableLayoutProps> = ({ children }) => {
   const [isNavVisible, setIsNavVisible] = useState(true);
-  const [navPosition, setNavPosition] = useState<"bottom" | "top">("bottom");
   const lastScrollY = useRef(0);
-  const scrollDistance = useRef(0);
   const scrollThreshold = 50;
 
   const handleScroll = (event: any) => {
@@ -19,27 +17,10 @@ const ScrollableLayout: React.FC<ScrollableLayoutProps> = ({ children }) => {
 
     if (scrollDifference > scrollThreshold) {
       if (currentScrollY > lastScrollY.current) {
-        // Scrolling down
-        scrollDistance.current += scrollDifference;
-        if (scrollDistance.current > 300 && navPosition === "bottom") {
-          // Move nav to top after scrolling down 300px
-          setNavPosition("top");
-          setIsNavVisible(true);
-        } else if (scrollDistance.current > 100) {
-          // Hide nav when scrolling down
-          setIsNavVisible(false);
-        }
+        // Scrolling down - hide navbar
+        setIsNavVisible(false);
       } else {
-        // Scrolling up
-        scrollDistance.current = Math.max(
-          0,
-          scrollDistance.current - scrollDifference
-        );
-        if (scrollDistance.current < 200 && navPosition === "top") {
-          // Move nav back to bottom when scrolling up
-          setNavPosition("bottom");
-        }
-        // Show nav when scrolling up
+        // Scrolling up - show navbar
         setIsNavVisible(true);
       }
       lastScrollY.current = currentScrollY;
@@ -47,7 +28,7 @@ const ScrollableLayout: React.FC<ScrollableLayoutProps> = ({ children }) => {
   };
 
   return (
-    <MainLayout isNavVisible={isNavVisible} navPosition={navPosition}>
+    <MainLayout isNavVisible={isNavVisible}>
       <ScrollView
         onScroll={handleScroll}
         scrollEventThrottle={16}

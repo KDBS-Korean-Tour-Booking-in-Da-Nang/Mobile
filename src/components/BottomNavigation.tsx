@@ -6,24 +6,33 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Animated,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../navigation";
 import { useTranslation } from "react-i18next";
 
+const { width: screenWidth } = Dimensions.get("window");
+
 interface BottomNavigationProps {
   currentRoute?: string;
   isVisible?: boolean;
-  position?: "bottom" | "top";
 }
 
 const BottomNavigation: React.FC<BottomNavigationProps> = ({
   currentRoute = "home",
   isVisible = true,
-  position = "bottom",
 }) => {
   const { navigate } = useNavigation();
   const { t } = useTranslation();
+
+  // Responsive sizing based on screen width
+  const isVerySmallScreen = screenWidth < 350; // Very small screens
+  const isSmallScreen = screenWidth < 400; // iPhone 11 Pro, iPhone SE, small Android phones
+
+  const iconSize = isVerySmallScreen ? 19 : isSmallScreen ? 19 : 23;
+  const fontSize = isVerySmallScreen ? 9 : isSmallScreen ? 10 : 12;
+  const navItemPadding = isVerySmallScreen ? 2 : isSmallScreen ? 2 : 4;
 
   const navItems = [
     {
@@ -66,24 +75,16 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const translateY = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
-    if (position === "top") {
-      Animated.timing(translateY, {
-        toValue: isVisible ? 0 : -100,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      Animated.timing(translateY, {
-        toValue: isVisible ? 0 : 100,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [isVisible, position, translateY]);
+    Animated.timing(translateY, {
+      toValue: isVisible ? 0 : 100,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [isVisible, translateY]);
 
   const containerStyle = [
     styles.container,
-    position === "top" ? styles.containerTop : styles.containerBottom,
+    styles.containerBottom,
     { transform: [{ translateY }] },
   ];
 
@@ -101,15 +102,34 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
                 ]}
                 onPress={() => navigate(item.route)}
               >
-                <View style={isActive ? styles.activeNavItem : {}}>
+                <View
+                  style={[
+                    isActive ? styles.activeNavItem : {},
+                    {
+                      paddingVertical: navItemPadding,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    },
+                  ]}
+                >
                   <Ionicons
                     name={isActive ? item.activeIcon : (item.icon as any)}
-                    size={24}
+                    size={iconSize}
                     color={isActive ? "#ffffff" : "#666"}
-                    style={{ marginLeft: 5 }}
+                    style={{
+                      marginBottom: isVerySmallScreen
+                        ? 2
+                        : isSmallScreen
+                        ? 3
+                        : 4,
+                    }}
                   />
                   <Text
-                    style={[styles.navLabel, isActive && styles.activeNavLabel]}
+                    style={[
+                      styles.navLabel,
+                      isActive && styles.activeNavLabel,
+                      { fontSize },
+                    ]}
                   >
                     {item.label}
                   </Text>
@@ -133,11 +153,6 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 1000,
   },
-  containerTop: {
-    top: 0,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
   containerBottom: {
     bottom: 0,
     borderTopLeftRadius: 20,
@@ -148,37 +163,37 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     alignItems: "center",
     paddingVertical: 2,
-    paddingHorizontal: 16,
-    height: 40,
+    paddingHorizontal: screenWidth < 350 ? 4 : screenWidth < 400 ? 6 : 16,
+    height: screenWidth < 350 ? 30 : screenWidth < 400 ? 34 : 40,
   },
   navItem: {
     flex: 1,
     alignItems: "center",
     paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingHorizontal: screenWidth < 350 ? 2 : screenWidth < 400 ? 3 : 8,
   },
   activeNavItemContainer: {
     flex: 1,
     alignItems: "center",
     paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingHorizontal: screenWidth < 350 ? 2 : screenWidth < 400 ? 3 : 8,
   },
   activeNavItem: {
-    backgroundColor: "#1088AE",
+    backgroundColor: "#a1d3ff",
     borderRadius: 12,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    marginHorizontal: 3,
+    paddingVertical: screenWidth < 350 ? 11 : screenWidth < 400 ? 13 : 15,
+    paddingHorizontal: screenWidth < 350 ? 7 : screenWidth < 400 ? 9 : 13,
+    marginHorizontal: screenWidth < 350 ? 0.5 : screenWidth < 400 ? 0.5 : 3,
+    minHeight: screenWidth < 350 ? 37 : screenWidth < 400 ? 43 : 49,
   },
   navLabel: {
     fontSize: 12,
     color: "#666",
-    marginTop: 4,
     textAlign: "center",
-    minWidth: 37,
+    minWidth: screenWidth < 350 ? 22 : screenWidth < 400 ? 25 : 37,
   },
   activeNavLabel: {
-    color: "#ffffff",
+    color: "#000000",
     fontWeight: "600",
   },
 });

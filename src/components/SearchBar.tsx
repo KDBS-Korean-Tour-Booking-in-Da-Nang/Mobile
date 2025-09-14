@@ -102,7 +102,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
       ];
       setSuggestions(combined);
       setShowSuggestions(true);
-    } catch (e) {
+    } catch {
       setSuggestions([]);
       setShowSuggestions(false);
     } finally {

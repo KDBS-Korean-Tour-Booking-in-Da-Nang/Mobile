@@ -185,12 +185,6 @@ export default function Home() {
     },
   ];
 
-  const removeDiacritics = (s: string) =>
-    s
-      .normalize("NFD")
-      .replace(/\p{Diacritic}+/gu, "")
-      .replace(/đ/gi, "d");
-
   // Sync currentLanguage with i18n language changes
   useEffect(() => {
     const handleLanguageChange = (lng: string) => {
@@ -255,7 +249,7 @@ export default function Home() {
             />
             <TouchableOpacity
               style={styles.settingBtn}
-              onPress={() => navigate("/userProfile")}
+              onPress={() => navigate("/settings")}
             >
               <Ionicons name="settings-outline" size={20} color="#212529" />
             </TouchableOpacity>
@@ -320,7 +314,7 @@ export default function Home() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t("common.hotTopic")}</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigate("/forum")}>
               <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
             </TouchableOpacity>
           </View>

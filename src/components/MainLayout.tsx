@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React from "react";
 import { View, StyleSheet } from "react-native";
 import { usePathname } from "expo-router";
 import BottomNavigation from "./BottomNavigation";
@@ -7,13 +7,11 @@ import { useTranslation } from "react-i18next";
 interface MainLayoutProps {
   children: React.ReactNode;
   isNavVisible?: boolean;
-  navPosition?: "bottom" | "top";
 }
 
 const MainLayout: React.FC<MainLayoutProps> = ({
   children,
   isNavVisible = true,
-  navPosition = "bottom",
 }) => {
   useTranslation();
   const pathname = usePathname();
@@ -34,7 +32,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       <BottomNavigation
         currentRoute={getCurrentRoute()}
         isVisible={isNavVisible}
-        position={navPosition}
       />
     </View>
   );

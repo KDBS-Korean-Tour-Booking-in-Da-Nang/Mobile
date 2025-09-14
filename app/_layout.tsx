@@ -1,20 +1,12 @@
 import { Stack, useRouter } from "expo-router";
 import "../src/i18n";
-import {
-  View,
-  TouchableOpacity,
-  Text,
-  TouchableWithoutFeedback,
-  Modal,
-} from "react-native";
-import { useTranslation } from "react-i18next";
-import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useRef, useState } from "react";
+import { View } from "react-native";
+import { useEffect } from "react";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { NavigationProvider } from "../src/navigation";
 import { AuthProvider, useAuthContext } from "../src/contexts/authContext";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { hasSeenOnboarding } from "../src/utils/onboardingUtils";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,17 +17,31 @@ function RootLayoutNav() {
   useEffect(() => {
     const redirect = async () => {
       if (loading) return;
-      const hasSeen = await AsyncStorage.getItem("hasSeenOnboarding");
-      if (!hasSeen) {
+
+      try {
+        // Check if user has seen onboarding
+        const userHasSeenOnboarding = await hasSeenOnboarding();
+
+        // If user hasn't seen onboarding, show it first
+        if (!userHasSeenOnboarding) {
+          console.log("First time user - showing onboarding");
+          router.replace("/onboarding" as any);
+          return;
+        }
+
+        // If user has seen onboarding, proceed with normal auth flow
+        if (isAuthenticated) {
+          router.replace("/forum");
+        } else {
+          router.replace("/userLogin");
+        }
+      } catch (error) {
+        console.error("Error checking onboarding status:", error);
+        // If there's an error, default to showing onboarding
         router.replace("/onboarding" as any);
-        return;
-      }
-      if (isAuthenticated) {
-        router.replace("/forum");
-      } else {
-        router.replace("/userLogin");
       }
     };
+
     redirect();
   }, [isAuthenticated, loading, router]);
 
@@ -54,6 +60,8 @@ function RootLayoutNav() {
       <Stack.Screen name="forgot" />
       <Stack.Screen name="createPost" options={{ presentation: "modal" }} />
       <Stack.Screen name="userProfile" />
+      <Stack.Screen name="editProfile" />
+      <Stack.Screen name="settings" />
       <Stack.Screen name="(tabs)" />
     </Stack>
   );

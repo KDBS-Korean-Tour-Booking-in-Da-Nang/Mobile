@@ -9,9 +9,9 @@ import {
   TouchableOpacity,
   Platform,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "../../src/navigation";
 import { spacing } from "../../src/constants/theme";
+import { markOnboardingCompleted } from "../../src/utils/onboardingUtils";
 
 type Slide = {
   key: string;
@@ -72,8 +72,17 @@ export default function Onboarding() {
   };
 
   const handleGetStarted = async () => {
-    await AsyncStorage.setItem("hasSeenOnboarding", "true");
-    navigate("/userLogin");
+    try {
+      // Mark that user has completed onboarding
+      await markOnboardingCompleted();
+
+      // Navigate to login screen
+      navigate("/userLogin");
+    } catch (error) {
+      console.error("Error saving onboarding status:", error);
+      // Still navigate even if saving fails
+      navigate("/userLogin");
+    }
   };
 
   const renderItem = ({ item }: { item: Slide }) => (
