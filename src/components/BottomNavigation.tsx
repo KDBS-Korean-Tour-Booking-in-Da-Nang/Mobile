@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   Animated,
   Dimensions,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../navigation";
@@ -76,7 +77,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
   React.useEffect(() => {
     Animated.timing(translateY, {
-      toValue: isVisible ? 0 : 100,
+      toValue: isVisible ? 0 : Platform.OS === "android" ? 150 : 100,
       duration: 300,
       useNativeDriver: true,
     }).start();
@@ -89,57 +90,61 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   ];
 
   return (
-    <Animated.View style={containerStyle}>
-      <SafeAreaView>
-        <View style={styles.navigation}>
-          {navItems.map((item) => {
-            const isActive = currentRoute === item.key;
-            return (
-              <TouchableOpacity
-                key={item.key}
-                style={[
-                  isActive ? styles.activeNavItemContainer : styles.navItem,
-                ]}
-                onPress={() => navigate(item.route)}
-              >
-                <View
+    <>
+      <Animated.View style={containerStyle}>
+        <SafeAreaView>
+          <View style={styles.navigation}>
+            {navItems.map((item) => {
+              const isActive = currentRoute === item.key;
+              return (
+                <TouchableOpacity
+                  key={item.key}
                   style={[
-                    isActive ? styles.activeNavItem : {},
-                    {
-                      paddingVertical: navItemPadding,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    },
+                    isActive ? styles.activeNavItemContainer : styles.navItem,
                   ]}
+                  onPress={() => navigate(item.route)}
                 >
-                  <Ionicons
-                    name={isActive ? item.activeIcon : (item.icon as any)}
-                    size={iconSize}
-                    color={isActive ? "#ffffff" : "#666"}
-                    style={{
-                      marginBottom: isVerySmallScreen
-                        ? 2
-                        : isSmallScreen
-                        ? 3
-                        : 4,
-                    }}
-                  />
-                  <Text
+                  <View
                     style={[
-                      styles.navLabel,
-                      isActive && styles.activeNavLabel,
-                      { fontSize },
+                      isActive ? styles.activeNavItem : {},
+                      {
+                        paddingVertical: navItemPadding,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      },
                     ]}
                   >
-                    {item.label}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </SafeAreaView>
-    </Animated.View>
+                    <Ionicons
+                      name={isActive ? item.activeIcon : (item.icon as any)}
+                      size={iconSize}
+                      color={isActive ? "#ffffff" : "#666"}
+                      style={{
+                        marginBottom: isVerySmallScreen
+                          ? 2
+                          : isSmallScreen
+                          ? 3
+                          : 4,
+                      }}
+                    />
+                    <Text
+                      style={[
+                        styles.navLabel,
+                        isActive && styles.activeNavLabel,
+                        { fontSize },
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </SafeAreaView>
+      </Animated.View>
+      {/* Android Navigation Bar - Outside of navbar container */}
+      {Platform.OS === "android" && <View style={styles.androidNavBar} />}
+    </>
   );
 };
 
@@ -151,10 +156,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    zIndex: 1000,
+    zIndex: 9999,
+    bottom: Platform.OS === "android" ? 60 : 0,
   },
   containerBottom: {
-    bottom: 0,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
@@ -165,6 +170,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     paddingHorizontal: screenWidth < 350 ? 4 : screenWidth < 400 ? 6 : 16,
     height: screenWidth < 350 ? 30 : screenWidth < 400 ? 34 : 40,
+    minHeight: 40,
   },
   navItem: {
     flex: 1,
@@ -195,6 +201,15 @@ const styles = StyleSheet.create({
   activeNavLabel: {
     color: "#000000",
     fontWeight: "600",
+  },
+  androidNavBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+    backgroundColor: "#000000",
+    zIndex: 1,
   },
 });
 

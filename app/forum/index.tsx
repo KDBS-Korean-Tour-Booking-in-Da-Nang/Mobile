@@ -10,6 +10,7 @@ import {
   Alert,
   TextInput,
   TouchableWithoutFeedback,
+  Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
@@ -763,7 +764,7 @@ const styles = StyleSheet.create({
   },
   createPostButton: {
     position: "absolute",
-    bottom: 20,
+    bottom: Platform.OS === "android" ? 130 : -20,
     left: 20,
     right: 20,
     backgroundColor: "#a1d3ff",
@@ -775,6 +776,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    zIndex: 1000,
   },
   createPostButtonText: {
     fontSize: 16,
