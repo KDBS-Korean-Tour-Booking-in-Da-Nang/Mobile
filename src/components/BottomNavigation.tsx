@@ -187,20 +187,22 @@ const styles = StyleSheet.create({
   activeNavItem: {
     backgroundColor: "#a1d3ff",
     borderRadius: 12,
-    paddingVertical: screenWidth < 350 ? 11 : screenWidth < 400 ? 13 : 15,
-    paddingHorizontal: screenWidth < 350 ? 7 : screenWidth < 400 ? 9 : 13,
+    paddingVertical: screenWidth < 350 ? 8 : screenWidth < 400 ? 10 : 12,
+    paddingHorizontal: screenWidth < 350 ? 8 : screenWidth < 400 ? 10 : 12,
     marginHorizontal: screenWidth < 350 ? 0.5 : screenWidth < 400 ? 0.5 : 3,
-    minHeight: screenWidth < 350 ? 37 : screenWidth < 400 ? 43 : 49,
+    minHeight: screenWidth < 350 ? 32 : screenWidth < 400 ? 38 : 44,
   },
   navLabel: {
     fontSize: 12,
     color: "#666",
     textAlign: "center",
-    minWidth: screenWidth < 350 ? 22 : screenWidth < 400 ? 25 : 37,
+    minWidth: screenWidth < 350 ? 40 : screenWidth < 400 ? 65 : 60,
+    flexShrink: 0,
   },
   activeNavLabel: {
     color: "#000000",
     fontWeight: "600",
+    flexShrink: 0,
   },
   androidNavBar: {
     position: "absolute",
