@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../src/navigation";
@@ -152,7 +153,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingBottom: 200,
+    paddingBottom: Platform.select({ ios: 200, android: 220 }) as number,
   },
   profileHeader: {
     backgroundColor: "#E3F2FD",
@@ -244,6 +245,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   bottomSpacing: {
-    height: 100,
+    height: Platform.select({ ios: 100, android: 120 }) as number,
   },
 });

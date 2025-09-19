@@ -1,45 +1,26 @@
 import { Stack, useRouter } from "expo-router";
 import "../src/i18n";
 import { View } from "react-native";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { NavigationProvider } from "../src/navigation";
 import { AuthProvider, useAuthContext } from "../src/contexts/authContext";
-import { hasSeenOnboarding } from "../src/utils/onboardingUtils";
 
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
   const { isAuthenticated, loading } = useAuthContext();
   const router = useRouter();
+  const hasRedirectedRef = useRef(false);
 
   useEffect(() => {
     const redirect = async () => {
-      if (loading) return;
+      if (loading || hasRedirectedRef.current) return;
 
-      try {
-        // Check if user has seen onboarding
-        const userHasSeenOnboarding = await hasSeenOnboarding();
-
-        // If user hasn't seen onboarding, show it first
-        if (!userHasSeenOnboarding) {
-          console.log("First time user - showing onboarding");
-          router.replace("/onboarding" as any);
-          return;
-        }
-
-        // If user has seen onboarding, proceed with normal auth flow
-        if (isAuthenticated) {
-          router.replace("/forum");
-        } else {
-          router.replace("/userLogin");
-        }
-      } catch (error) {
-        console.error("Error checking onboarding status:", error);
-        // If there's an error, default to showing onboarding
-        router.replace("/onboarding" as any);
-      }
+      // Always show onboarding first
+      router.replace("/onboarding" as any);
+      hasRedirectedRef.current = true;
     };
 
     redirect();

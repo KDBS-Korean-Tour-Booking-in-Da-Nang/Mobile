@@ -34,6 +34,10 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const iconSize = isVerySmallScreen ? 19 : isSmallScreen ? 19 : 23;
   const fontSize = isVerySmallScreen ? 9 : isSmallScreen ? 10 : 12;
   const navItemPadding = isVerySmallScreen ? 2 : isSmallScreen ? 2 : 4;
+  const activePillPadding = navItemPadding; // keep internal spacing constant
+  const navBarHeight = isVerySmallScreen ? 33 : isSmallScreen ? 37 : 43;
+  const pillBaseMinHeight = isVerySmallScreen ? 32 : isSmallScreen ? 38 : 44;
+  const pillActiveMinHeight = pillBaseMinHeight + 3; // increase visual height by ~3px
 
   const navItems = [
     {
@@ -93,7 +97,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
     <>
       <Animated.View style={containerStyle}>
         <SafeAreaView>
-          <View style={styles.navigation}>
+          <View style={[styles.navigation, { height: navBarHeight }]}>
             {navItems.map((item) => {
               const isActive = currentRoute === item.key;
               return (
@@ -108,7 +112,12 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
                     style={[
                       isActive ? styles.activeNavItem : {},
                       {
-                        paddingVertical: navItemPadding,
+                        paddingVertical: isActive
+                          ? activePillPadding
+                          : navItemPadding,
+                        minHeight: isActive
+                          ? pillActiveMinHeight
+                          : pillBaseMinHeight,
                         alignItems: "center",
                         justifyContent: "center",
                       },
@@ -169,7 +178,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 2,
     paddingHorizontal: screenWidth < 350 ? 4 : screenWidth < 400 ? 6 : 16,
-    height: screenWidth < 350 ? 30 : screenWidth < 400 ? 34 : 40,
     minHeight: 40,
   },
   navItem: {
@@ -187,10 +195,7 @@ const styles = StyleSheet.create({
   activeNavItem: {
     backgroundColor: "#a1d3ff",
     borderRadius: 12,
-    paddingVertical: screenWidth < 350 ? 8 : screenWidth < 400 ? 10 : 12,
-    paddingHorizontal: screenWidth < 350 ? 8 : screenWidth < 400 ? 10 : 12,
-    marginHorizontal: screenWidth < 350 ? 0.5 : screenWidth < 400 ? 0.5 : 3,
-    minHeight: screenWidth < 350 ? 32 : screenWidth < 400 ? 38 : 44,
+    paddingHorizontal: 6,
   },
   navLabel: {
     fontSize: 12,

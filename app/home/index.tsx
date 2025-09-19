@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../src/navigation";
@@ -283,7 +284,11 @@ export default function Home() {
             style={styles.toursContainer}
           >
             {featuredTours.map((tour) => (
-              <TouchableOpacity key={tour.id} style={styles.tourCard}>
+              <TouchableOpacity
+                key={tour.id}
+                style={styles.tourCard}
+                onPress={() => navigate("/tour")}
+              >
                 <Image source={{ uri: tour.image }} style={styles.tourImage} />
                 <View style={styles.durationBadge}>
                   <Text style={styles.durationText}>3N2D</Text>
@@ -377,6 +382,7 @@ export default function Home() {
             ))}
           </ScrollView>
         </View>
+        {Platform.OS === "android" && <View style={styles.bottomSpacing} />}
       </View>
     </ScrollableLayout>
   );
@@ -387,9 +393,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8f9fa",
   },
+  bottomSpacing: {
+    height: Platform.select({ ios: 0, android: 100 }) as number,
+  },
   topHeader: {
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: 30,
     paddingBottom: 12,
     flexDirection: "row",
     justifyContent: "space-between",

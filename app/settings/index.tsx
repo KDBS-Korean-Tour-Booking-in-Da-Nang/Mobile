@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../src/navigation";
@@ -206,11 +207,11 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   bottomSpacing: {
-    height: 100,
+    height: Platform.select({ ios: 100, android: 120 }) as number,
   },
   signOutContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingBottom: Platform.select({ ios: 100, android: 140 }) as number,
     paddingTop: 20,
   },
   signOutButton: {

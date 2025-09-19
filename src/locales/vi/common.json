@@ -277,5 +277,39 @@
     "cannotCreateUpdate": "Không thể tạo/cập nhật bài viết",
     "success": "Bài viết đã được đăng thành công!",
     "error": "Lỗi đăng bài. Vui lòng thử lại."
+  },
+  "tour": {
+    "detail": {
+      "description": "Mô tả",
+      "amount": "Số lượng",
+      "adult": "Người lớn",
+      "children": "Trẻ em",
+      "baby": "Em bé",
+      "destination": "Điểm đến và Lịch trình",
+      "bookingNow": "Đặt tour ngay"
+    },
+    "booking": {
+      "title": "Đặt tour",
+      "contactInfo": "Thông tin liên hệ",
+      "usePersonalInfo": "Sử dụng thông tin cá nhân",
+      "fullName": "Họ tên",
+      "address": "Địa chỉ",
+      "phoneNumber": "Số điện thoại",
+      "email": "Email",
+      "pickUpPoint": "Điểm đón",
+      "note": "Ghi chú",
+      "bookingInfo": "Thông tin đặt tour",
+      "departureDate": "Ngày khởi hành",
+      "totalGuests": "Tổng số khách",
+      "adult": "Người lớn",
+      "children": "Trẻ em",
+      "baby": "Em bé",
+      "atLeastOneAdult": "Ít nhất 1 người lớn",
+      "total": "Tổng cộng",
+      "bookingNow": "Đặt tour ngay",
+      "updateInfoHint": "Bạn hãy cập nhật thông tin để tiện lợi cho lần sau nhé",
+      "dob": "Ngày sinh",
+      "fullname": "Họ tên"
+    }
   }
 }

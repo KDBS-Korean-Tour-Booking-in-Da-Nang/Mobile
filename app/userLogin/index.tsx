@@ -21,7 +21,7 @@ import { spacing } from "../../src/constants/theme";
 const { width } = Dimensions.get("window");
 
 export default function UserLogin() {
-  const { navigate } = useNavigation();
+  const { navigate, replace } = useNavigation();
   const { login, checkAuthStatus } = useAuthContext();
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
@@ -39,6 +39,8 @@ export default function UserLogin() {
     try {
       await login(email.trim(), password, "USER");
       await checkAuthStatus();
+      // Navigate to main app after successful login
+      replace("/home");
     } catch (error: any) {
       console.error("Login error:", error);
       Alert.alert(

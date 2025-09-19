@@ -20,7 +20,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   const getCurrentRoute = () => {
     if (pathname === "/home") return "home";
     if (pathname === "/forum") return "forum";
-    if (pathname === "/tour") return "tour";
+    if (pathname === "/tour" || pathname === "/buyingTour") return "tour";
     if (pathname === "/article") return "article";
     if (pathname === "/userProfile") return "user";
     return "home";
