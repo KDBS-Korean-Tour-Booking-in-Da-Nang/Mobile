@@ -127,6 +127,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await AsyncStorage.removeItem("authToken");
       await AsyncStorage.removeItem("userData");
       await AsyncStorage.removeItem("hasSeenOnboarding");
+      await AsyncStorage.removeItem("lastRoute");
       
       // Clear any other user-related data
       try {
@@ -134,6 +135,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           "authToken",
           "userData", 
           "hasSeenOnboarding",
+          "lastRoute",
           "userPreferences",
           "lastLoginTime"
         ]);

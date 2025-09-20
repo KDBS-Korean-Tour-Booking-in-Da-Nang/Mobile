@@ -77,11 +77,11 @@ export default function Onboarding() {
       await markOnboardingCompleted();
 
       // Navigate to login screen
-      navigate("/userLogin");
+      navigate("/auth/login/userLogin");
     } catch (error) {
       console.error("Error saving onboarding status:", error);
       // Still navigate even if saving fails
-      navigate("/userLogin");
+      navigate("/auth/login/userLogin");
     }
   };
 

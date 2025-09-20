@@ -176,13 +176,6 @@
     "article": "Article",
     "profile": "Profile"
   },
-  "common": {
-    "seeAll": "See all",
-    "search": "Search",
-    "welcome": "Welcome",
-    "hotTopic": "Hot Topic",
-    "article": "Article"
-  },
   "onboarding": {
     "title1": "Plan Your Trip",
     "desc1": "Create your dream trip with ease. Choose a destination, find the perfect place to stay, and create an itinerary that suits your preferences.",
@@ -277,5 +270,123 @@
     "cannotCreateUpdate": "Cannot create/update post",
     "success": "Post published successfully!",
     "error": "Post error. Please try again."
+  },
+  "tour": {
+    "loading": "Loading...",
+    "detail": {
+      "name": "Tour Name",
+      "departurePoint": "Departure Point",
+      "type": "Tour Type",
+      "duration": "Duration",
+      "vehicle": "Vehicle",
+      "description": "Description",
+      "amount": "Amount",
+      "adult": "Adult",
+      "children": "Children",
+      "baby": "Baby",
+      "destination": "Destination",
+      "destinations": "Destinations"
+    },
+    "types": {
+      "DOMESTIC": "Domestic",
+      "INTERNATIONAL": "International",
+      "openTrip": "Open Trip",
+      "Domestic": "Domestic",
+      "International": "International"
+    },
+    "vehicles": {
+      "BUS": "Tour Bus",
+      "CAR": "Car",
+      "MOTORBIKE": "Motorbike",
+      "car": "Car",
+      "Tour Bus": "Tour Bus",
+      "Car": "Car",
+      "Motorbike": "Motorbike"
+    },
+    "meta": {
+      "rating": "Rating",
+      "type": "Type",
+      "estimate": "Estimate",
+      "vehicle": "Vehicle",
+      "days": "days"
+    },
+    "content": {
+      "title": "Nui Phu Si",
+      "location": "Da Nang",
+      "description": "Mount Semeru or Mount Meru is a cone volcano in East Java, Indonesia. Mount Semeru is the highest mountain on the island of Java, with its peak Mahameru, 3,676 meters above sea level."
+    },
+    "booking": {
+      "contactInfo": "Contact Information",
+      "usePersonalInfo": "Use personal information",
+      "fullName": "Full name",
+      "address": "Address",
+      "phoneNumber": "Phone number",
+      "email": "Email",
+      "pickUpPoint": "Pick-up point",
+      "note": "Note",
+      "bookingInfo": "Booking Information",
+      "departureDate": "Departure date",
+      "totalGuests": "Total guests",
+      "adult": "Adult",
+      "children": "Children",
+      "baby": "Baby",
+      "atLeastOneAdult": "At least 1 adult",
+      "total": "Total",
+      "bookingNow": "Book Now",
+      "fullname": "Full name",
+      "gender": "Gender",
+      "selectGender": "Gender",
+      "male": "Male",
+      "female": "Female",
+      "nationality": "Nationality",
+      "selectNationality": "Nationality",
+      "idNumber": "ID/Passport Number",
+      "dateOfBirth": "Date of Birth",
+      "updateInfoHint": "Update your profile to auto-fill this field",
+      "adultCount": "Adults",
+      "childrenCount": "Children",
+      "babyCount": "Babies",
+      "errors": {
+        "adultMin": "At least 1 adult is required",
+        "fullNameRequired": "Full name is required",
+        "phoneInvalid": "Invalid phone number",
+        "emailInvalid": "Invalid email address",
+        "loginRequired": "Please login to book a tour",
+        "bookingFailed": "Failed to book tour. Please try again",
+        "paymentFailed": "Failed to create payment. Please try again"
+      },
+      "success": "Tour booked successfully!"
+    },
+    "errors": {
+      "notFound": "No tours found",
+      "missingData": "Missing tour or booking data",
+      "bookingFailed": "Booking failed. Please try again.",
+      "loadFailed": "Failed to load tours. Please try again.",
+      "tourNotFound": "Tour not found"
+    },
+    "confirm": {
+      "tourInfo": "Tour Information",
+      "contactInfo": "Contact Information",
+      "bookingInfo": "Booking Information",
+      "priceSummary": "Price Summary",
+      "total": "Total",
+      "confirmBooking": "Confirm Booking",
+      "success": "Success",
+      "bookingConfirmed": "Your booking has been confirmed successfully!",
+      "guestDetails": "Guest Details",
+      "paymentRedirect": "Payment Redirect",
+      "paymentSuccess": "Payment Successful",
+      "paymentFailed": "Payment Failed"
+    }
+  },
+  "common": {
+    "error": "Error",
+    "success": "Success",
+    "retry": "Retry",
+    "goBack": "Go Back",
+    "ok": "OK",
+    "hotTopic": "Hot Topics",
+    "seeAll": "See All",
+    "article": "Articles"
   }
 }

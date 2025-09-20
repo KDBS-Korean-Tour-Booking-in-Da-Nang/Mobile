@@ -1,30 +1,120 @@
-import React from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   Image,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import MainLayout from "../../src/components/MainLayout";
-import { typography } from "../../src/constants/theme";
 import { useNavigation } from "../../src/navigation";
+import { useLocalSearchParams } from "expo-router";
 import BookingButton from "../../src/components/BookingButton";
 import { useTranslation } from "react-i18next";
+import { tourService } from "../../src/services/tourService";
+import { TourResponse } from "../../src/types/tour";
+import styles from "./styles";
 
 export default function TourDetail() {
   const { goBack, navigate } = useNavigation();
   const { t } = useTranslation();
+  const params = useLocalSearchParams();
+  const tourId = params.id ? Number(params.id) : 1; // Default to tour ID 1
+
+  const [tour, setTour] = useState<TourResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Navigation scroll effects
+  const [isNavVisible, setIsNavVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const scrollThreshold = 50;
+
+  // Load tour data
+  useEffect(() => {
+    const loadTour = async () => {
+      try {
+        setLoading(true);
+        const tourData = await tourService.getTourById(tourId);
+        setTour(tourData);
+      } catch (error) {
+        console.error("Error loading tour:", error);
+        Alert.alert(t("common.error"), t("tour.errors.loadFailed"));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTour();
+  }, [tourId, t]);
+
+  // Handle scroll for navigation effects - hide when scrolling down, show when scrolling up
+  const handleScroll = useCallback((event: any) => {
+    const currentScrollY = event.nativeEvent.contentOffset.y;
+    const scrollDifference = Math.abs(currentScrollY - lastScrollY.current);
+
+    if (scrollDifference > scrollThreshold) {
+      if (currentScrollY > lastScrollY.current) {
+        // Scrolling down - hide navbar
+        setIsNavVisible(false);
+      } else {
+        // Scrolling up - show navbar
+        setIsNavVisible(true);
+      }
+      lastScrollY.current = currentScrollY;
+    }
+  }, []);
+
+  const handleBooking = () => {
+    if (tour) {
+      navigate(`/tour/buying?id=${tour.id}`);
+    }
+  };
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <Text style={styles.loadingText}>{t("tour.loading")}</Text>
+        </View>
+      </MainLayout>
+    );
+  }
+
+  if (!tour) {
+    return (
+      <MainLayout>
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color="#ff6b6b" />
+          <Text style={styles.errorTitle}>{t("tour.errors.notFound")}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => navigate("/home")}
+          >
+            <Text style={styles.retryButtonText}>{t("common.retry")}</Text>
+          </TouchableOpacity>
+        </View>
+      </MainLayout>
+    );
+  }
 
   return (
-    <MainLayout>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <MainLayout isNavVisible={isNavVisible}>
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >
         <View style={styles.imageWrapper}>
           <Image
             source={{
-              uri: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
+              uri:
+                tour.tourImgPath ||
+                "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
             }}
             style={styles.heroImage}
           />
@@ -35,23 +125,25 @@ export default function TourDetail() {
           </TouchableOpacity>
           {/* Title and location overlay inside image */}
           <View style={styles.imageOverlay}>
-            <Text style={styles.overlayTitle}>Nui Phu Si</Text>
+            <Text style={styles.overlayTitle}>{tour.tourName}</Text>
             <View style={styles.overlayRow}>
               <Ionicons name="location-outline" size={14} color="#fff" />
-              <Text style={styles.overlayLocation}>Da Nang</Text>
+              <Text style={styles.overlayLocation}>
+                {tour.tourDeparturePoint}
+              </Text>
             </View>
           </View>
         </View>
 
         <View style={styles.content}>
-          {/* Title and location moved into image overlay */}
-
           {/* Meta grid: RATING | TYPE | ESTIMATE | VEHICLE */}
           <View style={styles.metaBox}>
             <View style={styles.metaRowContent}>
               {/* Rating */}
               <View style={styles.metaCol}>
-                <Text style={styles.metaLabelCaps}>RATING</Text>
+                <Text style={styles.metaLabelCaps}>
+                  {t("tour.meta.rating")}
+                </Text>
                 <View style={styles.metaValueRow}>
                   <Ionicons name="star" size={16} color="#FFD700" />
                   <Text style={styles.metaValue}>4.5</Text>
@@ -60,20 +152,30 @@ export default function TourDetail() {
               <View style={styles.metaDivider} />
               {/* Type */}
               <View style={styles.metaCol}>
-                <Text style={styles.metaLabelCaps}>TYPE</Text>
-                <Text style={styles.metaValue}>Open Trip</Text>
+                <Text style={styles.metaLabelCaps}>{t("tour.meta.type")}</Text>
+                <Text style={styles.metaValue}>
+                  {tour.tourType || t("tour.types.openTrip")}
+                </Text>
               </View>
               <View style={styles.metaDivider} />
               {/* Estimate */}
               <View style={styles.metaCol}>
-                <Text style={styles.metaLabelCaps}>ESTIMATE</Text>
-                <Text style={styles.metaValue}>3D 2N</Text>
+                <Text style={styles.metaLabelCaps}>
+                  {t("tour.meta.estimate")}
+                </Text>
+                <Text style={styles.metaValue}>
+                  {tour.tourDuration || "3D 2N"}
+                </Text>
               </View>
               <View style={styles.metaDivider} />
               {/* Vehicle */}
               <View style={styles.metaCol}>
-                <Text style={styles.metaLabelCaps}>VEHICLE</Text>
-                <Text style={styles.metaValue}>Car</Text>
+                <Text style={styles.metaLabelCaps}>
+                  {t("tour.meta.vehicle")}
+                </Text>
+                <Text style={styles.metaValue}>
+                  {tour.tourVehicle || t("tour.vehicles.car")}
+                </Text>
               </View>
             </View>
           </View>
@@ -82,51 +184,71 @@ export default function TourDetail() {
             {t("tour.detail.description")}
           </Text>
           <Text style={styles.paragraph}>
-            Mount Semeru or Mount Meru is a cone volcano in East Java,
-            Indonesia. Mount Semeru is the highest mountain on the island of
-            Java, with its peak Mahameru, 3,676 meters above sea level.
+            {tour.tourDescription || t("tour.content.description")}
           </Text>
 
           <View style={styles.card}>
             <View style={styles.infoGrid}>
               <View style={styles.infoCol}>
                 <Text style={styles.infoLabel}>{t("tour.detail.amount")}</Text>
-                <Text style={styles.infoValue}>20</Text>
+                <Text style={styles.infoValue}>{tour.amount || 20}</Text>
               </View>
               <View style={styles.infoDivider} />
               <View style={styles.infoCol}>
                 <Text style={styles.infoLabel}>{t("tour.detail.adult")}</Text>
-                <Text style={styles.infoValue}>3,200,000 Đ</Text>
+                <Text style={styles.infoValue}>
+                  {tour.adultPrice
+                    ? `${tour.adultPrice.toLocaleString()} Đ`
+                    : "3,200,000 Đ"}
+                </Text>
               </View>
               <View style={styles.infoDivider} />
               <View style={styles.infoCol}>
                 <Text style={styles.infoLabel}>
                   {t("tour.detail.children")}
                 </Text>
-                <Text style={styles.infoValue}>1,800,000 Đ</Text>
+                <Text style={styles.infoValue}>
+                  {tour.childrenPrice
+                    ? `${tour.childrenPrice.toLocaleString()} Đ`
+                    : "1,800,000 Đ"}
+                </Text>
               </View>
               <View style={styles.infoDivider} />
               <View style={styles.infoCol}>
                 <Text style={styles.infoLabel}>{t("tour.detail.baby")}</Text>
-                <Text style={styles.infoValue}>900,000 Đ</Text>
+                <Text style={styles.infoValue}>
+                  {tour.babyPrice
+                    ? `${tour.babyPrice.toLocaleString()} Đ`
+                    : "900,000 Đ"}
+                </Text>
               </View>
             </View>
           </View>
 
-          {/* Itinerary Blocks */}
-          {[1, 2, 3].map((idx) => (
-            <View key={idx} style={styles.sectionBlock}>
-              <View style={styles.blockBox} />
-              <View style={styles.blockHeader}>
-                <Text style={styles.blockHeaderText}>
-                  {t("tour.detail.destination")}
-                </Text>
-              </View>
+          {/* Tour Content/Destinations */}
+          {tour.contents && tour.contents.length > 0 && (
+            <View style={styles.sectionBlock}>
+              <Text style={styles.sectionTitle}>
+                {t("tour.detail.destinations")}
+              </Text>
+              {tour.contents.map((content, idx) => (
+                <View key={idx} style={styles.contentBlock}>
+                  <View style={styles.contentBox} />
+                  <View style={styles.contentHeader}>
+                    <Text style={styles.contentTitle}>
+                      {content.tourContentTitle}
+                    </Text>
+                    <Text style={styles.contentDescription}>
+                      {content.tourContentDescription}
+                    </Text>
+                  </View>
+                </View>
+              ))}
             </View>
-          ))}
+          )}
 
           {/* Booking button appears at the very end of content */}
-          <BookingButton onPress={() => navigate("/buyingTour")} />
+          <BookingButton onPress={handleBooking} />
           {/* Spacer after button so it's fully visible above system/nav bars when scrolled to end */}
           <View style={styles.bottomSpace} />
         </View>
@@ -134,152 +256,3 @@ export default function TourDetail() {
     </MainLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8f9fa" },
-  imageWrapper: {
-    position: "relative",
-    margin: 12,
-    marginTop: 30,
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  heroImage: { width: "100%", height: 260, borderRadius: 16 },
-  backBtn: { position: "absolute", top: 12, left: 12 },
-  backCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  imageOverlay: {
-    position: "absolute",
-    left: 16,
-    right: 16,
-    bottom: 16,
-  },
-  overlayTitle: {
-    fontSize: typography.h5.fontSize,
-    fontWeight: "600",
-    color: "#fff",
-    textShadowColor: "rgba(0,0,0,0.35)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  overlayRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 6,
-  },
-  overlayLocation: { fontSize: typography.body2.fontSize, color: "#fff" },
-  content: { paddingHorizontal: 16, paddingBottom: 24 },
-  metaBox: {
-    borderTopWidth: 2,
-    borderBottomWidth: 2,
-    borderColor: "#eee",
-    paddingVertical: 12,
-    marginBottom: 24,
-  },
-  metaRowContent: {
-    flexDirection: "row",
-    alignItems: "stretch",
-    justifyContent: "space-between",
-    paddingHorizontal: 8,
-  },
-  metaCol: { flex: 1, paddingHorizontal: 8, alignItems: "center" },
-  metaDivider: { width: 2, backgroundColor: "#e0e0e0", alignSelf: "stretch" },
-  metaLabelCaps: {
-    fontSize: typography.body2.fontSize,
-    color: "#6c757d",
-    letterSpacing: 1,
-    marginBottom: 6,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  metaValueRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-  },
-  metaValue: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#111",
-    textAlign: "center",
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111",
-    marginBottom: 16,
-  },
-  paragraph: { fontSize: 13, lineHeight: 18, color: "#555", marginBottom: 24 },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 24,
-    paddingVertical: 24,
-    paddingHorizontal: 16,
-    borderWidth: 2,
-    borderColor: "#cfcfcf",
-    marginBottom: 24,
-  },
-  infoGrid: {
-    flexDirection: "row",
-    alignItems: "stretch",
-    justifyContent: "space-between",
-  },
-  infoCol: { flex: 1, alignItems: "center" },
-  infoDivider: {
-    width: 2,
-    backgroundColor: "#cfcfcf",
-    borderRadius: 1,
-    marginHorizontal: 6,
-  },
-  infoLabel: {
-    fontSize: typography.caption.fontSize,
-    color: "#9e9e9e",
-    letterSpacing: 1,
-    marginBottom: 12,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  infoValue: {
-    fontSize: 15,
-    lineHeight: 24,
-    color: "#111",
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  sectionBlock: {
-    marginTop: 36,
-    marginBottom: 24,
-    paddingHorizontal: 8,
-    position: "relative",
-  },
-  blockHeader: {
-    position: "absolute",
-    top: -22,
-    left: 7,
-    right: 7,
-    height: 44,
-    backgroundColor: "#b9ffcc",
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: "#b0e8c0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  blockHeaderText: { fontSize: 16, fontWeight: "700", color: "#111" },
-  blockBox: {
-    height: 260,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#d9d9d9",
-  },
-  bottomSpace: { height: 140 },
-});

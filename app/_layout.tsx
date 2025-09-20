@@ -4,6 +4,7 @@ import { View } from "react-native";
 import { useEffect, useRef } from "react";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NavigationProvider } from "../src/navigation";
 import { AuthProvider, useAuthContext } from "../src/contexts/authContext";
 
@@ -18,8 +19,27 @@ function RootLayoutNav() {
     const redirect = async () => {
       if (loading || hasRedirectedRef.current) return;
 
-      // Always show onboarding first
-      router.replace("/onboarding" as any);
+      // Check if user has seen onboarding
+      const hasSeenOnboarding = await AsyncStorage.getItem("hasSeenOnboarding");
+
+      // Try to restore last route if user was authenticated
+      const lastRoute = await AsyncStorage.getItem("lastRoute");
+
+      if (!hasSeenOnboarding) {
+        // First time user - show onboarding
+        router.replace("/onboarding" as any);
+      } else if (!isAuthenticated) {
+        // User has seen onboarding but not logged in - go to auth
+        router.replace("/auth" as any);
+      } else {
+        // User is authenticated - try to restore last route or go to home
+        if (lastRoute && lastRoute !== "/onboarding" && lastRoute !== "/auth") {
+          router.replace(lastRoute as any);
+        } else {
+          router.replace("/home" as any);
+        }
+      }
+
       hasRedirectedRef.current = true;
     };
 
@@ -30,19 +50,9 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="home" />
       <Stack.Screen name="onboarding" />
-      <Stack.Screen name="loginSelection" />
-      <Stack.Screen name="userLogin" />
-      <Stack.Screen name="adminLogin" />
-      <Stack.Screen name="signUp" />
+      <Stack.Screen name="auth" />
       <Stack.Screen name="forum" />
-      <Stack.Screen name="verifyEmail" />
-      <Stack.Screen name="resetPassword" />
-      <Stack.Screen name="businessInfo" />
-      <Stack.Screen name="forgot" />
-      <Stack.Screen name="createPost" options={{ presentation: "modal" }} />
-      <Stack.Screen name="userProfile" />
-      <Stack.Screen name="editProfile" />
-      <Stack.Screen name="settings" />
+      <Stack.Screen name="tour" />
       <Stack.Screen name="(tabs)" />
     </Stack>
   );

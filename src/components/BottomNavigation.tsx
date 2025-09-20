@@ -59,7 +59,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
       label: t("nav.tour"),
       icon: "map-outline",
       activeIcon: "map",
-      route: "/tour",
+      route: "/tour/list",
     },
     {
       key: "article",

@@ -17,6 +17,7 @@ interface NavigationContextType {
   goToResetPassword: (params?: string) => void;
   goToBusinessInfo: (params?: string) => void;
   goToForgotPassword: () => void;
+  goToSettings: () => void;
   replaceToHome: () => void;
   replaceToForum: () => void;
   replaceToLoginSelection: () => void;
@@ -49,22 +50,23 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({
   };
 
   const goToHome = () => navigate("/home");
-  const goToLoginSelection = () => navigate("/loginSelection");
-  const goToUserLogin = () => navigate("/userLogin");
-  const goToAdminLogin = () => navigate("/adminLogin");
-  const goToSignUp = () => navigate("/signUp");
+  const goToLoginSelection = () => navigate("/auth/login/userLogin");
+  const goToUserLogin = () => navigate("/auth/login/userLogin");
+  const goToAdminLogin = () => navigate("/auth/login/adminLogin");
+  const goToSignUp = () => navigate("/auth/signup");
   const goToForum = (postId?: number) =>
     navigate(`/forum${postId ? `?postId=${postId}` : ""}`);
   const goToVerifyEmail = (params?: string) =>
-    navigate(`/verifyEmail${params ? `?${params}` : ""}`);
+    navigate(`/auth/verify${params ? `?${params}` : ""}`);
   const goToResetPassword = (params?: string) =>
-    navigate(`/resetPassword${params ? `?${params}` : ""}`);
+    navigate(`/auth/reset${params ? `?${params}` : ""}`);
   const goToBusinessInfo = (params?: string) =>
-    navigate(`/businessInfo${params ? `?${params}` : ""}`);
-  const goToForgotPassword = () => navigate("/forgot");
+    navigate(`/auth/profile/businessInfo${params ? `?${params}` : ""}`);
+  const goToForgotPassword = () => navigate("/auth/forgot");
+  const goToSettings = () => navigate("/home/settings");
   const replaceToHome = () => replace("/home");
   const replaceToForum = () => replace("/forum");
-  const replaceToLoginSelection = () => replace("/loginSelection");
+  const replaceToLoginSelection = () => replace("/auth/login/userLogin");
 
   const value: NavigationContextType = {
     navigate,
@@ -80,6 +82,7 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({
     goToResetPassword,
     goToBusinessInfo,
     goToForgotPassword,
+    goToSettings,
     replaceToHome,
     replaceToForum,
     replaceToLoginSelection,
@@ -105,66 +108,65 @@ export const useNavigation = (): NavigationContextType => {
 export const USER_ROUTES = {
   GUEST: [
     "/home",
-    "/loginSelection",
-    "/userLogin",
-    "/adminLogin",
-    "/signUp",
-    "/verifyEmail",
-    "/resetPassword",
-    "/businessInfo",
-    "/forgot",
+    "/auth/login/userLogin",
+    "/auth/login/adminLogin",
+    "/auth/signup",
+    "/auth/verify",
+    "/auth/reset",
+    "/auth/profile/businessInfo",
+    "/auth/forgot",
   ],
   USER: [
     "/home",
+    "/home/settings",
     "/forum",
-    "/userProfile",
-    "/loginSelection",
-    "/userLogin",
-    "/adminLogin",
-    "/signUp",
-    "/verifyEmail",
-    "/resetPassword",
-    "/businessInfo",
-    "/forgot",
+    "/auth/profile/userProfile",
+    "/auth/login/userLogin",
+    "/auth/login/adminLogin",
+    "/auth/signup",
+    "/auth/verify",
+    "/auth/reset",
+    "/auth/profile/businessInfo",
+    "/auth/forgot",
   ],
   BUSINESS: [
     "/home",
+    "/home/settings",
     "/forum",
-    "/userProfile",
-    "/loginSelection",
-    "/userLogin",
-    "/adminLogin",
-    "/signUp",
-    "/verifyEmail",
-    "/resetPassword",
-    "/businessInfo",
-    "/forgot",
+    "/auth/profile/userProfile",
+    "/auth/login/userLogin",
+    "/auth/login/adminLogin",
+    "/auth/signup",
+    "/auth/verify",
+    "/auth/reset",
+    "/auth/profile/businessInfo",
+    "/auth/forgot",
   ],
   STAFF: [
     "/home",
+    "/home/settings",
     "/forum",
-    "/userProfile",
-    "/loginSelection",
-    "/userLogin",
-    "/adminLogin",
-    "/signUp",
-    "/verifyEmail",
-    "/resetPassword",
-    "/businessInfo",
-    "/forgot",
+    "/auth/profile/userProfile",
+    "/auth/login/userLogin",
+    "/auth/login/adminLogin",
+    "/auth/signup",
+    "/auth/verify",
+    "/auth/reset",
+    "/auth/profile/businessInfo",
+    "/auth/forgot",
   ],
   ADMIN: [
     "/home",
+    "/home/settings",
     "/forum",
-    "/userProfile",
-    "/loginSelection",
-    "/userLogin",
-    "/adminLogin",
-    "/signUp",
-    "/verifyEmail",
-    "/resetPassword",
-    "/businessInfo",
-    "/forgot",
+    "/auth/profile/userProfile",
+    "/auth/login/userLogin",
+    "/auth/login/adminLogin",
+    "/auth/signup",
+    "/auth/verify",
+    "/auth/reset",
+    "/auth/profile/businessInfo",
+    "/auth/forgot",
   ],
 };
 
@@ -209,15 +211,15 @@ export const useAuthNavigation = () => {
   const { navigate, replace } = useNavigation();
 
   return {
-    goToLogin: () => navigate("/loginSelection"),
-    goToSignUp: () => navigate("/signUp"),
-    goToForgotPassword: () => navigate("/forgot"),
+    goToLogin: () => navigate("/auth/login/userLogin"),
+    goToSignUp: () => navigate("/auth/signup"),
+    goToForgotPassword: () => navigate("/auth/forgot"),
     goToVerifyEmail: (params?: string) =>
-      navigate(`/verifyEmail${params ? `?${params}` : ""}`),
+      navigate(`/auth/verify${params ? `?${params}` : ""}`),
     goToResetPassword: (params?: string) =>
-      navigate(`/resetPassword${params ? `?${params}` : ""}`),
+      navigate(`/auth/reset${params ? `?${params}` : ""}`),
     goToBusinessInfo: (params?: string) =>
-      navigate(`/businessInfo${params ? `?${params}` : ""}`),
+      navigate(`/auth/profile/businessInfo${params ? `?${params}` : ""}`),
     goToForum: (postId?: number) =>
       replace(`/forum${postId ? `?postId=${postId}` : ""}`),
     goToHome: () => replace("/home"),

@@ -176,13 +176,6 @@
     "article": "기사",
     "profile": "개인"
   },
-  "common": {
-    "seeAll": "모두 보기",
-    "search": "검색",
-    "welcome": "환영합니다",
-    "hotTopic": "인기 주제",
-    "article": "기사"
-  },
   "onboarding": {
     "title1": "여행 계획하기",
     "desc1": "쉽게 꿈의 여행을 만들어보세요. 목적지를 선택하고, 완벽한 숙소를 찾고, 당신의 취향에 맞는 여행 일정을 만드세요.",
@@ -277,5 +270,112 @@
     "cannotCreateUpdate": "게시물을 생성/수정할 수 없습니다",
     "success": "게시물이 성공적으로 게시되었습니다!",
     "error": "게시 오류. 다시 시도하세요."
+  },
+  "tour": {
+    "detail": {
+      "description": "설명",
+      "amount": "수량",
+      "adult": "성인",
+      "children": "어린이",
+      "baby": "유아",
+      "destination": "목적지"
+    },
+    "meta": {
+      "rating": "평점",
+      "type": "유형",
+      "estimate": "예상",
+      "vehicle": "교통수단"
+    },
+    "types": {
+      "DOMESTIC": "국내",
+      "INTERNATIONAL": "국제",
+      "openTrip": "오픈 트립",
+      "국내": "국내",
+      "국제": "국제"
+    },
+    "vehicles": {
+      "BUS": "관광버스",
+      "CAR": "자동차",
+      "MOTORBIKE": "오토바이",
+      "car": "자동차",
+      "관광버스": "관광버스",
+      "자동차": "자동차",
+      "오토바이": "오토바이"
+    },
+    "content": {
+      "title": "누이 푸 시",
+      "location": "다낭",
+      "description": "세메루 산 또는 메루 산은 인도네시아 동자바의 원뿔형 화산입니다. 세메루 산은 자바 섬에서 가장 높은 산으로, 해발 3,676미터의 마하메루 봉우리를 가지고 있습니다."
+    },
+    "booking": {
+      "contactInfo": "연락처 정보",
+      "usePersonalInfo": "개인정보 사용",
+      "fullName": "성명",
+      "address": "주소",
+      "phoneNumber": "전화번호",
+      "email": "이메일",
+      "pickUpPoint": "픽업 지점",
+      "note": "메모",
+      "bookingInfo": "예약 정보",
+      "departureDate": "출발일",
+      "totalGuests": "총 인원",
+      "adult": "성인",
+      "children": "어린이",
+      "baby": "유아",
+      "atLeastOneAdult": "최소 1명의 성인",
+      "total": "총계",
+      "bookingNow": "지금 예약",
+      "fullname": "성명",
+      "gender": "성별",
+      "selectGender": "성별",
+      "male": "남성",
+      "female": "여성",
+      "nationality": "국적",
+      "selectNationality": "국적",
+      "idNumber": "신분증/여권번호",
+      "dateOfBirth": "생년월일",
+      "updateInfoHint": "프로필을 업데이트하여 이 필드를 자동으로 채우세요",
+      "adultCount": "성인",
+      "childrenCount": "어린이",
+      "babyCount": "유아",
+      "errors": {
+        "adultMin": "최소 1명의 성인이 필요합니다",
+        "fullNameRequired": "성명이 필요합니다",
+        "phoneInvalid": "유효하지 않은 전화번호",
+        "emailInvalid": "유효하지 않은 이메일 주소"
+      }
+    },
+    "errors": {
+      "notFound": "투어를 찾을 수 없습니다",
+      "missingData": "투어 또는 예약 데이터가 누락되었습니다",
+      "bookingFailed": "예약에 실패했습니다. 다시 시도해주세요.",
+      "loadFailed": "투어를 불러오는데 실패했습니다. 다시 시도해주세요.",
+      "tourNotFound": "투어를 찾을 수 없습니다",
+      "paymentFailed": "결제 생성에 실패했습니다. 다시 시도해주세요."
+    },
+    "confirm": {
+      "tourInfo": "투어 정보",
+      "contactInfo": "연락처 정보",
+      "bookingInfo": "예약 정보",
+      "priceSummary": "가격 요약",
+      "total": "총계",
+      "confirmBooking": "예약 확인",
+      "success": "성공",
+      "bookingConfirmed": "예약이 성공적으로 확인되었습니다!",
+      "guestDetails": "고객 세부정보",
+      "paymentRedirect": "결제 리다이렉트",
+      "paymentSuccess": "결제 성공",
+      "paymentFailed": "결제 실패"
+    }
+  },
+  "common": {
+    "error": "오류",
+    "success": "성공",
+    "retry": "다시 시도",
+    "goBack": "돌아가기",
+    "ok": "확인",
+    "hotTopic": "인기 주제",
+    "seeAll": "모두 보기",
+    "article": "기사"
   }
 }

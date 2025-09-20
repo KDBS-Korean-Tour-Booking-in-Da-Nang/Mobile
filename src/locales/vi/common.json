@@ -176,13 +176,6 @@
     "article": "Bài viết",
     "profile": "Cá nhân"
   },
-  "common": {
-    "seeAll": "Xem tất cả",
-    "search": "Tìm kiếm",
-    "welcome": "Chào mừng",
-    "hotTopic": "Chủ đề nóng",
-    "article": "Bài viết"
-  },
   "onboarding": {
     "title1": "Lên kế hoạch chuyến đi",
     "desc1": "Tạo chuyến đi mơ ước của bạn một cách dễ dàng. Chọn điểm đến, tìm nơi ở hoàn hảo và tạo lịch trình phù hợp với sở thích của bạn.",
@@ -279,14 +272,49 @@
     "error": "Lỗi đăng bài. Vui lòng thử lại."
   },
   "tour": {
+    "loading": "Đang tải...",
     "detail": {
+      "name": "Tên tour",
+      "departurePoint": "Điểm khởi hành",
+      "type": "Loại tour",
+      "duration": "Thời gian",
+      "vehicle": "Phương tiện",
       "description": "Mô tả",
       "amount": "Số lượng",
       "adult": "Người lớn",
       "children": "Trẻ em",
       "baby": "Em bé",
-      "destination": "Điểm đến và Lịch trình",
+      "destination": "Điểm đến",
+      "destinations": "Điểm đến",
       "bookingNow": "Đặt tour ngay"
+    },
+    "types": {
+      "DOMESTIC": "Nội địa",
+      "INTERNATIONAL": "Quốc tế",
+      "openTrip": "Tour mở",
+      "Nội địa": "Nội địa",
+      "Quốc tế": "Quốc tế"
+    },
+    "vehicles": {
+      "BUS": "Xe du lịch",
+      "CAR": "Ô tô",
+      "MOTORBIKE": "Xe máy",
+      "car": "Ô tô",
+      "Xe du lịch": "Xe du lịch",
+      "Ô tô": "Ô tô",
+      "Xe máy": "Xe máy"
+    },
+    "meta": {
+      "rating": "Đánh giá",
+      "type": "Loại",
+      "estimate": "Ước tính",
+      "vehicle": "Phương tiện",
+      "days": "ngày"
+    },
+    "content": {
+      "title": "Núi Phú Sĩ",
+      "location": "Đà Nẵng",
+      "description": "Núi Semeru hay Núi Meru là một ngọn núi lửa hình nón ở Đông Java, Indonesia. Núi Semeru là ngọn núi cao nhất trên đảo Java, với đỉnh Mahameru cao 3,676 mét so với mực nước biển."
     },
     "booking": {
       "title": "Đặt tour",
@@ -309,7 +337,56 @@
       "bookingNow": "Đặt tour ngay",
       "updateInfoHint": "Bạn hãy cập nhật thông tin để tiện lợi cho lần sau nhé",
       "dob": "Ngày sinh",
-      "fullname": "Họ tên"
+      "fullname": "Họ tên",
+      "gender": "Giới tính",
+      "selectGender": "Giới tính",
+      "male": "Nam",
+      "female": "Nữ",
+      "nationality": "Quốc tịch",
+      "selectNationality": "Quốc tịch",
+      "idNumber": "CCCD/Hộ chiếu",
+      "dateOfBirth": "Ngày sinh",
+      "adultCount": "Người lớn",
+      "childrenCount": "Trẻ em",
+      "babyCount": "Em bé",
+      "errors": {
+        "adultMin": "Cần ít nhất 1 người lớn",
+        "fullNameRequired": "Họ tên là bắt buộc",
+        "phoneInvalid": "Số điện thoại không hợp lệ",
+        "emailInvalid": "Địa chỉ email không hợp lệ"
+      }
+    },
+    "errors": {
+      "notFound": "Không tìm thấy tour",
+      "missingData": "Thiếu thông tin tour hoặc đặt tour",
+      "bookingFailed": "Đặt tour thất bại. Vui lòng thử lại.",
+      "loadFailed": "Tải danh sách tour thất bại. Vui lòng thử lại.",
+      "tourNotFound": "Không tìm thấy tour",
+      "paymentFailed": "Tạo thanh toán thất bại. Vui lòng thử lại."
+    },
+    "confirm": {
+      "tourInfo": "Thông tin tour",
+      "contactInfo": "Thông tin liên hệ",
+      "bookingInfo": "Thông tin đặt tour",
+      "priceSummary": "Tóm tắt giá",
+      "total": "Tổng cộng",
+      "confirmBooking": "Xác nhận đặt tour",
+      "success": "Thành công",
+      "bookingConfirmed": "Đặt tour thành công!",
+      "guestDetails": "Chi tiết khách hàng",
+      "paymentRedirect": "Chuyển hướng thanh toán",
+      "paymentSuccess": "Thanh toán thành công",
+      "paymentFailed": "Thanh toán thất bại"
     }
+  },
+  "common": {
+    "error": "Lỗi",
+    "success": "Thành công",
+    "retry": "Thử lại",
+    "goBack": "Quay lại",
+    "ok": "OK",
+    "hotTopic": "Chủ đề nóng",
+    "seeAll": "Xem tất cả",
+    "article": "Bài viết"
   }
 }
