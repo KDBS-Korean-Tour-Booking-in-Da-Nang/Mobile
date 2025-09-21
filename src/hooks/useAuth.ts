@@ -1,26 +1,22 @@
 import { useState, useEffect } from "react";
-import { useRouter } from "expo-router";
-import authService, {
-  LoginRequest,
-  SignupRequest,
-  ForgotPasswordRequest,
-  ResetPasswordRequest,
-} from "../services/authService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "../services/api";
 
+// This hook remains for login form logic
 export const useLogin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, role: string) => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await authService.login({ email, password });
-      return response;
+      // Align with AuthContext and backend contract
+      const response = await api.post("/api/auth/login", { email, password });
+      return response?.data ?? null;
     } catch (err: any) {
       setError(err.message);
-      return null;
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -29,20 +25,54 @@ export const useLogin = () => {
   return { login, loading, error };
 };
 
+// This hook can be used to get the initial auth status without causing dependency cycles
+export const useAuthStatus = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      setLoading(true);
+      try {
+        const token = await AsyncStorage.getItem("authToken");
+        setIsAuthenticated(!!token);
+      } catch (error) {
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkStatus();
+  }, []);
+
+  return { isAuthenticated, loading };
+};
+
+// Other hooks like useSignUp, useForgotPassword can remain here as they are independent
 export const useSignUp = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const signUp = async (email: string, password: string, username: string) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    fullName: string,
+    role: "USER" | "BUSINESS"
+  ) => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await authService.signup({ username, email, password });
-      return response;
+      // Align with Website: use /api/users/register and send username, email, password
+      const response = await api.post("/api/users/register", {
+        username: fullName,
+        email,
+        password,
+      });
+      // Treat any 2xx as success; some backends return a boolean or message
+      return response?.data ?? true;
     } catch (err: any) {
       setError(err.message);
-      return null;
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -51,6 +81,7 @@ export const useSignUp = () => {
   return { signUp, loading, error };
 };
 
+// Forgot password flow hooks
 export const useForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,91 +89,59 @@ export const useForgotPassword = () => {
   const forgotPassword = async (email: string) => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await authService.forgotPassword({ email });
-      return response;
+      await api.post("/api/auth/forgot-password/request", { email });
+      return true;
     } catch (err: any) {
-      setError(err.message);
-      return null;
+      setError(err?.response?.data?.message || err.message || "Request failed");
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  return { forgotPassword, loading, error };
-};
-
-export const useResetPassword = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const verifyForgotOtp = async (email: string, otpCode: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.post(
+        "/api/auth/forgot-password/verify-otp",
+        undefined,
+        {
+          params: { email, otpCode },
+        }
+      );
+      // backend returns { result: boolean }
+      return Boolean(res?.data?.result ?? res?.data);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err.message || "Verify failed");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const resetPassword = async (
     email: string,
-    otp: string,
+    otpCode: string,
     newPassword: string
   ) => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await authService.resetPassword({
+      await api.post("/api/auth/forgot-password/reset", {
         email,
-        otp,
+        otpCode,
         newPassword,
       });
-      return response;
+      return true;
     } catch (err: any) {
-      setError(err.message);
-      return null;
+      setError(err?.response?.data?.message || err.message || "Reset failed");
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  return { resetPassword, loading, error };
-};
-
-export const useAuth = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
-    try {
-      const authenticated = await authService.isAuthenticated();
-      const userData = await authService.getCurrentUser();
-
-      setIsAuthenticated(authenticated);
-      setUser(userData);
-    } catch (error) {
-      console.error("Auth check error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await authService.logout();
-      setIsAuthenticated(false);
-      setUser(null);
-      router.replace("/login");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
-  };
-
-  return {
-    isAuthenticated,
-    user,
-    loading,
-    logout,
-    checkAuthStatus,
-  };
+  return { forgotPassword, verifyForgotOtp, resetPassword, loading, error };
 };

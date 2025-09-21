@@ -1,0 +1,426 @@
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Platform,
+  ActivityIndicator,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "../../src/navigation";
+import { useTranslation } from "react-i18next";
+import { colors } from "../../src/constants/theme";
+import ScrollableLayout from "../../src/components/ScrollableLayout";
+import { useAuthContext } from "../../src/contexts/authContext";
+import {
+  getAllPosts,
+  PostResponse,
+  getReactionSummary,
+} from "../../src/endpoints/forum";
+import { tourService } from "../../src/services/tourService";
+import { TourResponse } from "../../src/types/tour";
+import styles from "./styles";
+
+// width no longer used here; used inside styles.ts
+
+// Language dropdown component
+const LanguageDropdown = ({
+  currentLanguage,
+  onLanguageSelect,
+}: {
+  currentLanguage: "en" | "ko" | "vi";
+  onLanguageSelect: (lang: "en" | "ko" | "vi") => void;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const languages = [
+    {
+      code: "en" as const,
+      name: "English",
+      flag: require("../../assets/images/eng.png"),
+    },
+    {
+      code: "ko" as const,
+      name: "한국어",
+      flag: require("../../assets/images/krn.webp"),
+    },
+    {
+      code: "vi" as const,
+      name: "Việt Nam",
+      flag: require("../../assets/images/vn.jpeg"),
+    },
+  ];
+
+  const currentLang =
+    languages.find((lang) => lang.code === currentLanguage) || languages[0];
+
+  const getLanguageCode = (code: string) => {
+    switch (code) {
+      case "en":
+        return "EN";
+      case "ko":
+        return "KO";
+      case "vi":
+        return "VN";
+      default:
+        return "EN";
+    }
+  };
+
+  return (
+    <View style={styles.languageContainer}>
+      <TouchableOpacity
+        style={styles.langBadge}
+        onPress={() => setIsOpen(!isOpen)}
+      >
+        <Image source={currentLang.flag} style={styles.flagImage} />
+        <Text style={styles.langText}>{getLanguageCode(currentLanguage)}</Text>
+        <Ionicons
+          name={isOpen ? "chevron-up" : "chevron-down"}
+          size={12}
+          color="#212529"
+        />
+      </TouchableOpacity>
+
+      {isOpen && (
+        <View style={styles.dropdown}>
+          {languages.map((lang) => (
+            <TouchableOpacity
+              key={lang.code}
+              style={[
+                styles.dropdownItem,
+                lang.code === currentLanguage && styles.dropdownItemActive,
+              ]}
+              onPress={() => {
+                onLanguageSelect(lang.code);
+                setIsOpen(false);
+              }}
+            >
+              <Image source={lang.flag} style={styles.flagImage} />
+              <Text
+                style={[
+                  styles.dropdownText,
+                  lang.code === currentLanguage && styles.dropdownTextActive,
+                ]}
+              >
+                {lang.name}
+              </Text>
+              <Text
+                style={[
+                  styles.dropdownCode,
+                  lang.code === currentLanguage && styles.dropdownCodeActive,
+                ]}
+              >
+                {getLanguageCode(lang.code)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+};
+
+export default function Home() {
+  const { navigate } = useNavigation();
+  const { t, i18n } = useTranslation();
+  const { user } = useAuthContext();
+  const [hotPosts, setHotPosts] = useState<PostResponse[]>([]);
+  const [featuredTours, setFeaturedTours] = useState<TourResponse[]>([]);
+  const [toursLoading, setToursLoading] = useState(true);
+
+  const [currentLanguage, setCurrentLanguage] = useState<"en" | "ko" | "vi">(
+    i18n.language as "en" | "ko" | "vi"
+  );
+
+  // Function to handle language selection
+  const handleLanguageSelect = (language: "en" | "ko" | "vi") => {
+    setCurrentLanguage(language);
+    i18n.changeLanguage(language);
+  };
+
+  // Load featured tours from API
+  useEffect(() => {
+    const loadTours = async () => {
+      try {
+        setToursLoading(true);
+        const tours = await tourService.getAllTours();
+
+        // Kiểm tra nếu tours là HTML (trang login)
+        if (
+          typeof tours === "string" &&
+          (tours as string).includes("<!DOCTYPE html>")
+        ) {
+          setFeaturedTours([]);
+          return;
+        }
+
+        // Hiển thị tất cả tours, đảm bảo tours là array
+        const validTours = Array.isArray(tours) ? tours : [];
+        setFeaturedTours(validTours);
+      } catch (error) {
+        console.error("Error loading tours:", error);
+        // Fallback to empty array if API fails
+        setFeaturedTours([]);
+      } finally {
+        setToursLoading(false);
+      }
+    };
+
+    loadTours();
+  }, []);
+
+  const newsItems = [
+    {
+      id: 1,
+      title: "Khám phá vẻ đẹp mới của Đà Nẵng",
+      summary: "Những điểm đến mới được khám phá và phát triển...",
+      date: "2 giờ trước",
+      image:
+        "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=100&h=100&fit=crop",
+    },
+    {
+      id: 2,
+      title: "Văn hóa Hàn Quốc - Những điều thú vị",
+      summary: "Tìm hiểu về văn hóa truyền thống và hiện đại của Hàn Quốc...",
+      date: "5 giờ trước",
+      image:
+        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=100&h=100&fit=crop",
+    },
+  ];
+
+  // Sync currentLanguage with i18n language changes
+  useEffect(() => {
+    const handleLanguageChange = (lng: string) => {
+      setCurrentLanguage(lng as "en" | "ko" | "vi");
+    };
+
+    i18n.on("languageChanged", handleLanguageChange);
+    return () => {
+      i18n.off("languageChanged", handleLanguageChange);
+    };
+  }, [i18n]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const posts = await getAllPosts();
+        // Lấy 5 bài viết mới nhất có hashtag
+        const postsWithHashtags = posts
+          .filter((p) => p.hashtags && p.hashtags.length > 0)
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
+          .slice(0, 5);
+
+        // Lấy reaction summary cho mỗi bài viết
+        const postsWithReactions = await Promise.all(
+          postsWithHashtags.map(async (post) => {
+            try {
+              const reactionSummary = await getReactionSummary(post.id, "POST");
+              return {
+                ...post,
+                totalReactions: reactionSummary?.totalReactions || 0,
+                likeCount: reactionSummary?.likeCount || 0,
+                dislikeCount: reactionSummary?.dislikeCount || 0,
+              };
+            } catch {
+              // Nếu không lấy được reaction, giữ nguyên giá trị cũ
+              return post;
+            }
+          })
+        );
+
+        setHotPosts(postsWithReactions);
+      } catch {}
+    })();
+  }, []);
+
+  return (
+    <ScrollableLayout>
+      <View style={styles.container}>
+        {/* Header: Welcome + username (left), language + settings (right) */}
+        <View style={styles.topHeader}>
+          <View>
+            <Text style={styles.welcomeLabel}>{t("home.welcome.heading")}</Text>
+            <Text style={styles.usernameText}>{user?.username || "Guest"}</Text>
+          </View>
+          <View style={styles.rightActions}>
+            <LanguageDropdown
+              currentLanguage={currentLanguage}
+              onLanguageSelect={handleLanguageSelect}
+            />
+            <TouchableOpacity
+              style={styles.settingBtn}
+              onPress={() => navigate("/settings")}
+            >
+              <Ionicons name="settings-outline" size={20} color="#212529" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Search box */}
+        <View style={styles.searchBox}>
+          <Ionicons name="search" size={18} color="#6c757d" />
+          <Text style={styles.searchPlaceholder}>
+            {t("forum.searchPlaceholder")}
+          </Text>
+        </View>
+
+        {/* Hero removed as requested */}
+
+        {/* Popular Tour */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              {t("home.dashboard.welcome")}
+            </Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.toursContainer}
+          >
+            {toursLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#007AFF" />
+                <Text style={styles.loadingText}>{t("tour.loading")}</Text>
+              </View>
+            ) : featuredTours && featuredTours.length > 0 ? (
+              featuredTours.map((tour) => (
+                <TouchableOpacity
+                  key={tour.id}
+                  style={styles.tourCard}
+                  onPress={() => navigate(`/tour?id=${tour.id}`)}
+                >
+                  <Image
+                    source={{
+                      uri:
+                        tour.tourImgPath ||
+                        "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=250&fit=crop",
+                    }}
+                    style={styles.tourImage}
+                  />
+                  <View style={styles.durationBadge}>
+                    <Text style={styles.durationText}>
+                      {tour.tourDuration || "3N2D"}
+                    </Text>
+                  </View>
+                  <View style={styles.tourContent}>
+                    <Text style={styles.tourTitle}>{tour.tourName}</Text>
+                    <View style={styles.tourRow}>
+                      <View style={styles.locationContainer}>
+                        <Ionicons
+                          name="location-outline"
+                          size={14}
+                          color={colors.text.secondary}
+                        />
+                        <Text style={styles.tourLocation}>
+                          {tour.tourDeparturePoint}
+                        </Text>
+                      </View>
+                      <View style={styles.ratingContainer}>
+                        <Ionicons name="star" size={16} color="#FFD700" />
+                        <Text style={styles.ratingText}>4.5</Text>
+                      </View>
+                    </View>
+                    <View style={styles.priceContainer}>
+                      <Text style={styles.priceText}>
+                        {tour.adultPrice
+                          ? `${tour.adultPrice.toLocaleString()} Đ`
+                          : "500,000 Đ"}
+                      </Text>
+                      <Text style={styles.priceUnit}>/person</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>
+                  {t("tour.errors.notFound")}
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+        </View>
+
+        {/* Hot Topic */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t("common.hotTopic")}</Text>
+            <TouchableOpacity onPress={() => navigate("/forum")}>
+              <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {hotPosts.map((post) => (
+            <TouchableOpacity
+              key={post.id}
+              style={styles.newsCard}
+              onPress={() => navigate(`/forum?postId=${post.id}`)}
+            >
+              <View style={styles.avatarCircle}>
+                <Ionicons name="person" size={20} color={colors.text.primary} />
+              </View>
+              <View style={styles.newsContent}>
+                <Text style={styles.newsTitle}>{post.title}</Text>
+                <View style={styles.hashtagsContainer}>
+                  {post.hashtags.slice(0, 3).map((tag, index) => (
+                    <Text key={index} style={styles.tag}>
+                      #{tag}
+                    </Text>
+                  ))}
+                </View>
+              </View>
+              <Ionicons
+                name="happy-outline"
+                size={16}
+                color={colors.text.secondary}
+              />
+              <Text style={styles.newsDate}>{post.totalReactions}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Article */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t("common.article")}</Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.articlesContainer}
+          >
+            {newsItems.map((news) => (
+              <TouchableOpacity key={news.id} style={styles.articleCard}>
+                <Image
+                  source={{ uri: news.image }}
+                  style={styles.articleImage}
+                />
+                <View style={styles.articleContent}>
+                  <Text style={styles.articleTitle}>{news.title}</Text>
+                  <Text style={styles.articleSummary}>{news.summary}</Text>
+                  <Text style={styles.articleMeta}>{news.date}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+        {Platform.OS === "android" && <View style={styles.bottomSpacing} />}
+      </View>
+    </ScrollableLayout>
+  );
+}
