@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   },
   createPostButton: {
     position: "absolute",
-    bottom: Platform.OS === "android" ? 130 : -20,
+    bottom: Platform.OS === "android" ? 60 : 0,
     left: 20,
     right: 20,
     backgroundColor: "#a1d3ff",

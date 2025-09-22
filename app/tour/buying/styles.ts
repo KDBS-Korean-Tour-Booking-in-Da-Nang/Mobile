@@ -33,23 +33,27 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   overlayLocation: { fontSize: typography.body2.fontSize, color: "#fff" },
-  content: { paddingHorizontal: 16, paddingBottom: 24 },
+  content: { paddingHorizontal: 12, paddingBottom: 20 },
 
   metaBox: {
     borderTopWidth: 2,
     borderBottomWidth: 2,
     borderColor: "#eee",
-    paddingVertical: 12,
-    marginBottom: 24,
+    paddingVertical: 8,
+    marginBottom: 20,
   },
   metaRowContent: {
     flexDirection: "row",
     alignItems: "stretch",
     justifyContent: "space-between",
-    paddingHorizontal: 8,
+    paddingHorizontal: 2,
   },
-  metaCol: { flex: 1, paddingHorizontal: 8, alignItems: "center" },
-  metaDivider: { width: 2, backgroundColor: "#e0e0e0", alignSelf: "stretch" },
+  metaCol: { flex: 1, paddingHorizontal: 2, alignItems: "center", minWidth: 0 },
+  metaDivider: {
+    width: StyleSheet.hairlineWidth,
+    backgroundColor: "#e0e0e0",
+    alignSelf: "stretch",
+  },
   metaLabelCaps: {
     fontSize: typography.body2.fontSize,
     color: "#6c757d",
@@ -57,6 +61,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     fontWeight: "700",
     textAlign: "center",
+    flexShrink: 1,
   },
   metaValueRow: {
     flexDirection: "row",
@@ -324,8 +329,9 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 8,
+    borderColor: "#dadada",
+    borderRadius: 18,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -336,13 +342,13 @@ const styles = StyleSheet.create({
   dropdownItem: {
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#f3f4f6",
   },
   dropdownText: {
     fontSize: 14,
     color: "#374151",
-    fontWeight: "500",
+    fontWeight: "400",
   },
   rowContainer: {
     flexDirection: "row",
@@ -395,14 +401,15 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   dobInput: {
-    width: 140,
+    width: "100%",
+    minWidth: 0,
     height: 36,
     borderRadius: 18,
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#dadada",
     paddingHorizontal: 8,
-    flexShrink: 0,
+    flexShrink: 1,
   },
   dobText: {
     fontSize: 15,
@@ -565,34 +572,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
-  },
-  contentBlock: {
-    marginBottom: 16,
-  },
-  contentBox: {
-    height: 200,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#d9d9d9",
-    marginBottom: 12,
-  },
-  contentHeader: {
-    paddingHorizontal: 4,
-  },
-  contentTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
-    marginBottom: 8,
-  },
-  contentDescription: {
-    fontSize: 14,
-    color: "#666",
-    lineHeight: 20,
-  },
-  sectionBlock: {
-    marginTop: 24,
   },
 });
 

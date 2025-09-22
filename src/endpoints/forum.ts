@@ -150,14 +150,19 @@ export async function createPost(
     });
   }
   if (data.images) {
-    data.images.forEach((image) => {
-      const uriParts = image.uri.split(".");
-      const fileType = uriParts[uriParts.length - 1];
-      formData.append("imageUrls", {
-        uri: image.uri,
-        name: `photo.${fileType}`,
-        type: `image/${fileType}`,
-      } as any);
+    data.images.forEach((image: any, idx: number) => {
+      const uri: string = image?.uri || image?.path || "";
+      const clean = uri.split("?")[0];
+      const ext = (
+        clean.match(/\.([a-zA-Z0-9]+)$/)?.[1] || "jpg"
+      ).toLowerCase();
+      const mime =
+        image?.type ||
+        (ext === "jpg" || ext === "jpeg" ? "image/jpeg" : `image/${ext}`);
+      const name = image?.name || `photo_${Date.now()}_${idx}.${ext}`;
+      if (uri) {
+        formData.append("images", { uri, name, type: mime } as any);
+      }
     });
   }
   const response = await api.post<ApiPost>("/api/posts", formData, {
@@ -178,14 +183,19 @@ export async function updatePost(
     data.hashtags.forEach((hashtag) => formData.append("hashtags", hashtag));
   }
   if (data.images && data.images.length > 0) {
-    data.images.forEach((image: any) => {
-      const uriParts = image.uri.split(".");
-      const fileType = uriParts[uriParts.length - 1];
-      formData.append("imageUrls", {
-        uri: image.uri,
-        name: `photo.${fileType}`,
-        type: `image/${fileType}`,
-      } as any);
+    data.images.forEach((image: any, idx: number) => {
+      const uri: string = image?.uri || image?.path || "";
+      const clean = uri.split("?")[0];
+      const ext = (
+        clean.match(/\.([a-zA-Z0-9]+)$/)?.[1] || "jpg"
+      ).toLowerCase();
+      const mime =
+        image?.type ||
+        (ext === "jpg" || ext === "jpeg" ? "image/jpeg" : `image/${ext}`);
+      const name = image?.name || `photo_${Date.now()}_${idx}.${ext}`;
+      if (uri) {
+        formData.append("images", { uri, name, type: mime } as any);
+      }
     });
   }
   const response = await api.put<ApiPost>(`/api/posts/${id}`, formData, {

@@ -1,12 +1,17 @@
 import { StyleSheet, Dimensions, Platform } from "react-native";
 import { colors, spacing, borderRadius } from "../../src/constants/theme";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
+const isSmallScreen = width <= 360 || height <= 700;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8f9fa",
+    paddingTop: 16,
+  },
+  containerSm: {
+    paddingTop: 24,
   },
   bottomSpacing: {
     height: Platform.select({ ios: 0, android: 100 }) as number,
@@ -19,6 +24,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: "#ffffff",
+  },
+  topHeaderSm: {
+    paddingTop: 38,
   },
   welcomeLabel: {
     fontSize: 14,
@@ -213,6 +221,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: colors.text.primary,
   },
+  sectionTitleSm: {
+    fontSize: 20,
+  },
   seeAllText: {
     fontSize: 16,
     color: colors.primary.main,
@@ -253,12 +264,17 @@ const styles = StyleSheet.create({
   durationText: { fontSize: 10, fontWeight: "700", color: colors.text.primary },
   tourContent: {
     padding: spacing.md,
+    flexGrow: 1,
+    flexShrink: 0,
   },
   tourTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: colors.text.primary,
     marginBottom: spacing.xs,
+  },
+  tourTitleSm: {
+    fontSize: 16,
   },
   tourLocation: {
     fontSize: 14,
@@ -277,6 +293,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: spacing.sm,
+    marginTop: "auto",
   },
   locationContainer: {
     flexDirection: "row",
@@ -460,11 +477,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "baseline",
     marginTop: 8,
+    marginBottom: 0,
   },
   priceText: {
     fontSize: 16,
     fontWeight: "bold",
     color: colors.primary.main,
+  },
+  priceTextSm: {
+    fontSize: 14,
+  },
+
+  // Language-specific tweaks
+  langKoAdjust: {
+    letterSpacing: 0,
+    lineHeight: 20,
+  },
+  langViAdjust: {
+    letterSpacing: 0.1,
   },
   priceUnit: {
     fontSize: 12,

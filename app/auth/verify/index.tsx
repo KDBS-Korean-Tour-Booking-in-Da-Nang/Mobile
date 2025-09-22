@@ -12,14 +12,12 @@ import {
 } from "react-native";
 import { useNavigation } from "../../../src/navigation";
 import { useLocalSearchParams } from "expo-router";
-import { useTranslation } from "react-i18next";
 import api from "../../../src/services/api";
 import styles from "./styles";
 
 export default function VerifyEmail() {
   const { navigate } = useNavigation();
   const params = useLocalSearchParams();
-  const { t } = useTranslation();
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
@@ -51,11 +49,7 @@ export default function VerifyEmail() {
         const resp = await api.post("/api/users/regenerate-otp", { email });
         if (resp?.data?.code === 1000 || resp?.data?.code === 0)
           setCountdown(60);
-        else
-          Alert.alert(
-            t("auth.login.error"),
-            resp?.data?.message || t("auth.login.error")
-          );
+        else Alert.alert("Error", resp?.data?.message || "Request failed");
       } else {
         // Forgot password flow
         const resp = await api.post("/api/auth/forgot-password/request", {
@@ -63,16 +57,12 @@ export default function VerifyEmail() {
         });
         if (resp?.data?.code === 1000 || resp?.data?.message?.includes("OTP"))
           setCountdown(60);
-        else
-          Alert.alert(
-            t("auth.login.error"),
-            resp?.data?.message || t("auth.login.error")
-          );
+        else Alert.alert("Error", resp?.data?.message || "Request failed");
       }
     } catch (err: any) {
       Alert.alert(
-        t("auth.login.error"),
-        err?.response?.data?.message || err?.message || t("auth.login.error")
+        "Error",
+        err?.response?.data?.message || err?.message || "Request failed"
       );
     } finally {
       setResendLoading(false);
@@ -81,7 +71,7 @@ export default function VerifyEmail() {
 
   const verifyOTP = async () => {
     if (!otp.trim() || otp.length !== 6) {
-      Alert.alert(t("auth.login.error"), t("auth.common.otpPlaceholder"));
+      Alert.alert("Error", "Invalid OTP code");
       return;
     }
     setLoading(true);
@@ -124,7 +114,7 @@ export default function VerifyEmail() {
         );
       }
     } catch (err: any) {
-      Alert.alert(t("auth.login.error"), err?.message || t("auth.login.error"));
+      Alert.alert("Error", err?.message || "Verification failed");
     } finally {
       setLoading(false);
     }
@@ -186,10 +176,10 @@ export default function VerifyEmail() {
                 }
               >
                 {resendLoading
-                  ? t("auth.common.sending")
+                  ? "Sending..."
                   : countdown > 0
-                  ? t("auth.common.resendIn", { seconds: countdown })
-                  : t("auth.common.resend")}
+                  ? `Resend in ${countdown}s`
+                  : "Resend"}
               </Text>
             </TouchableOpacity>
           </View>

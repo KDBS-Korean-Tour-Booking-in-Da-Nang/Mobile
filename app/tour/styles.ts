@@ -1,11 +1,14 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Dimensions } from "react-native";
 import { typography } from "../../src/constants/theme";
+
+const { width, height } = Dimensions.get("window");
+const isSmallScreen = width <= 360 || height <= 700;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8f9fa" },
   imageWrapper: {
     position: "relative",
-    margin: 12,
+    margin: 10,
     marginTop: 30,
     borderRadius: 16,
     overflow: "hidden",
@@ -38,25 +41,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginTop: 6,
+    marginTop: 4,
   },
   overlayLocation: { fontSize: typography.body2.fontSize, color: "#fff" },
-  content: { paddingHorizontal: 16, paddingBottom: 24 },
+  content: { paddingHorizontal: 12, paddingBottom: 20 },
   metaBox: {
     borderTopWidth: 2,
     borderBottomWidth: 2,
     borderColor: "#eee",
-    paddingVertical: 12,
-    marginBottom: 24,
+    paddingVertical: 8,
+    marginBottom: 20,
   },
   metaRowContent: {
     flexDirection: "row",
     alignItems: "stretch",
     justifyContent: "space-between",
-    paddingHorizontal: 8,
+    paddingHorizontal: 2,
   },
-  metaCol: { flex: 1, paddingHorizontal: 8, alignItems: "center" },
-  metaDivider: { width: 2, backgroundColor: "#e0e0e0", alignSelf: "stretch" },
+  metaCol: { flex: 1, paddingHorizontal: 2, alignItems: "center" },
+  metaColNarrow: { flexGrow: 0, flexShrink: 1, flexBasis: "20%" },
+  metaColWide: { flexGrow: 0, flexShrink: 1, flexBasis: "30%" },
+  metaColStart: { alignItems: "flex-start", paddingLeft: 0 },
+  metaDivider: {
+    width: StyleSheet.hairlineWidth,
+    backgroundColor: "#e0e0e0",
+    alignSelf: "stretch",
+  },
   metaLabelCaps: {
     fontSize: typography.body2.fontSize,
     color: "#6c757d",
@@ -64,6 +74,11 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     fontWeight: "700",
     textAlign: "center",
+    flexShrink: 1,
+  },
+  metaLabelCapsSm: {
+    fontSize: 10.5,
+    letterSpacing: 0.2,
   },
   metaValueRow: {
     flexDirection: "row",
@@ -77,33 +92,37 @@ const styles = StyleSheet.create({
     color: "#111",
     textAlign: "center",
   },
+  metaValueSm: {
+    fontSize: 14,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
     color: "#111",
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  paragraph: { fontSize: 13, lineHeight: 18, color: "#555", marginBottom: 24 },
+  sectionTitleSm: { fontSize: 14 },
+  paragraph: { fontSize: 13, lineHeight: 18, color: "#555", marginBottom: 20 },
   card: {
     backgroundColor: "#fff",
     borderRadius: 24,
-    paddingVertical: 24,
-    paddingHorizontal: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 12,
     borderWidth: 2,
     borderColor: "#cfcfcf",
-    marginBottom: 24,
+    marginBottom: 20,
   },
   infoGrid: {
     flexDirection: "row",
     alignItems: "stretch",
     justifyContent: "space-between",
   },
-  infoCol: { flex: 1, alignItems: "center" },
+  infoCol: { flex: 1, alignItems: "center", minWidth: 0 },
   infoDivider: {
     width: 2,
     backgroundColor: "#cfcfcf",
     borderRadius: 1,
-    marginHorizontal: 6,
+    marginHorizontal: 4,
   },
   infoLabel: {
     fontSize: typography.caption.fontSize,
@@ -113,24 +132,39 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
   },
+  infoLabelSm: { fontSize: 10, letterSpacing: 0.5 },
   infoValue: {
     fontSize: 15,
     lineHeight: 24,
     color: "#111",
     fontWeight: "800",
     textAlign: "center",
+    includeFontPadding: false,
   },
+  infoValueSm: { fontSize: 13 },
   sectionBlock: {
     marginTop: 36,
     marginBottom: 24,
     paddingHorizontal: 8,
     position: "relative",
   },
+  outerCard: {
+    position: "relative",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#d9d9d9",
+    paddingTop: 20,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    marginBottom: 12,
+    overflow: "visible",
+  },
   blockHeader: {
     position: "absolute",
     top: -22,
-    left: 7,
-    right: 7,
+    left: 12,
+    right: 12,
     height: 44,
     backgroundColor: "#b9ffcc",
     borderRadius: 22,
@@ -138,14 +172,19 @@ const styles = StyleSheet.create({
     borderColor: "#b0e8c0",
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 2,
   },
   blockHeaderText: { fontSize: 16, fontWeight: "700", color: "#111" },
   blockBox: {
-    height: 260,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#d9d9d9",
+    paddingTop: 0,
+    backgroundColor: "transparent",
+    borderWidth: 0,
+  },
+  contentCard: {
+    backgroundColor: "transparent",
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 4,
   },
   bottomSpace: { height: 140 },
   loadingContainer: {
@@ -205,11 +244,13 @@ const styles = StyleSheet.create({
     color: "#111",
     marginBottom: 8,
   },
+  contentTitleSm: { fontSize: 16 },
   contentDescription: {
     fontSize: 14,
     color: "#666",
     lineHeight: 20,
   },
+  contentDescriptionSm: { fontSize: 13, lineHeight: 18 },
 });
 
 export default styles;

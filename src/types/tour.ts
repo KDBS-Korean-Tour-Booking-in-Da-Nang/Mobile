@@ -20,6 +20,9 @@ export interface TourResponse {
 export interface TourContentResponse {
   tourContentTitle: string;
   tourContentDescription: string;
+  images?: string[];
+  dayColor?: string;
+  titleAlignment?: string;
 }
 
 export interface TourRequest {

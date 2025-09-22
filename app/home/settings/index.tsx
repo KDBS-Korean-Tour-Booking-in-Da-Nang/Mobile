@@ -45,7 +45,6 @@ export default function Settings() {
       icon: "globe-outline",
       onPress: () => {
         // TODO: Navigate to language settings
-        console.log("Language settings");
       },
     },
     {
@@ -54,7 +53,6 @@ export default function Settings() {
       icon: "notifications-outline",
       onPress: () => {
         // TODO: Navigate to notification settings
-        console.log("Notification settings");
       },
     },
     {
@@ -63,7 +61,6 @@ export default function Settings() {
       icon: "card-outline",
       onPress: () => {
         // TODO: Navigate to transaction history
-        console.log("Transaction history");
       },
     },
   ];

@@ -9,6 +9,7 @@ import {
   Alert,
   TextInput,
   TouchableWithoutFeedback,
+  Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
@@ -28,8 +29,10 @@ import PostCard from "../../src/components/PostCard";
 import CreatePostModal from "../../src/components/CreatePostModal";
 import styles from "./styles";
 import MainLayout from "../../src/components/MainLayout";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Forum() {
+  const insets = useSafeAreaInsets();
   const { user, loading: authLoading } = useAuthContext();
   const { t } = useTranslation();
   const params = useLocalSearchParams();
@@ -635,7 +638,12 @@ export default function Forum() {
 
           {/* Create Post Button - Fixed at Bottom */}
           <TouchableOpacity
-            style={styles.createPostButton}
+            style={[
+              styles.createPostButton,
+              {
+                bottom: insets.bottom + (Platform.OS === "android" ? 140 : 60),
+              },
+            ]}
             onPress={openCreateModal}
           >
             <Text style={styles.createPostButtonText}>Create a post</Text>

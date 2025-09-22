@@ -82,10 +82,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   };
 
   const pickImage = async () => {
-    const permissionResult =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (permissionResult.granted === false) {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
       Alert.alert(t("forum.errorTitle"), t("forum.cannotPerformAction"));
       return;
     }
@@ -93,11 +91,24 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
-      quality: 0.8,
+      quality: 0.85,
+      selectionLimit: 6,
     });
 
     if (!result.canceled) {
-      setImages((prev) => [...prev, ...result.assets]);
+      // Normalize assets shape for upload API
+      const normalized = result.assets.map((a) => ({
+        uri: a.uri,
+        type:
+          a.mimeType ||
+          (a.fileName?.endsWith(".png") ? "image/png" : "image/jpeg"),
+        name:
+          a.fileName ||
+          `photo_${Date.now()}_${Math.floor(Math.random() * 10000)}.${(
+            a.uri.split("?")[0].match(/\.([a-zA-Z0-9]+)$/)?.[1] || "jpg"
+          ).toLowerCase()}`,
+      }));
+      setImages((prev) => [...prev, ...normalized]);
     }
   };
 

@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import MainLayout from "../../../src/components/MainLayout";
@@ -34,10 +35,12 @@ export default function BuyingTour() {
   const [tour, setTour] = React.useState<TourResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [booking] = React.useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
 
   // Navigation scroll effects
   const [isNavVisible, setIsNavVisible] = React.useState(true);
   const lastScrollY = React.useRef(0);
+  const lastScrollUpdateTs = React.useRef(0);
   const scrollThreshold = 50;
 
   // Dropdown states
@@ -61,6 +64,7 @@ export default function BuyingTour() {
         setLoading(true);
         const tourData = await tourService.getTourById(tourId);
         setTour(tourData);
+        setCurrentImageIndex(0);
       } catch (error) {
         console.error("Error loading tour:", error);
         console.error(
@@ -77,21 +81,22 @@ export default function BuyingTour() {
   }, [tourId, t]);
 
   // Handle scroll for navigation effects - hide when scrolling down, show when scrolling up
-  const handleScroll = React.useCallback((event: any) => {
-    const currentScrollY = event.nativeEvent.contentOffset.y;
-    const scrollDifference = Math.abs(currentScrollY - lastScrollY.current);
+  const handleScroll = React.useCallback(
+    (event: any) => {
+      const now = Date.now();
+      if (now - lastScrollUpdateTs.current < 120) return; // throttle ~8fps
+      lastScrollUpdateTs.current = now;
 
-    if (scrollDifference > scrollThreshold) {
-      if (currentScrollY > lastScrollY.current) {
-        // Scrolling down - hide navbar
-        setIsNavVisible(false);
-      } else {
-        // Scrolling up - show navbar
-        setIsNavVisible(true);
+      const currentScrollY = event.nativeEvent.contentOffset.y;
+      const scrollDifference = Math.abs(currentScrollY - lastScrollY.current);
+      if (scrollDifference > scrollThreshold) {
+        const shouldShow = currentScrollY <= lastScrollY.current;
+        if (shouldShow !== isNavVisible) setIsNavVisible(shouldShow);
+        lastScrollY.current = currentScrollY;
       }
-      lastScrollY.current = currentScrollY;
-    }
-  }, []);
+    },
+    [isNavVisible]
+  );
   const [adultCount, setAdultCount] = React.useState<number>(1);
   const [childrenCount, setChildrenCount] = React.useState<number>(0);
   const [babyCount, setBabyCount] = React.useState<number>(0);
@@ -150,16 +155,16 @@ export default function BuyingTour() {
     note: "",
   });
 
-  const increment = (type: "adult" | "children" | "baby") => {
+  const increment = React.useCallback((type: "adult" | "children" | "baby") => {
     if (type === "adult") setAdultCount((c) => c + 1);
     if (type === "children") setChildrenCount((c) => c + 1);
     if (type === "baby") setBabyCount((c) => c + 1);
-  };
-  const decrement = (type: "adult" | "children" | "baby") => {
+  }, []);
+  const decrement = React.useCallback((type: "adult" | "children" | "baby") => {
     if (type === "adult") setAdultCount((c) => Math.max(1, c - 1));
     if (type === "children") setChildrenCount((c) => Math.max(0, c - 1));
     if (type === "baby") setBabyCount((c) => Math.max(0, c - 1));
-  };
+  }, []);
 
   // Handle personal information toggle
   const handleTogglePersonalInfo = () => {
@@ -213,24 +218,36 @@ export default function BuyingTour() {
   const isValidEmail = (value: string) =>
     /[^\s@]+@[^\s@]+\.[^\s@]+/.test(value);
   const isValidPhone = (value: string) =>
-    /^(\+?\d{7,15})$/.test(value.replace(/\s|-/g, ""));
+    /^\d{10}$/.test(value.replace(/\D/g, ""));
+  const isValidTenDigitId = (value: string) =>
+    /^\d{10}$/.test((value || "").replace(/\D/g, ""));
 
   const validateBeforeBooking = (): boolean => {
     if (adultCount < 1) {
       Alert.alert(t("common.error"), t("tour.booking.errors.adultMin"));
       return false;
     }
+    // Address required
+    if (!formData.address || formData.address.trim().length < 2) {
+      Alert.alert(t("common.error"), t("tour.booking.errors.fullNameRequired"));
+      return false;
+    }
+    // Require pick-up point
+    if (!formData.pickUpPoint || formData.pickUpPoint.trim().length < 2) {
+      Alert.alert(
+        t("common.error"),
+        t("tour.booking.errors.pickUpPointRequired")
+      );
+      return false;
+    }
     const nameOk = formData.fullName && formData.fullName.trim().length >= 2;
-    const phoneOk = isValidPhone(formData.phoneNumber || "");
+    const phoneOk = true; // no validation for phone per request
     const emailOk = isValidEmail(formData.email || "");
     if (!nameOk) {
       Alert.alert(t("common.error"), t("tour.booking.errors.fullNameRequired"));
       return false;
     }
-    if (!phoneOk) {
-      Alert.alert(t("common.error"), t("tour.booking.errors.phoneInvalid"));
-      return false;
-    }
+    // skip phone validation per request
     if (!emailOk) {
       Alert.alert(t("common.error"), t("tour.booking.errors.emailInvalid"));
       return false;
@@ -260,13 +277,7 @@ export default function BuyingTour() {
         );
         return false;
       }
-      if (!guest?.idNumber || guest.idNumber.trim().length < 5) {
-        Alert.alert(
-          t("common.error"),
-          `Adult ${i + 1}: ${t("tour.booking.idNumber")} is required`
-        );
-        return false;
-      }
+      // skip id/passport validation per request
     }
 
     for (let i = 0; i < childrenCount; i++) {
@@ -292,13 +303,7 @@ export default function BuyingTour() {
         );
         return false;
       }
-      if (!guest?.idNumber || guest.idNumber.trim().length < 5) {
-        Alert.alert(
-          t("common.error"),
-          `Child ${i + 1}: ${t("tour.booking.idNumber")} is required`
-        );
-        return false;
-      }
+      // skip id/passport validation per request
     }
 
     for (let i = 0; i < babyCount; i++) {
@@ -324,13 +329,7 @@ export default function BuyingTour() {
         );
         return false;
       }
-      if (!guest?.idNumber || guest.idNumber.trim().length < 5) {
-        Alert.alert(
-          t("common.error"),
-          `Baby ${i + 1}: ${t("tour.booking.idNumber")} is required`
-        );
-        return false;
-      }
+      // skip id/passport validation per request
     }
 
     return true;
@@ -379,6 +378,24 @@ export default function BuyingTour() {
     );
   };
 
+  // Build image list (cover + content images) before early returns
+  const imageList = React.useMemo(() => {
+    const contentImages = (tour?.contents || [])
+      .flatMap((c: any) => (Array.isArray(c.images) ? c.images : []))
+      .map((u: any) => (typeof u === "string" ? u.trim() : ""))
+      .filter((u: any) => u && /^https?:\/\//i.test(u));
+    const cover =
+      tour?.tourImgPath && /^https?:\/\//i.test((tour.tourImgPath || "").trim())
+        ? [tour!.tourImgPath.trim()]
+        : [];
+    const all = [...cover, ...contentImages];
+    return all.length > 0
+      ? all
+      : [
+          "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
+        ];
+  }, [tour]);
+
   if (loading) {
     return (
       <MainLayout>
@@ -415,21 +432,30 @@ export default function BuyingTour() {
           style={styles.container}
           showsVerticalScrollIndicator={false}
           onScroll={handleScroll}
-          scrollEventThrottle={16}
+          scrollEventThrottle={32}
+          removeClippedSubviews
         >
           {/* Hero with overlay title/location */}
           <View style={styles.imageWrapper}>
             <Image
-              source={{
-                uri:
-                  tour.tourImgPath ||
-                  "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
-              }}
+              source={{ uri: imageList[currentImageIndex] }}
               style={styles.heroImage}
             />
             <TouchableOpacity style={styles.backBtn} onPress={goBack}>
               <View style={styles.backCircle}>
                 <Ionicons name="chevron-back" size={18} color="#000" />
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.backBtn, { left: undefined, right: 12 }]}
+              onPress={() =>
+                setCurrentImageIndex((prev) =>
+                  imageList.length ? (prev + 1) % imageList.length : 0
+                )
+              }
+            >
+              <View style={styles.backCircle}>
+                <Ionicons name="chevron-forward" size={18} color="#000" />
               </View>
             </TouchableOpacity>
             <View style={styles.imageOverlay}>
@@ -448,38 +474,58 @@ export default function BuyingTour() {
             <View style={styles.metaBox}>
               <View style={styles.metaRowContent}>
                 <View style={styles.metaCol}>
-                  <Text style={styles.metaLabelCaps}>
+                  <Text style={styles.metaLabelCaps} numberOfLines={2}>
                     {t("tour.meta.rating")}
                   </Text>
                   <View style={styles.metaValueRow}>
                     <Ionicons name="star" size={16} color="#FFD700" />
-                    <Text style={styles.metaValue}>4.5</Text>
+                    <Text
+                      style={styles.metaValue}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      4.5
+                    </Text>
                   </View>
                 </View>
                 <View style={styles.metaDivider} />
                 <View style={styles.metaCol}>
-                  <Text style={styles.metaLabelCaps}>
+                  <Text style={styles.metaLabelCaps} numberOfLines={2}>
                     {t("tour.meta.type")}
                   </Text>
-                  <Text style={styles.metaValue}>
+                  <Text
+                    style={styles.metaValue}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
+                  >
                     {tour.tourType || t("tour.types.openTrip")}
                   </Text>
                 </View>
                 <View style={styles.metaDivider} />
                 <View style={styles.metaCol}>
-                  <Text style={styles.metaLabelCaps}>
+                  <Text style={styles.metaLabelCaps} numberOfLines={2}>
                     {t("tour.meta.estimate")}
                   </Text>
-                  <Text style={styles.metaValue}>
+                  <Text
+                    style={styles.metaValue}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
                     {tour.tourDuration || "3D 2N"}
                   </Text>
                 </View>
                 <View style={styles.metaDivider} />
                 <View style={styles.metaCol}>
-                  <Text style={styles.metaLabelCaps}>
+                  <Text style={styles.metaLabelCaps} numberOfLines={2}>
                     {t("tour.meta.vehicle")}
                   </Text>
-                  <Text style={styles.metaValue}>
+                  <Text
+                    style={styles.metaValue}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
                     {tour.tourVehicle || t("tour.vehicles.car")}
                   </Text>
                 </View>
@@ -493,28 +539,6 @@ export default function BuyingTour() {
             <Text style={styles.paragraph}>
               {tour.tourDescription || t("tour.content.description")}
             </Text>
-
-            {/* Tour Content/Destinations */}
-            {tour.contents && tour.contents.length > 0 && (
-              <View style={styles.sectionBlock}>
-                <Text style={styles.sectionTitle}>
-                  {t("tour.detail.destinations")}
-                </Text>
-                {tour.contents.map((content, idx) => (
-                  <View key={idx} style={styles.contentBlock}>
-                    <View style={styles.contentBox} />
-                    <View style={styles.contentHeader}>
-                      <Text style={styles.contentTitle}>
-                        {content.tourContentTitle}
-                      </Text>
-                      <Text style={styles.contentDescription}>
-                        {content.tourContentDescription}
-                      </Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            )}
 
             {/* Contact Information form */}
             <Text style={styles.formTitle}>
@@ -562,7 +586,12 @@ export default function BuyingTour() {
               )}
             </View>
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>{t("tour.booking.address")}</Text>
+              <Text style={styles.label}>
+                {t("tour.booking.address")}{" "}
+                {!formData.address?.trim() && (
+                  <Text style={{ color: "#FF3B30" }}> *</Text>
+                )}
+              </Text>
               <TextInput
                 style={[
                   styles.input,
@@ -600,11 +629,6 @@ export default function BuyingTour() {
                 }
                 editable={!usePersonalInfo || needsUpdate("phoneNumber")}
               />
-              {usePersonalInfo && needsUpdate("phoneNumber") && (
-                <Text style={styles.updateHint}>
-                  {t("tour.booking.updateInfoHint")}
-                </Text>
-              )}
             </View>
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>{t("tour.booking.email")}</Text>
@@ -620,7 +644,12 @@ export default function BuyingTour() {
               />
             </View>
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>{t("tour.booking.pickUpPoint")}</Text>
+              <Text style={styles.label}>
+                {t("tour.booking.pickUpPoint")}{" "}
+                {!formData.pickUpPoint?.trim() && (
+                  <Text style={{ color: "#FF3B30" }}> *</Text>
+                )}
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder=""
@@ -1516,6 +1545,7 @@ export default function BuyingTour() {
 type DobFieldProps = { value?: string; onChange: (value: string) => void };
 
 const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
+  const { t } = useTranslation();
   const [showPicker, setShowPicker] = React.useState(false);
   const [selectedDate, setSelectedDate] = React.useState<Date>(() => {
     if (!value) return new Date();
@@ -1530,12 +1560,17 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
     return `${dd}/${mm}/${yyyy}`;
   };
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowPicker(Platform.OS === "ios");
-    if (selectedDate) {
-      setSelectedDate(selectedDate);
-      onChange(formatDate(selectedDate));
+  const handleDateChange = (event: any, selected?: Date) => {
+    if (Platform.OS === "ios") {
+      if (selected) setSelectedDate(selected);
+      return; // apply on confirm for iOS
     }
+    // Android: apply immediately and close
+    if (selected) {
+      setSelectedDate(selected);
+      onChange(formatDate(selected));
+    }
+    setShowPicker(false);
   };
 
   const showDatePicker = () => {
@@ -1551,20 +1586,60 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
         <Text
           style={[styles.dobText, !value && { color: "#9ca3af" }]}
           numberOfLines={1}
-          ellipsizeMode="clip"
+          ellipsizeMode="tail"
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
         >
-          {value || "dob"}
+          {value || t("tour.booking.dobShort")}
         </Text>
       </Pressable>
 
-      {showPicker && (
+      {showPicker && Platform.OS !== "ios" && (
         <DateTimePicker
           value={selectedDate}
           mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
+          display="default"
           onChange={handleDateChange}
           maximumDate={new Date()}
         />
+      )}
+
+      {Platform.OS === "ios" && (
+        <Modal
+          transparent
+          animationType="fade"
+          visible={showPicker}
+          onRequestClose={() => setShowPicker(false)}
+        >
+          <View style={styles.iosDateOverlay}>
+            <View style={styles.iosDateCard}>
+              <Text style={styles.iosDateTitle}>
+                {t("tour.booking.dateOfBirth")}
+              </Text>
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display="spinner"
+                onChange={handleDateChange}
+                maximumDate={new Date()}
+                style={{ alignSelf: "stretch" }}
+              />
+              <View style={styles.iosDateActions}>
+                <TouchableOpacity onPress={() => setShowPicker(false)}>
+                  <Text>{t("common.cancel")}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    onChange(formatDate(selectedDate));
+                    setShowPicker(false);
+                  }}
+                >
+                  <Text style={{ fontWeight: "700" }}>{t("common.ok")}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       )}
     </>
   );

@@ -1,4 +1,11 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  useMemo,
+} from "react";
+import { Dimensions } from "react-native";
 import {
   View,
   Text,
@@ -26,6 +33,7 @@ export default function TourDetail() {
 
   const [tour, setTour] = useState<TourResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Navigation scroll effects
   const [isNavVisible, setIsNavVisible] = useState(true);
@@ -39,6 +47,7 @@ export default function TourDetail() {
         setLoading(true);
         const tourData = await tourService.getTourById(tourId);
         setTour(tourData);
+        setCurrentImageIndex(0);
       } catch (error) {
         console.error("Error loading tour:", error);
         Alert.alert(t("common.error"), t("tour.errors.loadFailed"));
@@ -73,6 +82,24 @@ export default function TourDetail() {
     }
   };
 
+  // Build image list: cover image + content images (must be before any early return)
+  const imageList = useMemo(() => {
+    const contentImages = (tour?.contents || [])
+      .flatMap((c: any) => (Array.isArray(c.images) ? c.images : []))
+      .map((u: any) => (typeof u === "string" ? u.trim() : ""))
+      .filter((u: any) => u && /^https?:\/\//i.test(u));
+    const cover =
+      tour?.tourImgPath && /^https?:\/\//i.test((tour.tourImgPath || "").trim())
+        ? [tour!.tourImgPath.trim()]
+        : [];
+    const all = [...cover, ...contentImages];
+    return all.length > 0
+      ? all
+      : [
+          "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
+        ];
+  }, [tour]);
+
   if (loading) {
     return (
       <MainLayout>
@@ -101,6 +128,14 @@ export default function TourDetail() {
     );
   }
 
+  // (old block removed - now declared above early returns)
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prev) =>
+      imageList.length ? (prev + 1) % imageList.length : 0
+    );
+  };
+
   return (
     <MainLayout isNavVisible={isNavVisible}>
       <ScrollView
@@ -111,11 +146,7 @@ export default function TourDetail() {
       >
         <View style={styles.imageWrapper}>
           <Image
-            source={{
-              uri:
-                tour.tourImgPath ||
-                "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
-            }}
+            source={{ uri: imageList[currentImageIndex] }}
             style={styles.heroImage}
           />
           <TouchableOpacity style={styles.backBtn} onPress={goBack}>
@@ -123,6 +154,29 @@ export default function TourDetail() {
               <Ionicons name="chevron-back" size={18} color="#000" />
             </View>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.backBtn, { left: undefined, right: 12 }]}
+            onPress={handleNextImage}
+          >
+            <View style={styles.backCircle}>
+              <Ionicons name="chevron-forward" size={18} color="#000" />
+            </View>
+          </TouchableOpacity>
+          <View
+            style={{
+              position: "absolute",
+              right: 12,
+              bottom: 12,
+              backgroundColor: "rgba(255,255,255,0.85)",
+              borderRadius: 12,
+              paddingHorizontal: 8,
+              paddingVertical: 2,
+            }}
+          >
+            <Text style={{ fontSize: 12, fontWeight: "700", color: "#111" }}>
+              {currentImageIndex + 1}/{imageList.length}
+            </Text>
+          </View>
           {/* Title and location overlay inside image */}
           <View style={styles.imageOverlay}>
             <Text style={styles.overlayTitle}>{tour.tourName}</Text>
@@ -139,48 +193,123 @@ export default function TourDetail() {
           {/* Meta grid: RATING | TYPE | ESTIMATE | VEHICLE */}
           <View style={styles.metaBox}>
             <View style={styles.metaRowContent}>
-              {/* Rating */}
+              {/* Rating (shift a bit to the left) */}
               <View style={styles.metaCol}>
-                <Text style={styles.metaLabelCaps}>
+                <Text
+                  style={[
+                    styles.metaLabelCaps,
+                    (Dimensions.get("window").width <= 360 ||
+                      Dimensions.get("window").height <= 700) &&
+                      styles.metaLabelCapsSm,
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="clip"
+                >
                   {t("tour.meta.rating")}
                 </Text>
                 <View style={styles.metaValueRow}>
                   <Ionicons name="star" size={16} color="#FFD700" />
-                  <Text style={styles.metaValue}>4.5</Text>
+                  <Text
+                    style={[
+                      styles.metaValue,
+                      (Dimensions.get("window").width <= 360 ||
+                        Dimensions.get("window").height <= 700) &&
+                        styles.metaValueSm,
+                    ]}
+                  >
+                    4.5
+                  </Text>
                 </View>
               </View>
               <View style={styles.metaDivider} />
-              {/* Type */}
-              <View style={styles.metaCol}>
-                <Text style={styles.metaLabelCaps}>{t("tour.meta.type")}</Text>
-                <Text style={styles.metaValue}>
+              {/* Type (center to balance with other columns) */}
+              <View style={[styles.metaCol, styles.metaColNarrow]}>
+                <Text
+                  style={[
+                    styles.metaLabelCaps,
+                    (Dimensions.get("window").width <= 360 ||
+                      Dimensions.get("window").height <= 700) &&
+                      styles.metaLabelCapsSm,
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="clip"
+                >
+                  {t("tour.meta.type")}
+                </Text>
+                <Text
+                  style={[
+                    styles.metaValue,
+                    (Dimensions.get("window").width <= 360 ||
+                      Dimensions.get("window").height <= 700) &&
+                      styles.metaValueSm,
+                  ]}
+                >
                   {tour.tourType || t("tour.types.openTrip")}
                 </Text>
               </View>
               <View style={styles.metaDivider} />
               {/* Estimate */}
               <View style={styles.metaCol}>
-                <Text style={styles.metaLabelCaps}>
+                <Text
+                  style={[
+                    styles.metaLabelCaps,
+                    (Dimensions.get("window").width <= 360 ||
+                      Dimensions.get("window").height <= 700) &&
+                      styles.metaLabelCapsSm,
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="clip"
+                >
                   {t("tour.meta.estimate")}
                 </Text>
-                <Text style={styles.metaValue}>
+                <Text
+                  style={[
+                    styles.metaValue,
+                    (Dimensions.get("window").width <= 360 ||
+                      Dimensions.get("window").height <= 700) &&
+                      styles.metaValueSm,
+                  ]}
+                >
                   {tour.tourDuration || "3D 2N"}
                 </Text>
               </View>
               <View style={styles.metaDivider} />
               {/* Vehicle */}
               <View style={styles.metaCol}>
-                <Text style={styles.metaLabelCaps}>
+                <Text
+                  style={[
+                    styles.metaLabelCaps,
+                    (Dimensions.get("window").width <= 360 ||
+                      Dimensions.get("window").height <= 700) &&
+                      styles.metaLabelCapsSm,
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="clip"
+                >
                   {t("tour.meta.vehicle")}
                 </Text>
-                <Text style={styles.metaValue}>
+                <Text
+                  style={[
+                    styles.metaValue,
+                    (Dimensions.get("window").width <= 360 ||
+                      Dimensions.get("window").height <= 700) &&
+                      styles.metaValueSm,
+                  ]}
+                >
                   {tour.tourVehicle || t("tour.vehicles.car")}
                 </Text>
               </View>
             </View>
           </View>
 
-          <Text style={styles.sectionTitle}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              (Dimensions.get("window").width <= 360 ||
+                Dimensions.get("window").height <= 700) &&
+                styles.sectionTitleSm,
+            ]}
+          >
             {t("tour.detail.description")}
           </Text>
           <Text style={styles.paragraph}>
@@ -190,36 +319,110 @@ export default function TourDetail() {
           <View style={styles.card}>
             <View style={styles.infoGrid}>
               <View style={styles.infoCol}>
-                <Text style={styles.infoLabel}>{t("tour.detail.amount")}</Text>
-                <Text style={styles.infoValue}>{tour.amount || 20}</Text>
+                <Text
+                  style={[
+                    styles.infoLabel,
+                    (Dimensions.get("window").width <= 360 ||
+                      Dimensions.get("window").height <= 700) &&
+                      styles.infoLabelSm,
+                  ]}
+                >
+                  {t("tour.detail.amount")}
+                </Text>
+                <Text
+                  style={[
+                    styles.infoValue,
+                    (Dimensions.get("window").width <= 360 ||
+                      Dimensions.get("window").height <= 700) &&
+                      styles.infoValueSm,
+                  ]}
+                >
+                  {tour.amount || 20}
+                </Text>
               </View>
               <View style={styles.infoDivider} />
               <View style={styles.infoCol}>
-                <Text style={styles.infoLabel}>{t("tour.detail.adult")}</Text>
-                <Text style={styles.infoValue}>
+                <Text
+                  style={[
+                    styles.infoLabel,
+                    (Dimensions.get("window").width <= 360 ||
+                      Dimensions.get("window").height <= 700) &&
+                      styles.infoLabelSm,
+                  ]}
+                >
+                  {t("tour.detail.adult")}
+                </Text>
+                <Text
+                  style={[
+                    styles.infoValue,
+                    (Dimensions.get("window").width <= 360 ||
+                      Dimensions.get("window").height <= 700) &&
+                      styles.infoValueSm,
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
+                >
                   {tour.adultPrice
                     ? `${tour.adultPrice.toLocaleString()} Đ`
-                    : "3,200,000 Đ"}
+                    : ""}
                 </Text>
               </View>
               <View style={styles.infoDivider} />
               <View style={styles.infoCol}>
-                <Text style={styles.infoLabel}>
+                <Text
+                  style={[
+                    styles.infoLabel,
+                    (Dimensions.get("window").width <= 360 ||
+                      Dimensions.get("window").height <= 700) &&
+                      styles.infoLabelSm,
+                  ]}
+                >
                   {t("tour.detail.children")}
                 </Text>
-                <Text style={styles.infoValue}>
+                <Text
+                  style={[
+                    styles.infoValue,
+                    (Dimensions.get("window").width <= 360 ||
+                      Dimensions.get("window").height <= 700) &&
+                      styles.infoValueSm,
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
+                >
                   {tour.childrenPrice
                     ? `${tour.childrenPrice.toLocaleString()} Đ`
-                    : "1,800,000 Đ"}
+                    : ""}
                 </Text>
               </View>
               <View style={styles.infoDivider} />
               <View style={styles.infoCol}>
-                <Text style={styles.infoLabel}>{t("tour.detail.baby")}</Text>
-                <Text style={styles.infoValue}>
-                  {tour.babyPrice
-                    ? `${tour.babyPrice.toLocaleString()} Đ`
-                    : "900,000 Đ"}
+                <Text
+                  style={[
+                    styles.infoLabel,
+                    (Dimensions.get("window").width <= 360 ||
+                      Dimensions.get("window").height <= 700) &&
+                      styles.infoLabelSm,
+                  ]}
+                >
+                  {t("tour.detail.baby")}
+                </Text>
+                <Text
+                  style={[
+                    styles.infoValue,
+                    (Dimensions.get("window").width <= 360 ||
+                      Dimensions.get("window").height <= 700) &&
+                      styles.infoValueSm,
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
+                >
+                  {tour.babyPrice ? `${tour.babyPrice.toLocaleString()} Đ` : ""}
                 </Text>
               </View>
             </View>
@@ -227,24 +430,27 @@ export default function TourDetail() {
 
           {/* Tour Content/Destinations */}
           {tour.contents && tour.contents.length > 0 && (
-            <View style={styles.sectionBlock}>
-              <Text style={styles.sectionTitle}>
-                {t("tour.detail.destinations")}
-              </Text>
+            <>
               {tour.contents.map((content, idx) => (
-                <View key={idx} style={styles.contentBlock}>
-                  <View style={styles.contentBox} />
-                  <View style={styles.contentHeader}>
-                    <Text style={styles.contentTitle}>
-                      {content.tourContentTitle}
+                <View key={idx} style={[styles.sectionBlock, styles.outerCard]}>
+                  <View style={styles.blockHeader}>
+                    <Text style={styles.blockHeaderText}>
+                      {t("tour.detail.destinationAndItinerary")}
                     </Text>
-                    <Text style={styles.contentDescription}>
-                      {content.tourContentDescription}
-                    </Text>
+                  </View>
+                  <View style={styles.blockBox}>
+                    <View style={styles.contentCard}>
+                      <Text style={styles.contentTitle}>
+                        {content.tourContentTitle}
+                      </Text>
+                      <Text style={styles.contentDescription}>
+                        {content.tourContentDescription}
+                      </Text>
+                    </View>
                   </View>
                 </View>
               ))}
-            </View>
+            </>
           )}
 
           {/* Booking button appears at the very end of content */}

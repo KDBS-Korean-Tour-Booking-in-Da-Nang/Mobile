@@ -30,6 +30,7 @@
   },
   "auth": {
     "common": {
+      "fullName": "Họ tên",
       "email": "Email",
       "password": "Mật khẩu",
       "rememberMe": "Ghi nhớ đăng nhập",
@@ -44,6 +45,15 @@
       "backToForgot": "Quay lại quên mật khẩu",
       "send": "Gửi",
       "sending": "Đang gửi..."
+    },
+    "signup": {
+      "title": "Đăng ký",
+      "subtitle": "Tạo tài khoản mới",
+      "fullNamePlaceholder": "Nhập họ tên",
+      "emailPlaceholder": "Nhập email",
+      "passwordPlaceholder": "Nhập mật khẩu",
+      "haveAccount": "Đã có tài khoản?",
+      "signIn": "Đăng nhập"
     },
     "login": {
       "title": "Đăng nhập",
@@ -81,7 +91,8 @@
         "passwordMinLength": "Mật khẩu phải có ít nhất 6 ký tự",
         "usernameRequired": "Tên người dùng không được để trống",
         "registerFailed": "Đăng ký thất bại. Vui lòng thử lại."
-      }
+      },
+      "idNumberInvalid": "CCCD/Hộ chiếu phải gồm 10 số"
     },
     "selection": {
       "headerTitle": "Chọn loại đăng nhập",
@@ -286,6 +297,7 @@
       "baby": "Em bé",
       "destination": "Điểm đến",
       "destinations": "Điểm đến",
+      "destinationAndItinerary": "Điểm đến và Hành trình",
       "bookingNow": "Đặt tour ngay"
     },
     "types": {
@@ -346,6 +358,7 @@
       "selectNationality": "Quốc tịch",
       "idNumber": "CCCD/Hộ chiếu",
       "dateOfBirth": "Ngày sinh",
+      "dobShort": "Ngày sinh",
       "adultCount": "Người lớn",
       "childrenCount": "Trẻ em",
       "babyCount": "Em bé",
@@ -353,7 +366,8 @@
         "adultMin": "Cần ít nhất 1 người lớn",
         "fullNameRequired": "Họ tên là bắt buộc",
         "phoneInvalid": "Số điện thoại không hợp lệ",
-        "emailInvalid": "Địa chỉ email không hợp lệ"
+        "emailInvalid": "Địa chỉ email không hợp lệ",
+        "pickUpPointRequired": "Vui lòng nhập điểm đón"
       }
     },
     "errors": {
@@ -379,12 +393,45 @@
       "paymentFailed": "Thanh toán thất bại"
     }
   },
+  "payment": {
+    "title": "Thanh toán",
+    "creating": "Đang tạo thanh toán...",
+    "loading": "Đang tải trang thanh toán...",
+    "error": "Lỗi thanh toán",
+    "noUrl": "Không có URL thanh toán",
+    "loadFailed": "Tải trang thanh toán thất bại",
+    "createFailed": "Tạo thanh toán thất bại",
+    "orderInfo": "Thanh toán đặt tour cho mã đặt: {{bookingId}}",
+    "result": {
+      "loading": "Đang tải giao dịch...",
+      "success": "Thanh toán thành công",
+      "failed": "Thanh toán thất bại",
+      "pending": "Đang xử lý thanh toán",
+      "successMessage": "Thanh toán của bạn đã hoàn tất thành công.",
+      "failedMessage": "Thanh toán của bạn không thể hoàn tất.",
+      "pendingMessage": "Thanh toán của bạn đang được xử lý.",
+      "details": "Chi tiết giao dịch",
+      "orderId": "Mã đơn hàng",
+      "bookingId": "Mã đặt chỗ",
+      "paymentMethod": "Phương thức thanh toán",
+      "responseCode": "Mã phản hồi",
+      "amount": "Số tiền",
+      "status": "Trạng thái",
+      "bankCode": "Mã ngân hàng",
+      "responseTime": "Thời gian phản hồi",
+      "viewBooking": "Xem đặt chỗ",
+      "goHome": "Về trang chủ",
+      "fetchError": "Không thể tải chi tiết giao dịch"
+    }
+  },
   "common": {
     "error": "Lỗi",
     "success": "Thành công",
     "retry": "Thử lại",
     "goBack": "Quay lại",
+    "cancel": "Hủy",
     "ok": "OK",
+    "na": "Không có",
     "hotTopic": "Chủ đề nóng",
     "seeAll": "Xem tất cả",
     "article": "Bài viết"

@@ -6,11 +6,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Linking,
 } from "react-native";
 import MainLayout from "../../../src/components/MainLayout";
 import { useNavigation } from "../../../src/navigation";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import { useTranslation } from "react-i18next";
@@ -27,6 +26,7 @@ export default function ConfirmTour() {
   const { user } = useAuthContext();
   const { t } = useTranslation();
   const params = useLocalSearchParams();
+  const router = useRouter();
 
   // Get booking data from params
   const bookingData = params.bookingData
@@ -116,7 +116,7 @@ export default function ConfirmTour() {
                 })()
               : new Date().toISOString().split("T")[0],
             gender: (guest.gender || "OTHER").toUpperCase(),
-            idNumber: guest.idNumber || "000000000",
+            idNumber: guest.idNumber || "",
             nationality: guest.nationality || "Vietnamese",
             guestType: "ADULT",
           });
@@ -142,7 +142,7 @@ export default function ConfirmTour() {
                 })()
               : new Date().toISOString().split("T")[0],
             gender: (guest.gender || "OTHER").toUpperCase(),
-            idNumber: guest.idNumber || "000000000",
+            idNumber: guest.idNumber || "",
             nationality: guest.nationality || "Vietnamese",
             guestType: "CHILD", // Fixed: CHILD not CHILDREN
           });
@@ -168,7 +168,7 @@ export default function ConfirmTour() {
                 })()
               : new Date().toISOString().split("T")[0],
             gender: (guest.gender || "OTHER").toUpperCase(),
-            idNumber: guest.idNumber || "000000000",
+            idNumber: guest.idNumber || "",
             nationality: guest.nationality || "Vietnamese",
             guestType: "BABY",
           });
@@ -176,6 +176,44 @@ export default function ConfirmTour() {
       }
 
       // Create booking request
+      const sanitizedPhone = (bookingData.customerPhone || "").replace(
+        /\D/g,
+        ""
+      );
+
+      const formatLocalYMD = (d: Date) => {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        return `${yyyy}-${mm}-${dd}`;
+      };
+
+      const computeDepartureDate = () => {
+        try {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          if (bookingData.departureDate) {
+            const parsed = new Date(bookingData.departureDate);
+            if (!isNaN(parsed.getTime())) {
+              const localParsed = new Date(
+                parsed.getFullYear(),
+                parsed.getMonth(),
+                parsed.getDate()
+              );
+              if (localParsed > today) return formatLocalYMD(localParsed);
+            }
+          }
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          return formatLocalYMD(tomorrow);
+        } catch {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          return formatLocalYMD(tomorrow);
+        }
+      };
+
       const bookingRequest: BookingRequest = {
         tourId: tour.id,
         contactName:
@@ -184,8 +222,8 @@ export default function ConfirmTour() {
             : "Guest User",
         contactAddress: bookingData.customerAddress || "",
         contactPhone:
-          bookingData.customerPhone && bookingData.customerPhone.trim() !== ""
-            ? bookingData.customerPhone
+          sanitizedPhone && sanitizedPhone.length === 10
+            ? sanitizedPhone
             : "0123456789",
         contactEmail:
           bookingData.customerEmail && bookingData.customerEmail.trim() !== ""
@@ -193,25 +231,7 @@ export default function ConfirmTour() {
             : "user@example.com",
         pickupPoint: bookingData.pickUpPoint || "",
         note: bookingData.note || "",
-        departureDate: bookingData.departureDate
-          ? (() => {
-              try {
-                const date = new Date(bookingData.departureDate);
-                if (isNaN(date.getTime())) {
-                  return new Date(Date.now() + 24 * 60 * 60 * 1000)
-                    .toISOString()
-                    .split("T")[0];
-                }
-                return date.toISOString().split("T")[0];
-              } catch {
-                return new Date(Date.now() + 24 * 60 * 60 * 1000)
-                  .toISOString()
-                  .split("T")[0];
-              }
-            })()
-          : new Date(Date.now() + 24 * 60 * 60 * 1000)
-              .toISOString()
-              .split("T")[0], // Tomorrow's date as default
+        departureDate: computeDepartureDate(),
         adultsCount: bookingData.adultCount || 0,
         childrenCount: bookingData.childrenCount || 0,
         babiesCount: bookingData.babyCount || 0,
@@ -246,34 +266,29 @@ export default function ConfirmTour() {
       });
 
       if (paymentResponse.success && paymentResponse.payUrl) {
-        // Redirect to VNPay payment page with bank transfer form
+        // Navigate to PaymentScreen with WebView
         Alert.alert(
           t("tour.confirm.paymentRedirect"),
-          `Booking created successfully!\nBooking ID: ${bookingResponse.bookingId}\n\nRedirecting to VNPay payment page...\n\nPlease select "Bank Transfer" option and enter your bank account information.`,
+          `Booking created successfully!\nBooking ID: ${bookingResponse.bookingId}\n\nRedirecting to payment page...`,
           [
             {
               text: t("common.ok"),
-              onPress: async () => {
-                try {
-                  // Open VNPay payment page in browser
-                  const supported = await Linking.canOpenURL(
-                    paymentResponse.payUrl
-                  );
-                  if (supported) {
-                    await Linking.openURL(paymentResponse.payUrl);
-                  } else {
-                    Alert.alert(
-                      t("common.error"),
-                      "Cannot open payment page. Please try again."
-                    );
-                  }
-                } catch (error) {
-                  console.error("Error opening payment URL:", error);
-                  Alert.alert(
-                    t("common.error"),
-                    "Failed to open payment page. Please try again."
-                  );
-                }
+              onPress: () => {
+                // Navigate to PaymentScreen with booking details
+                router.push({
+                  pathname: "/payment" as any,
+                  params: {
+                    bookingId: bookingResponse.bookingId.toString(),
+                    userEmail:
+                      bookingRequest.contactEmail || "user@example.com",
+                    amount: (
+                      bookingData.adultCount * (tour.adultPrice || 0) +
+                      bookingData.childrenCount * (tour.childrenPrice || 0) +
+                      bookingData.babyCount * (tour.babyPrice || 0)
+                    ).toString(),
+                    orderInfo: `Booking payment for tour: ${tour.tourName}`,
+                  },
+                });
               },
             },
           ]
