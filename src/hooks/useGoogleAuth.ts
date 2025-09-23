@@ -77,17 +77,23 @@ export const useGoogleAuth = () => {
 
       const updated = new URL(rawAuthUrl);
       const params = updated.searchParams;
-      params.set(
-        "redirect_uri",
-        "https://8002b8712600.ngrok-free.app/api/auth/google/callback"
-      );
+      const redirectApi =
+        (process.env as any)?.EXPO_PUBLIC_GOOGLE_REDIRECT_API ||
+        `${(api.defaults.baseURL || "").replace(
+          /\/$/,
+          ""
+        )}/api/auth/google/callback`;
+      params.set("redirect_uri", redirectApi);
       params.set("prompt", "select_account");
       updated.search = params.toString();
       const authUrl = updated.toString();
 
+      const appRedirect =
+        (process.env as any)?.EXPO_PUBLIC_GOOGLE_REDIRECT_APP ||
+        `${(api.defaults.baseURL || "").replace(/\/$/, "")}/google/callback`;
       const result = await WebBrowser.openAuthSessionAsync(
         authUrl,
-        "https://8002b8712600.ngrok-free.app/google/callback"
+        appRedirect
       );
 
       if (result.type === "success" && result.url) {
