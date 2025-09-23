@@ -81,7 +81,8 @@
         "passwordMinLength": "비밀번호는 최소 6자 이상이어야 합니다",
         "usernameRequired": "사용자 이름은 필수입니다",
         "registerFailed": "등록에 실패했습니다. 다시 시도해주세요."
-      }
+      },
+      "idNumberInvalid": "신분증/여권번호는 10자리 숫자여야 합니다"
     },
     "selection": {
       "headerTitle": "로그인 유형 선택",
@@ -278,7 +279,7 @@
       "adult": "성인",
       "children": "어린이",
       "baby": "유아",
-      "destination": "목적지"
+      "destinationAndItinerary": "목적지 및 일정"
     },
     "meta": {
       "rating": "평점",
@@ -334,6 +335,7 @@
       "selectNationality": "국적",
       "idNumber": "신분증/여권번호",
       "dateOfBirth": "생년월일",
+      "dobShort": "생년월일",
       "updateInfoHint": "프로필을 업데이트하여 이 필드를 자동으로 채우세요",
       "adultCount": "성인",
       "childrenCount": "어린이",
@@ -342,7 +344,8 @@
         "adultMin": "최소 1명의 성인이 필요합니다",
         "fullNameRequired": "성명이 필요합니다",
         "phoneInvalid": "유효하지 않은 전화번호",
-        "emailInvalid": "유효하지 않은 이메일 주소"
+        "emailInvalid": "유효하지 않은 이메일 주소",
+        "pickUpPointRequired": "픽업 지점을 입력해주세요"
       }
     },
     "errors": {
@@ -368,12 +371,45 @@
       "paymentFailed": "결제 실패"
     }
   },
+  "payment": {
+    "title": "결제",
+    "creating": "결제를 생성하는 중...",
+    "loading": "결제 페이지를 불러오는 중...",
+    "error": "결제 오류",
+    "noUrl": "결제 URL이 없습니다",
+    "loadFailed": "결제 페이지를 불러오지 못했습니다",
+    "createFailed": "결제를 생성하지 못했습니다",
+    "orderInfo": "예약 결제 - 예약 ID: {{bookingId}}",
+    "result": {
+      "loading": "거래를 불러오는 중...",
+      "success": "결제 성공",
+      "failed": "결제 실패",
+      "pending": "결제 처리 중",
+      "successMessage": "결제가 성공적으로 완료되었습니다.",
+      "failedMessage": "결제를 완료할 수 없습니다.",
+      "pendingMessage": "결제가 처리 중입니다.",
+      "details": "거래 상세",
+      "orderId": "주문 ID",
+      "bookingId": "예약 ID",
+      "paymentMethod": "결제 수단",
+      "responseCode": "응답 코드",
+      "amount": "금액",
+      "status": "상태",
+      "bankCode": "은행 코드",
+      "responseTime": "응답 시간",
+      "viewBooking": "예약 보기",
+      "goHome": "홈으로",
+      "fetchError": "거래 상세를 불러오지 못했습니다"
+    }
+  },
   "common": {
     "error": "오류",
     "success": "성공",
     "retry": "다시 시도",
     "goBack": "돌아가기",
+    "cancel": "취소",
     "ok": "확인",
+    "na": "없음",
     "hotTopic": "인기 주제",
     "seeAll": "모두 보기",
     "article": "기사"

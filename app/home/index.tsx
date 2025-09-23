@@ -7,6 +7,7 @@ import {
   Image,
   Platform,
   ActivityIndicator,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../src/navigation";
@@ -172,6 +173,17 @@ export default function Home() {
     loadTours();
   }, []);
 
+  const resolveTourCardImage = (t: any): string => {
+    const isHttp = (u?: string) =>
+      !!u && /^https?:\/\//i.test((u || "").trim());
+    if (isHttp(t?.tourImgPath)) return (t.tourImgPath as string).trim();
+    const first = ((t?.contents || []) as any[])
+      .flatMap((c) => (Array.isArray(c?.images) ? c.images : []))
+      .map((u) => (typeof u === "string" ? u.trim() : ""))
+      .find((u) => u && isHttp(u));
+    return first || "";
+  };
+
   const newsItems = [
     {
       id: 1,
@@ -239,14 +251,27 @@ export default function Home() {
     })();
   }, []);
 
+  const isSmall =
+    Dimensions.get("window").width <= 360 ||
+    Dimensions.get("window").height <= 700;
+  const lang = i18n.language as "en" | "vi" | "ko";
+  const langAdjust =
+    lang === "ko"
+      ? styles.langKoAdjust
+      : lang === "vi"
+      ? styles.langViAdjust
+      : null;
+
   return (
     <ScrollableLayout>
-      <View style={styles.container}>
+      <View style={[styles.container, isSmall && styles.containerSm]}>
         {/* Header: Welcome + username (left), language + settings (right) */}
-        <View style={styles.topHeader}>
+        <View style={[styles.topHeader, isSmall && styles.topHeaderSm]}>
           <View>
             <Text style={styles.welcomeLabel}>{t("home.welcome.heading")}</Text>
-            <Text style={styles.usernameText}>{user?.username || "Guest"}</Text>
+            <Text style={[styles.usernameText, langAdjust]}>
+              {user?.username || "Guest"}
+            </Text>
           </View>
           <View style={styles.rightActions}>
             <LanguageDropdown
@@ -255,7 +280,7 @@ export default function Home() {
             />
             <TouchableOpacity
               style={styles.settingBtn}
-              onPress={() => navigate("/settings")}
+              onPress={() => navigate("/home/settings")}
             >
               <Ionicons name="settings-outline" size={20} color="#212529" />
             </TouchableOpacity>
@@ -275,10 +300,12 @@ export default function Home() {
         {/* Popular Tour */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
+            <Text
+              style={[styles.sectionTitle, isSmall && styles.sectionTitleSm]}
+            >
               {t("home.dashboard.welcome")}
             </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigate("/tour/list")}>
               <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
             </TouchableOpacity>
           </View>
@@ -302,9 +329,7 @@ export default function Home() {
                 >
                   <Image
                     source={{
-                      uri:
-                        tour.tourImgPath ||
-                        "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=250&fit=crop",
+                      uri: resolveTourCardImage(tour),
                     }}
                     style={styles.tourImage}
                   />
@@ -314,7 +339,15 @@ export default function Home() {
                     </Text>
                   </View>
                   <View style={styles.tourContent}>
-                    <Text style={styles.tourTitle}>{tour.tourName}</Text>
+                    <Text
+                      style={[
+                        styles.tourTitle,
+                        isSmall && styles.tourTitleSm,
+                        langAdjust,
+                      ]}
+                    >
+                      {tour.tourName}
+                    </Text>
                     <View style={styles.tourRow}>
                       <View style={styles.locationContainer}>
                         <Ionicons
@@ -332,7 +365,12 @@ export default function Home() {
                       </View>
                     </View>
                     <View style={styles.priceContainer}>
-                      <Text style={styles.priceText}>
+                      <Text
+                        style={[
+                          styles.priceText,
+                          isSmall && styles.priceTextSm,
+                        ]}
+                      >
                         {tour.adultPrice
                           ? `${tour.adultPrice.toLocaleString()} Đ`
                           : "500,000 Đ"}

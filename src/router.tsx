@@ -42,7 +42,7 @@ export const goBack = () => router.back();
 
 // Deep linking configuration
 export const LINKING = {
-  prefixes: ["exp://localhost:8081", "your-app-scheme://"],
+  prefixes: ["exp://localhost:8081", "mobilefe://"],
   config: {
     screens: {
       home: "home",
@@ -55,6 +55,8 @@ export const LINKING = {
       resetPassword: "resetPassword",
       businessInfo: "businessInfo",
       forgot: "forgot",
+      payment: "payment",
+      transactionResult: "transactionResult",
     },
   },
 };

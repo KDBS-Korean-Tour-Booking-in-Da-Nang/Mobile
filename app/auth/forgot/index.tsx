@@ -12,25 +12,24 @@ import {
 } from "react-native";
 import { useNavigation } from "../../../src/navigation";
 import { useForgotPassword } from "../../../src/hooks/useAuth";
-import { useTranslation } from "react-i18next";
+// Hardcode English strings for auth flows (no i18n)
 import styles from "./styles";
 
 export default function ForgotPassword() {
   const { navigate } = useNavigation();
   const { forgotPassword } = useForgotPassword();
-  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleForgotPassword = async () => {
     if (!email.trim()) {
-      Alert.alert(t("auth.login.error"), t("auth.common.email"));
+      Alert.alert("Error", "Email is required");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      Alert.alert(t("auth.login.error"), t("auth.login.invalidEmail"));
+      Alert.alert("Error", "Invalid email address");
       return;
     }
 
@@ -46,13 +45,13 @@ export default function ForgotPassword() {
 
         navigate(`/auth/verify?${params.toString()}`);
       } else {
-        Alert.alert(t("auth.login.error"), t("auth.login.error"));
+        Alert.alert("Error", "Request failed. Please try again.");
       }
     } catch (error: any) {
       console.error("Forgot password error:", error);
       Alert.alert(
-        t("auth.login.error"),
-        error.message || t("auth.login.error")
+        "Error",
+        error.message || "Request failed. Please try again."
       );
     } finally {
       setLoading(false);
@@ -76,14 +75,14 @@ export default function ForgotPassword() {
 
         {/* Form Card overlapping */}
         <View style={styles.formCard}>
-          <Text style={styles.formTitle}>{t("auth.forgot.title")}</Text>
-          <Text style={styles.formSubtitle}>{t("auth.forgot.subtitle")}</Text>
+          <Text style={styles.formTitle}>Forgot Password</Text>
+          <Text style={styles.formSubtitle}>Enter your email to continue</Text>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>{t("auth.common.email")}</Text>
+            <Text style={styles.inputLabel}>Email</Text>
             <TextInput
               style={styles.input}
-              placeholder={t("auth.forgot.emailPlaceholder")}
+              placeholder="youremails@yahoo.com"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -97,7 +96,7 @@ export default function ForgotPassword() {
             onPress={handleForgotPassword}
             disabled={loading}
           >
-            <Text style={styles.sendButtonText}>{t("auth.forgot.send")}</Text>
+            <Text style={styles.sendButtonText}>Send</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

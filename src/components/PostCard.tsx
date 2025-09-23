@@ -76,7 +76,9 @@ const PostCard: React.FC<PostCardProps> = ({
 
   // Since we don't have userEmail from backend, we'll use username comparison
   // This is not perfect but works for now without changing backend
-  const isOwner = user?.username === post.username;
+  const isOwner =
+    (user?.username || "").trim().toLowerCase() ===
+    (post.username || "").trim().toLowerCase();
 
   const checkIfSaved = useCallback(async () => {
     try {
@@ -639,16 +641,18 @@ const PostCard: React.FC<PostCardProps> = ({
                     {isSaved ? "Unsave" : "Save"}
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.menuItem, styles.menuItemDanger]}
-                  onPress={() => {
-                    setShowMenu(false);
-                    handleReport();
-                  }}
-                >
-                  <Ionicons name="flag-outline" size={18} color="#ff4444" />
-                  <Text style={styles.menuItemTextDanger}>Report</Text>
-                </TouchableOpacity>
+                {!isOwner && (
+                  <TouchableOpacity
+                    style={[styles.menuItem, styles.menuItemDanger]}
+                    onPress={() => {
+                      setShowMenu(false);
+                      handleReport();
+                    }}
+                  >
+                    <Ionicons name="flag-outline" size={18} color="#ff4444" />
+                    <Text style={styles.menuItemTextDanger}>Report</Text>
+                  </TouchableOpacity>
+                )}
               </>
             )}
           </View>

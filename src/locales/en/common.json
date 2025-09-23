@@ -284,8 +284,7 @@
       "adult": "Adult",
       "children": "Children",
       "baby": "Baby",
-      "destination": "Destination",
-      "destinations": "Destinations"
+      "destinationAndItinerary": "Destination and Itinerary"
     },
     "types": {
       "DOMESTIC": "Domestic",
@@ -342,6 +341,7 @@
       "selectNationality": "Nationality",
       "idNumber": "ID/Passport Number",
       "dateOfBirth": "Date of Birth",
+      "dobShort": "DOB",
       "updateInfoHint": "Update your profile to auto-fill this field",
       "adultCount": "Adults",
       "childrenCount": "Children",
@@ -351,10 +351,12 @@
         "fullNameRequired": "Full name is required",
         "phoneInvalid": "Invalid phone number",
         "emailInvalid": "Invalid email address",
+        "pickUpPointRequired": "Pick-up point is required",
         "loginRequired": "Please login to book a tour",
         "bookingFailed": "Failed to book tour. Please try again",
         "paymentFailed": "Failed to create payment. Please try again"
       },
+      "idNumberInvalid": "ID/Passport must be 10 digits",
       "success": "Tour booked successfully!"
     },
     "errors": {
@@ -379,12 +381,45 @@
       "paymentFailed": "Payment Failed"
     }
   },
+  "payment": {
+    "title": "Payment",
+    "creating": "Creating payment...",
+    "loading": "Loading payment page...",
+    "error": "Payment Error",
+    "noUrl": "Payment URL is not available",
+    "loadFailed": "Failed to load payment page",
+    "createFailed": "Failed to create payment",
+    "orderInfo": "Booking payment for booking ID: {{bookingId}}",
+    "result": {
+      "loading": "Loading transaction...",
+      "success": "Payment Successful",
+      "failed": "Payment Failed",
+      "pending": "Payment Pending",
+      "successMessage": "Your payment was completed successfully.",
+      "failedMessage": "Your payment could not be completed.",
+      "pendingMessage": "Your payment is being processed.",
+      "details": "Transaction Details",
+      "orderId": "Order ID",
+      "bookingId": "Booking ID",
+      "paymentMethod": "Payment Method",
+      "responseCode": "Response Code",
+      "amount": "Amount",
+      "status": "Status",
+      "bankCode": "Bank Code",
+      "responseTime": "Response Time",
+      "viewBooking": "View Booking",
+      "goHome": "Go Home",
+      "fetchError": "Failed to fetch transaction details"
+    }
+  },
   "common": {
     "error": "Error",
     "success": "Success",
     "retry": "Retry",
     "goBack": "Go Back",
+    "cancel": "Cancel",
     "ok": "OK",
+    "na": "N/A",
     "hotTopic": "Hot Topics",
     "seeAll": "See All",
     "article": "Articles"

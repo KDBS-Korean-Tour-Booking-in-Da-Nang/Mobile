@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -9,18 +9,32 @@ import {
 } from "react-native";
 import { useNavigation } from "../../../src/navigation";
 import { useSignUp } from "../../../src/hooks/useAuth";
-import { useTranslation } from "react-i18next";
+// Hardcode English strings for this auth screen
+import i18n from "../../../src/i18n";
 import styles from "./styles";
 
 export default function SignUp() {
   const { navigate } = useNavigation();
   const { signUp } = useSignUp();
-  const { t } = useTranslation();
+  const previousLangRef = useRef<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Force English on this screen and restore previous language on leave
+  useEffect(() => {
+    previousLangRef.current = i18n.language;
+    if (i18n.language !== "en") {
+      i18n.changeLanguage("en");
+    }
+    return () => {
+      if (previousLangRef.current && previousLangRef.current !== "en") {
+        i18n.changeLanguage(previousLangRef.current);
+      }
+    };
+  }, []);
 
   const handleSignUp = async () => {
     if (!email || !password || !confirmPassword || !fullName) {
@@ -70,15 +84,15 @@ export default function SignUp() {
 
       {/* Form Card overlapping -140 */}
       <View style={styles.formCard}>
-        <Text style={styles.formTitle}>{t("auth.signup.title")}</Text>
-        <Text style={styles.formSubtitle}>{t("auth.signup.subtitle")}</Text>
+        <Text style={styles.formTitle}>Sign Up</Text>
+        <Text style={styles.formSubtitle}>Create a new account</Text>
 
         {/* Username */}
         <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>{t("auth.common.fullName")}</Text>
+          <Text style={styles.inputLabel}>Full name</Text>
           <TextInput
             style={styles.input}
-            placeholder={t("auth.signup.fullNamePlaceholder")}
+            placeholder="Enter full name"
             value={fullName}
             onChangeText={setFullName}
           />
@@ -86,10 +100,10 @@ export default function SignUp() {
 
         {/* Email */}
         <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>{t("auth.common.email")}</Text>
+          <Text style={styles.inputLabel}>Email</Text>
           <TextInput
             style={styles.input}
-            placeholder={t("auth.signup.emailPlaceholder")}
+            placeholder="Enter email"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -99,12 +113,25 @@ export default function SignUp() {
 
         {/* Password */}
         <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>{t("auth.common.password")}</Text>
+          <Text style={styles.inputLabel}>Password</Text>
           <TextInput
             style={styles.input}
-            placeholder={t("auth.signup.passwordPlaceholder")}
+            placeholder="Enter password"
             value={password}
             onChangeText={setPassword}
+            secureTextEntry
+            autoCapitalize="none"
+          />
+        </View>
+
+        {/* Confirm Password */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Confirm Password</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Re-enter password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
             secureTextEntry
             autoCapitalize="none"
           />
@@ -116,13 +143,13 @@ export default function SignUp() {
           onPress={handleSignUp}
           disabled={loading}
         >
-          <Text style={styles.signUpButtonText}>{t("auth.signup.title")}</Text>
+          <Text style={styles.signUpButtonText}>Sign Up</Text>
         </TouchableOpacity>
 
         {/* Divider */}
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>{t("auth.common.or")}</Text>
+          <Text style={styles.dividerText}>OR</Text>
           <View style={styles.dividerLine} />
         </View>
 
@@ -144,9 +171,9 @@ export default function SignUp() {
 
         {/* Footer */}
         <View style={styles.footerRow}>
-          <Text style={styles.footerText}>{t("auth.signup.haveAccount")}</Text>
+          <Text style={styles.footerText}>Already have an account?</Text>
           <TouchableOpacity onPress={() => navigate("/auth/login/userLogin")}>
-            <Text style={styles.footerLink}>{t("auth.signup.signIn")}</Text>
+            <Text style={styles.footerLink}>Sign In</Text>
           </TouchableOpacity>
         </View>
       </View>

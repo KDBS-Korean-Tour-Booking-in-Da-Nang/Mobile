@@ -297,10 +297,11 @@ const styles = StyleSheet.create({
   },
   tourDetails: {
     flexDirection: "row",
-    gap: 20,
+    gap: 8,
   },
   detailItem: {
     flex: 1,
+    minWidth: 0,
   },
   detailLabel: {
     fontSize: 12,
@@ -308,12 +309,16 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginBottom: 4,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
+    flexShrink: 1,
+    flexWrap: "wrap",
   },
   detailValue: {
     fontSize: 16,
     color: "#333",
     fontWeight: "600",
+    flexShrink: 1,
+    flexWrap: "wrap",
   },
 
   // Contact Information Styles

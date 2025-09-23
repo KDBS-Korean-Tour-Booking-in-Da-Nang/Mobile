@@ -15,12 +15,11 @@ import api from "../../../src/services/api";
 import { colors } from "../../../src/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import styles from "./styles";
-import { useTranslation } from "react-i18next";
+// Hardcode English for auth flows
 
 export default function ResetPassword() {
   const { navigate } = useNavigation();
   const params = useLocalSearchParams();
-  const { t } = useTranslation();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,17 +32,17 @@ export default function ResetPassword() {
   const handleResetPassword = async () => {
     // Validation
     if (!newPassword.trim() || !confirmPassword.trim()) {
-      Alert.alert(t("auth.login.error"), t("auth.reset.fillAll"));
+      Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
     if (newPassword.length < 6) {
-      Alert.alert(t("auth.login.error"), t("auth.reset.passwordMinLength"));
+      Alert.alert("Error", "Password must be at least 6 characters");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert(t("auth.login.error"), t("auth.reset.passwordMismatch"));
+      Alert.alert("Error", "Passwords do not match");
       return;
     }
 
@@ -56,21 +55,18 @@ export default function ResetPassword() {
       });
       const ok = resp?.data?.code === 1000 || resp?.status === 200;
       if (ok) {
-        Alert.alert(t("common.success"), t("auth.reset.resetSuccess"), [
+        Alert.alert("Success", "Password has been reset successfully", [
           {
             text: "OK",
             onPress: () => navigate("/auth/login/userLogin"),
           },
         ]);
       } else {
-        Alert.alert(
-          t("auth.login.error"),
-          resp?.data?.message || t("auth.reset.cannotReset")
-        );
+        Alert.alert("Error", resp?.data?.message || "Cannot reset password");
       }
     } catch (error) {
       console.error("Reset password error:", error);
-      Alert.alert(t("auth.login.error"), t("common.networkError"));
+      Alert.alert("Error", "Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -96,13 +92,13 @@ export default function ResetPassword() {
               </View>
             </View>
 
-            <Text style={styles.formTitle}>Tạo mật khẩu mới</Text>
+            <Text style={styles.formTitle}>Create new password</Text>
             <Text style={styles.formSubtitle}>
-              Vui lòng nhập mật khẩu mới cho tài khoản của bạn
+              Please enter a new password for your account
             </Text>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Mật khẩu mới</Text>
+              <Text style={styles.inputLabel}>New password</Text>
               <View style={styles.inputWrapper}>
                 <Ionicons
                   name="lock-closed-outline"
@@ -111,7 +107,7 @@ export default function ResetPassword() {
                 />
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Nhập mật khẩu mới"
+                  placeholder="Enter new password"
                   value={newPassword}
                   onChangeText={setNewPassword}
                   secureTextEntry={!showNewPassword}
@@ -131,7 +127,7 @@ export default function ResetPassword() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Xác nhận mật khẩu mới</Text>
+              <Text style={styles.inputLabel}>Confirm new password</Text>
               <View style={styles.inputWrapper}>
                 <Ionicons
                   name="lock-closed-outline"
@@ -140,7 +136,7 @@ export default function ResetPassword() {
                 />
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Nhập lại mật khẩu mới"
+                  placeholder="Re-enter new password"
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showConfirmPassword}
@@ -162,13 +158,17 @@ export default function ResetPassword() {
             </View>
 
             <View style={styles.passwordRequirements}>
-              <Text style={styles.requirementsTitle}>Yêu cầu mật khẩu:</Text>
-              <Text style={styles.requirementItem}>• Ít nhất 6 ký tự</Text>
-              <Text style={styles.requirementItem}>
-                • Nên có chữ hoa, chữ thường
+              <Text style={styles.requirementsTitle}>
+                Password requirements:
               </Text>
               <Text style={styles.requirementItem}>
-                • Nên có số và ký tự đặc biệt
+                • At least 6 characters
+              </Text>
+              <Text style={styles.requirementItem}>
+                • Should include upper and lower case
+              </Text>
+              <Text style={styles.requirementItem}>
+                • Should include numbers and special characters
               </Text>
             </View>
 
@@ -188,19 +188,19 @@ export default function ResetPassword() {
                     color="white"
                     style={styles.spinning}
                   />
-                  <Text style={styles.resetButtonText}>Đang đặt lại...</Text>
+                  <Text style={styles.resetButtonText}>Resetting...</Text>
                 </View>
               ) : (
-                <Text style={styles.resetButtonText}>Đặt lại mật khẩu</Text>
+                <Text style={styles.resetButtonText}>Reset password</Text>
               )}
             </TouchableOpacity>
 
             <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>Đã nhớ mật khẩu? </Text>
+              <Text style={styles.loginText}>Remember your password? </Text>
               <TouchableOpacity
                 onPress={() => navigate("/auth/login/userLogin")}
               >
-                <Text style={styles.loginLink}>Đăng nhập</Text>
+                <Text style={styles.loginLink}>Login</Text>
               </TouchableOpacity>
             </View>
           </View>

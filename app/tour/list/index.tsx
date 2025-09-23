@@ -77,6 +77,20 @@ export default function TourList() {
     navigate(`/tour?id=${tourId}`);
   };
 
+  const resolveTourCardImage = (t: any): string => {
+    const isHttp = (u?: string) =>
+      !!u && /^https?:\/\//i.test((u || "").trim());
+    if (isHttp(t?.tourImgPath)) return (t.tourImgPath as string).trim();
+    const first = ((t?.contents || []) as any[])
+      .flatMap((c) => (Array.isArray(c?.images) ? c.images : []))
+      .map((u) => (typeof u === "string" ? u.trim() : ""))
+      .find((u) => u && isHttp(u));
+    return (
+      first ||
+      "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=250&fit=crop"
+    );
+  };
+
   if (loading) {
     return (
       <MainLayout>
@@ -118,11 +132,7 @@ export default function TourList() {
                 onPress={() => handleTourPress(tour.id)}
               >
                 <Image
-                  source={{
-                    uri:
-                      tour.tourImgPath ||
-                      "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=250&fit=crop",
-                  }}
+                  source={{ uri: resolveTourCardImage(tour) }}
                   style={styles.tourImage}
                 />
                 <View style={styles.tourContent}>
