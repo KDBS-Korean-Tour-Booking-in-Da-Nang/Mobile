@@ -150,6 +150,7 @@
     "commentsTitle": "Bình luận ({{count}})",
     "writeCommentPlaceholder": "Viết bình luận...",
     "writeReplyPlaceholder": "Viết trả lời...",
+    "writeSelfReplyPlaceholder": "Thêm bình luận cho bài viết của bạn...",
     "save": "Lưu",
     "delete": "Xóa",
     "deletePostTitle": "Xóa bài viết",
@@ -284,6 +285,13 @@
   },
   "tour": {
     "loading": "Đang tải...",
+    "list": {
+      "title": "Danh sách tour",
+      "searchPlaceholder": "Tìm kiếm tour...",
+      "viewPurchased": "Đã mua",
+      "empty": "Không tìm thấy tour",
+      "emptySubtitle": "Hãy thử điều chỉnh từ khóa hoặc bộ lọc."
+    },
     "detail": {
       "name": "Tên tour",
       "departurePoint": "Điểm khởi hành",

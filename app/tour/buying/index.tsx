@@ -217,10 +217,10 @@ export default function BuyingTour() {
 
   const isValidEmail = (value: string) =>
     /[^\s@]+@[^\s@]+\.[^\s@]+/.test(value);
-  const isValidPhone = (value: string) =>
-    /^\d{10}$/.test(value.replace(/\D/g, ""));
-  const isValidTenDigitId = (value: string) =>
-    /^\d{10}$/.test((value || "").replace(/\D/g, ""));
+  // const isValidPhone = (value: string) =>
+  //   /^\d{10}$/.test(value.replace(/\D/g, ""));
+  // const isValidTenDigitId = (value: string) =>
+  //   /^\d{10}$/.test((value || "").replace(/\D/g, ""));
 
   const validateBeforeBooking = (): boolean => {
     if (adultCount < 1) {
@@ -241,7 +241,6 @@ export default function BuyingTour() {
       return false;
     }
     const nameOk = formData.fullName && formData.fullName.trim().length >= 2;
-    const phoneOk = true; // no validation for phone per request
     const emailOk = isValidEmail(formData.email || "");
     if (!nameOk) {
       Alert.alert(t("common.error"), t("tour.booking.errors.fullNameRequired"));
@@ -613,7 +612,12 @@ export default function BuyingTour() {
               )}
             </View>
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>{t("tour.booking.phoneNumber")}</Text>
+              <Text style={styles.label}>
+                {t("tour.booking.phoneNumber")}{" "}
+                {!(formData.phoneNumber || "").trim() && (
+                  <Text style={{ color: "#FF3B30" }}> *</Text>
+                )}
+              </Text>
               <TextInput
                 style={[
                   styles.input,
@@ -629,6 +633,11 @@ export default function BuyingTour() {
                 }
                 editable={!usePersonalInfo || needsUpdate("phoneNumber")}
               />
+              {!(formData.phoneNumber || "").trim() && (
+                <Text style={styles.updateHint}>
+                  {t("tour.booking.updateInfoHint")}
+                </Text>
+              )}
             </View>
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>{t("tour.booking.email")}</Text>
@@ -1587,8 +1596,6 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
           style={[styles.dobText, !value && { color: "#9ca3af" }]}
           numberOfLines={1}
           ellipsizeMode="tail"
-          adjustsFontSizeToFit
-          minimumFontScale={0.85}
         >
           {value || t("tour.booking.dobShort")}
         </Text>

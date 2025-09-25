@@ -140,6 +140,7 @@
     "commentsTitle": "댓글 ({{count}})",
     "writeCommentPlaceholder": "댓글을 입력하세요...",
     "writeReplyPlaceholder": "답글을 입력하세요...",
+    "writeSelfReplyPlaceholder": "댓글에 더 추가하세요...",
     "save": "저장",
     "delete": "삭제",
     "deletePostTitle": "게시물 삭제",
@@ -273,6 +274,13 @@
     "error": "게시 오류. 다시 시도하세요."
   },
   "tour": {
+    "list": {
+      "title": "투어 목록",
+      "viewPurchased": "구매함",
+      "searchPlaceholder": "투어 검색...",
+      "empty": "투어를 찾을 수 없습니다",
+      "emptySubtitle": "검색어 또는 필터를 조정해 보세요."
+    },
     "detail": {
       "description": "설명",
       "amount": "수량",

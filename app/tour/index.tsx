@@ -96,7 +96,7 @@ export default function TourDetail() {
     return all.length > 0
       ? all
       : [
-          "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
+          "",
         ];
   }, [tour]);
 

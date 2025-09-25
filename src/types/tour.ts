@@ -123,9 +123,12 @@ export interface BookingPaymentRequest {
 
 export interface BookingSummaryResponse {
   bookingId: number;
+  tourId?: number;
   tourName: string;
   departureDate: string;
   totalGuests: number;
+  totalAmount?: number;
+  status?: string;
   createdAt: string;
 }
 

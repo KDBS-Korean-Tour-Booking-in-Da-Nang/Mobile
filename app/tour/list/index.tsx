@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import {
   View,
   Text,
@@ -8,6 +14,7 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import MainLayout from "../../../src/components/MainLayout";
@@ -24,6 +31,7 @@ export default function TourList() {
   const [tours, setTours] = useState<TourResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [keyword, setKeyword] = useState("");
 
   // Navigation scroll effects
   const [isNavVisible, setIsNavVisible] = useState(true);
@@ -91,6 +99,17 @@ export default function TourList() {
     );
   };
 
+  const filteredTours = useMemo(() => {
+    const k = keyword.trim().toLowerCase();
+    if (!k) return tours;
+    return tours.filter((it) => {
+      const name = (it.tourName || "").toLowerCase();
+      const dep = (it.tourDeparturePoint || "").toLowerCase();
+      const type = (it.tourType || "").toLowerCase();
+      return name.includes(k) || dep.includes(k) || type.includes(k);
+    });
+  }, [tours, keyword]);
+
   if (loading) {
     return (
       <MainLayout>
@@ -119,13 +138,39 @@ export default function TourList() {
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t("tour.list.title")}</Text>
-          <View style={styles.headerRight} />
+          <TouchableOpacity
+            style={styles.purchasedButton}
+            onPress={() => navigate("/tour/historyBooking")}
+          >
+            <Ionicons name="receipt-outline" size={18} color="#007AFF" />
+            <Text style={styles.purchasedButtonText}>
+              {t("tour.list.viewPurchased")}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Search */}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search-outline" size={18} color="#6c757d" />
+          <TextInput
+            style={styles.searchInput}
+            value={keyword}
+            onChangeText={setKeyword}
+            placeholder={t("tour.list.searchPlaceholder")}
+            placeholderTextColor="#9aa0a6"
+            returnKeyType="search"
+          />
+          {keyword ? (
+            <TouchableOpacity onPress={() => setKeyword("")}>
+              <Ionicons name="close-circle" size={18} color="#9aa0a6" />
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {/* Tours Grid */}
         <View style={styles.toursGrid}>
-          {tours.length > 0 ? (
-            tours.map((tour) => (
+          {filteredTours.length > 0 ? (
+            filteredTours.map((tour) => (
               <TouchableOpacity
                 key={tour.id}
                 style={styles.tourCard}

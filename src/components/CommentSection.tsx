@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
   Alert,
   Image,
 } from "react-native";
@@ -52,6 +51,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   const [editingComment, setEditingComment] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
   const [, setHasReportedComment] = useState<Record<number, boolean>>({});
+  const [totalCommentCounts, setTotalCommentCounts] = useState<
+    Record<number, number>
+  >({});
 
   const handleSubmitComment = async () => {
     if (!newComment.trim()) {
@@ -102,7 +104,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
       onCommentAdded(comment);
       setNewComment("");
-    } catch (error: any) {
+    } catch {
       Alert.alert(t("forum.errorTitle"), t("forum.cannotPerformAction"));
     } finally {
       setIsSubmitting(false);
@@ -248,277 +250,1663 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     return user?.username === comment.username;
   };
 
+  // Function to calculate total comment count including nested replies
+  const calculateTotalCommentCount = (commentId: number): number => {
+    const directReplies = repliesMap[commentId] || [];
+    let totalCount = directReplies.length;
+
+    // Add nested replies count
+    directReplies.forEach((reply) => {
+      totalCount += calculateTotalCommentCount(reply.forumCommentId);
+    });
+
+    return totalCount;
+  };
+
+  // Function to get total comment count for display
+  const getTotalCommentCount = (commentId: number): number => {
+    return (
+      totalCommentCounts[commentId] || calculateTotalCommentCount(commentId)
+    );
+  };
+
+  // Load replies only when needed to avoid duplicate display
+  const loadRepliesForComment = React.useCallback(
+    async (commentId: number) => {
+      if (!repliesMap[commentId]) {
+        try {
+          const data = await getRepliesByComment(commentId);
+          setRepliesMap((prev) => ({
+            ...prev,
+            [commentId]: data,
+          }));
+        } catch {
+          // Silently fail for individual comments
+        }
+      }
+    },
+    [repliesMap]
+  );
+
+  // Load replies for all comments on mount to get accurate counts
+  React.useEffect(() => {
+    const loadAllReplies = async () => {
+      for (const comment of comments) {
+        if (!comment.parentCommentId && !repliesMap[comment.forumCommentId]) {
+          await loadRepliesForComment(comment.forumCommentId);
+        }
+      }
+    };
+    if (comments.length > 0) {
+      loadAllReplies();
+    }
+  }, [comments, loadRepliesForComment, repliesMap]);
+
+  // Recursively preload replies for all depths so counts are correct without interaction
+  React.useEffect(() => {
+    const visited = new Set<number>();
+
+    const preloadRecursively = async (commentId: number): Promise<void> => {
+      if (visited.has(commentId)) return;
+      visited.add(commentId);
+      try {
+        // Fetch children directly to avoid relying on possibly stale state
+        const children = await getRepliesByComment(commentId);
+        setRepliesMap((prev) => ({ ...prev, [commentId]: children }));
+        for (const child of children) {
+          await preloadRecursively(child.forumCommentId);
+        }
+      } catch {
+        // ignore per-node failures
+      }
+    };
+
+    const start = async () => {
+      const topLevel = comments.filter((c) => !c.parentCommentId);
+      for (const c of topLevel) {
+        await preloadRecursively(c.forumCommentId);
+      }
+    };
+
+    if (comments.length > 0) {
+      start();
+    }
+  }, [comments]);
+
+  // Debug: Check if comments array contains replies
+  React.useEffect(() => {
+    const topLevelComments = comments.filter(
+      (comment) => !comment.parentCommentId
+    );
+    const repliesInComments = comments.filter(
+      (comment) => comment.parentCommentId
+    );
+
+    console.log("Comments array analysis:", {
+      totalComments: comments.length,
+      topLevelComments: topLevelComments.length,
+      repliesInComments: repliesInComments.length,
+      repliesInCommentsIds: repliesInComments.map((r) => r.forumCommentId),
+    });
+
+    if (repliesInComments.length > 0) {
+      console.warn(
+        "Found replies in main comments array! This should not happen."
+      );
+    }
+  }, [comments]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>
-        {t("forum.commentsTitle", { count: comments.length })}
+        {t("forum.commentsTitle", {
+          count: comments.filter((comment) => !comment.parentCommentId).length,
+        })}
       </Text>
 
-      {/* Comments List */}
-      <ScrollView
-        style={styles.commentsList}
-        showsVerticalScrollIndicator={false}
-      >
-        {comments.map((comment) => (
-          <View key={comment.forumCommentId} style={styles.commentItem}>
-            <View style={styles.commentHeader}>
-              <Text style={styles.commentAuthor}>{comment.username}</Text>
-              <View style={styles.commentHeaderRight}>
-                <Text style={styles.commentTime}>
-                  {formatDate(comment.createdAt)}
-                </Text>
-                {isCommentOwner(comment) && (
-                  <View style={styles.ownerActions}>
-                    <TouchableOpacity
-                      onPress={() => handleEditComment(comment)}
-                      style={styles.actionButton}
-                    >
-                      <Ionicons name="create-outline" size={16} color="#666" />
-                    </TouchableOpacity>
+      {/* Comments List - Full width, no scroll container */}
+      <View style={styles.commentsList}>
+        {comments
+          .filter((comment) => !comment.parentCommentId) // Only show top-level comments
+          .map((comment) => (
+            <View key={comment.forumCommentId} style={styles.commentItem}>
+              <View style={styles.commentHeader}>
+                <Text style={styles.commentAuthor}>{comment.username}</Text>
+                <View style={styles.commentHeaderRight}>
+                  <Text style={styles.commentTime}>
+                    {formatDate(comment.createdAt)}
+                  </Text>
+                  {isCommentOwner(comment) && (
+                    <View style={styles.ownerActions}>
+                      <TouchableOpacity
+                        onPress={() => handleEditComment(comment)}
+                        style={styles.actionButton}
+                      >
+                        <Ionicons
+                          name="create-outline"
+                          size={16}
+                          color="#666"
+                        />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() =>
+                          handleDeleteComment(comment.forumCommentId)
+                        }
+                        style={styles.actionButton}
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={16}
+                          color="#ff4444"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                  {!isCommentOwner(comment) && (
                     <TouchableOpacity
                       onPress={() =>
-                        handleDeleteComment(comment.forumCommentId)
+                        handleReportComment(comment.forumCommentId)
                       }
                       style={styles.actionButton}
                     >
-                      <Ionicons
-                        name="trash-outline"
-                        size={16}
-                        color="#ff4444"
-                      />
+                      <Ionicons name="flag-outline" size={16} color="#666" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+              {editingComment === comment.forumCommentId ? (
+                <View style={styles.editContainer}>
+                  <TextInput
+                    style={styles.editInput}
+                    value={editText}
+                    onChangeText={setEditText}
+                    multiline
+                    autoFocus
+                  />
+                  <View style={styles.editActions}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setEditingComment(null);
+                        setEditText("");
+                      }}
+                      style={styles.editButton}
+                    >
+                      <Text style={styles.editButtonText}>
+                        {t("forum.cancel")}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleSaveEdit(comment.forumCommentId)}
+                      style={[styles.editButton, styles.saveButton]}
+                    >
+                      <Text
+                        style={[styles.editButtonText, styles.saveButtonText]}
+                      >
+                        {t("forum.save")}
+                      </Text>
                     </TouchableOpacity>
                   </View>
-                )}
-                {!isCommentOwner(comment) && (
-                  <TouchableOpacity
-                    onPress={() => handleReportComment(comment.forumCommentId)}
-                    style={styles.actionButton}
-                  >
-                    <Ionicons name="flag-outline" size={16} color="#666" />
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-            {editingComment === comment.forumCommentId ? (
-              <View style={styles.editContainer}>
-                <TextInput
-                  style={styles.editInput}
-                  value={editText}
-                  onChangeText={setEditText}
-                  multiline
-                  autoFocus
-                />
-                <View style={styles.editActions}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setEditingComment(null);
-                      setEditText("");
-                    }}
-                    style={styles.editButton}
-                  >
-                    <Text style={styles.editButtonText}>
-                      {t("forum.cancel")}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => handleSaveEdit(comment.forumCommentId)}
-                    style={[styles.editButton, styles.saveButton]}
-                  >
-                    <Text
-                      style={[styles.editButtonText, styles.saveButtonText]}
-                    >
-                      {t("forum.save")}
-                    </Text>
-                  </TouchableOpacity>
                 </View>
-              </View>
-            ) : (
-              <Text style={styles.commentContent}>{comment.content}</Text>
-            )}
-            {comment.imgPath && (
-              <Image
-                source={{ uri: comment.imgPath }}
-                style={styles.commentImage}
-                resizeMode="cover"
-              />
-            )}
-            <View style={styles.commentActions}>
-              <TouchableOpacity
-                style={styles.commentAction}
-                onPress={async () => {
-                  if (!user?.email) {
-                    Alert.alert(t("forum.errorTitle"), t("forum.loginToLike"));
-                    return;
-                  }
-                  const isLiked = !!likedMap[comment.forumCommentId];
-                  try {
-                    if (!isLiked) {
-                      await addCommentReaction(
-                        comment.forumCommentId,
-                        "LIKE",
-                        user.email
-                      );
-                      comment.react = (comment.react || 0) + 1;
-                      setLikedMap((prev) => ({
-                        ...prev,
-                        [comment.forumCommentId]: true,
-                      }));
-                    } else {
-                      // toggle off by calling same endpoint (backend toggles)
-                      await addCommentReaction(
-                        comment.forumCommentId,
-                        "LIKE",
-                        user.email
-                      );
-                      comment.react = Math.max(0, (comment.react || 0) - 1);
-                      setLikedMap((prev) => ({
-                        ...prev,
-                        [comment.forumCommentId]: false,
-                      }));
-                    }
-                  } catch {}
-                }}
-              >
-                <Ionicons
-                  name={
-                    likedMap[comment.forumCommentId] ? "heart" : "heart-outline"
-                  }
-                  size={16}
-                  color={likedMap[comment.forumCommentId] ? "#ff4444" : "#666"}
+              ) : (
+                <Text style={styles.commentContent}>{comment.content}</Text>
+              )}
+              {comment.imgPath && (
+                <Image
+                  source={{ uri: comment.imgPath }}
+                  style={styles.commentImage}
+                  resizeMode="cover"
                 />
-                <Text style={styles.commentActionText}>
-                  {comment.react || 0}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.commentAction}
-                onPress={async () => {
-                  if (!user?.email) {
-                    Alert.alert(t("forum.errorTitle"), t("forum.loginToReply"));
-                    return;
-                  }
-                  // Cross-platform behavior: open inline reply box under comment
-                  const isOpen = !!replyOpen[comment.forumCommentId];
-                  setReplyOpen((prev) => ({
-                    ...prev,
-                    [comment.forumCommentId]: true,
-                  }));
-                  // Lazy load replies on first open
-                  if (!isOpen && !repliesMap[comment.forumCommentId]) {
-                    try {
-                      const data = await getRepliesByComment(
-                        comment.forumCommentId
+              )}
+              <View style={styles.commentActions}>
+                <TouchableOpacity
+                  style={styles.commentAction}
+                  onPress={async () => {
+                    if (!user?.email) {
+                      Alert.alert(
+                        t("forum.errorTitle"),
+                        t("forum.loginToLike")
                       );
-                      setRepliesMap((prev) => ({
-                        ...prev,
-                        [comment.forumCommentId]: data,
-                      }));
-                    } catch {}
-                  }
-                }}
-              >
-                <Ionicons name="chatbubble-outline" size={16} color="#666" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.commentAction}
-                onPress={async () => {
-                  const isOpen = !!replyOpen[comment.forumCommentId];
-                  setReplyOpen((prev) => ({
-                    ...prev,
-                    [comment.forumCommentId]: !isOpen,
-                  }));
-                  if (!isOpen && !repliesMap[comment.forumCommentId]) {
-                    try {
-                      const data = await getRepliesByComment(
-                        comment.forumCommentId
-                      );
-                      setRepliesMap((prev) => ({
-                        ...prev,
-                        [comment.forumCommentId]: data,
-                      }));
-                    } catch {}
-                  }
-                }}
-              >
-                <Ionicons
-                  name={
-                    replyOpen[comment.forumCommentId]
-                      ? "chevron-up"
-                      : "chevron-down"
-                  }
-                  size={16}
-                  color="#666"
-                />
-              </TouchableOpacity>
-            </View>
-            {replyOpen[comment.forumCommentId] && (
-              <View style={styles.repliesContainer}>
-                {(repliesMap[comment.forumCommentId] || []).map((reply) => (
-                  <View key={reply.forumCommentId} style={styles.replyItem}>
-                    <View style={styles.commentHeader}>
-                      <Text style={styles.commentAuthor}>{reply.username}</Text>
-                      <Text style={styles.commentTime}>
-                        {formatDate(reply.createdAt)}
-                      </Text>
-                    </View>
-                    <Text style={styles.commentContent}>{reply.content}</Text>
-                  </View>
-                ))}
-                <View style={styles.replyInputRow}>
-                  <TextInput
-                    style={styles.replyInput}
-                    placeholder={t("forum.writeReplyPlaceholder")}
-                    value={replyDraft[comment.forumCommentId] || ""}
-                    onChangeText={(t) =>
-                      setReplyDraft((prev) => ({
-                        ...prev,
-                        [comment.forumCommentId]: t,
-                      }))
+                      return;
                     }
-                    multiline
+                    const isLiked = !!likedMap[comment.forumCommentId];
+                    try {
+                      if (!isLiked) {
+                        await addCommentReaction(
+                          comment.forumCommentId,
+                          "LIKE",
+                          user.email
+                        );
+                        comment.react = (comment.react || 0) + 1;
+                        setLikedMap((prev) => ({
+                          ...prev,
+                          [comment.forumCommentId]: true,
+                        }));
+                      } else {
+                        // toggle off by calling same endpoint (backend toggles)
+                        await addCommentReaction(
+                          comment.forumCommentId,
+                          "LIKE",
+                          user.email
+                        );
+                        comment.react = Math.max(0, (comment.react || 0) - 1);
+                        setLikedMap((prev) => ({
+                          ...prev,
+                          [comment.forumCommentId]: false,
+                        }));
+                      }
+                    } catch {}
+                  }}
+                >
+                  <Ionicons
+                    name={
+                      likedMap[comment.forumCommentId]
+                        ? "heart"
+                        : "heart-outline"
+                    }
+                    size={16}
+                    color={
+                      likedMap[comment.forumCommentId] ? "#ff4444" : "#666"
+                    }
                   />
-                  <TouchableOpacity
-                    style={styles.replySend}
-                    onPress={async () => {
-                      const text = (
-                        replyDraft[comment.forumCommentId] || ""
-                      ).trim();
-                      if (!text) return;
-                      if (!user?.email) {
-                        Alert.alert("Lỗi", "Vui lòng đăng nhập để trả lời");
-                        return;
-                      }
-                      try {
-                        const newReply = await replyToComment({
-                          forumPostId: Number(postId),
-                          content: text,
-                          userEmail: user.email!,
-                          parentCommentId: comment.forumCommentId,
-                        });
-                        setRepliesMap((prev) => ({
-                          ...prev,
-                          [comment.forumCommentId]: [
-                            newReply,
-                            ...(prev[comment.forumCommentId] || []),
-                          ],
-                        }));
-                        setReplyDraft((prev) => ({
-                          ...prev,
-                          [comment.forumCommentId]: "",
-                        }));
-                      } catch {
-                        Alert.alert("Lỗi", "Không thể gửi trả lời");
-                      }
-                    }}
-                  >
-                    <Ionicons name="send" size={18} color="#007AFF" />
-                  </TouchableOpacity>
-                </View>
+                  <Text style={styles.commentActionText}>
+                    {comment.react || 0}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Comment count - tap to expand and show input */}
+                <TouchableOpacity
+                  style={styles.commentAction}
+                  onPress={async () => {
+                    const isOpen = !!replyOpen[comment.forumCommentId];
+                    if (!isOpen) {
+                      await loadRepliesForComment(comment.forumCommentId);
+                    }
+                    setReplyOpen((prev) => ({
+                      ...prev,
+                      [comment.forumCommentId]: true,
+                    }));
+                  }}
+                >
+                  <Ionicons name="chatbubble-outline" size={16} color="#666" />
+                  <Text style={styles.commentActionText}>
+                    {getTotalCommentCount(comment.forumCommentId)}
+                  </Text>
+                </TouchableOpacity>
               </View>
-            )}
-          </View>
-        ))}
-      </ScrollView>
+              {replyOpen[comment.forumCommentId] && (
+                <View style={styles.repliesContainer}>
+                  {(repliesMap[comment.forumCommentId] || []).map((reply) => (
+                    <View key={reply.forumCommentId} style={styles.replyItem}>
+                      <View style={styles.commentHeader}>
+                        <View style={styles.replyAuthorContainer}>
+                          <Ionicons
+                            name="chatbubble-outline"
+                            size={14}
+                            color="#666"
+                          />
+                          <Text
+                            style={[styles.commentAuthor, { marginLeft: 4 }]}
+                          >
+                            {reply.username}
+                          </Text>
+                        </View>
+                        <View style={styles.commentHeaderRight}>
+                          <Text style={styles.commentTime}>
+                            {formatDate(reply.createdAt)}
+                          </Text>
+                          {isCommentOwner(reply) && (
+                            <View style={styles.ownerActions}>
+                              <TouchableOpacity
+                                onPress={() => handleEditComment(reply)}
+                                style={styles.actionButton}
+                              >
+                                <Ionicons
+                                  name="create-outline"
+                                  size={16}
+                                  color="#666"
+                                />
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                onPress={() =>
+                                  handleDeleteComment(reply.forumCommentId)
+                                }
+                                style={styles.actionButton}
+                              >
+                                <Ionicons
+                                  name="trash-outline"
+                                  size={16}
+                                  color="#ff4444"
+                                />
+                              </TouchableOpacity>
+                            </View>
+                          )}
+                          {!isCommentOwner(reply) && (
+                            <TouchableOpacity
+                              onPress={() =>
+                                handleReportComment(reply.forumCommentId)
+                              }
+                              style={styles.actionButton}
+                            >
+                              <Ionicons
+                                name="flag-outline"
+                                size={16}
+                                color="#666"
+                              />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
+                      {editingComment === reply.forumCommentId ? (
+                        <View style={styles.editContainer}>
+                          <TextInput
+                            style={styles.editInput}
+                            value={editText}
+                            onChangeText={setEditText}
+                            multiline
+                            autoFocus
+                          />
+                          <View style={styles.editActions}>
+                            <TouchableOpacity
+                              onPress={() => {
+                                setEditingComment(null);
+                                setEditText("");
+                              }}
+                              style={styles.editButton}
+                            >
+                              <Text style={styles.editButtonText}>
+                                {t("forum.cancel")}
+                              </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              onPress={() =>
+                                handleSaveEdit(reply.forumCommentId)
+                              }
+                              style={[styles.editButton, styles.saveButton]}
+                            >
+                              <Text
+                                style={[
+                                  styles.editButtonText,
+                                  styles.saveButtonText,
+                                ]}
+                              >
+                                {t("forum.save")}
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      ) : (
+                        <Text style={styles.commentContent}>
+                          {reply.content}
+                        </Text>
+                      )}
+                      {reply.imgPath && (
+                        <Image
+                          source={{ uri: reply.imgPath }}
+                          style={styles.commentImage}
+                          resizeMode="cover"
+                        />
+                      )}
+
+                      <View style={styles.commentActions}>
+                        <TouchableOpacity
+                          style={styles.commentAction}
+                          onPress={async () => {
+                            if (!user?.email) {
+                              Alert.alert(
+                                t("forum.errorTitle"),
+                                t("forum.loginToLike")
+                              );
+                              return;
+                            }
+                            const isLiked = !!likedMap[reply.forumCommentId];
+                            try {
+                              if (!isLiked) {
+                                await addCommentReaction(
+                                  reply.forumCommentId,
+                                  "LIKE",
+                                  user.email
+                                );
+                                reply.react = (reply.react || 0) + 1;
+                                setLikedMap((prev) => ({
+                                  ...prev,
+                                  [reply.forumCommentId]: true,
+                                }));
+                              } else {
+                                await addCommentReaction(
+                                  reply.forumCommentId,
+                                  "LIKE",
+                                  user.email
+                                );
+                                reply.react = Math.max(
+                                  0,
+                                  (reply.react || 0) - 1
+                                );
+                                setLikedMap((prev) => ({
+                                  ...prev,
+                                  [reply.forumCommentId]: false,
+                                }));
+                              }
+                            } catch {}
+                          }}
+                        >
+                          <Ionicons
+                            name={
+                              likedMap[reply.forumCommentId]
+                                ? "heart"
+                                : "heart-outline"
+                            }
+                            size={14}
+                            color={
+                              likedMap[reply.forumCommentId]
+                                ? "#ff4444"
+                                : "#666"
+                            }
+                          />
+                          <Text
+                            style={[styles.commentActionText, { fontSize: 12 }]}
+                          >
+                            {reply.react || 0}
+                          </Text>
+                        </TouchableOpacity>
+
+                        {/* Reply count - tap to expand nested replies and show input */}
+                        <TouchableOpacity
+                          style={styles.commentAction}
+                          onPress={async () => {
+                            const isOpen = !!replyOpen[reply.forumCommentId];
+                            if (!isOpen) {
+                              await loadRepliesForComment(reply.forumCommentId);
+                            }
+                            setReplyOpen((prev) => ({
+                              ...prev,
+                              [reply.forumCommentId]: true,
+                            }));
+                          }}
+                        >
+                          <Ionicons
+                            name="chatbubble-outline"
+                            size={14}
+                            color="#666"
+                          />
+                          <Text
+                            style={[styles.commentActionText, { fontSize: 12 }]}
+                          >
+                            {getTotalCommentCount(reply.forumCommentId)}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* Nested replies for this reply */}
+                      {replyOpen[reply.forumCommentId] && (
+                        <View style={styles.nestedRepliesContainer}>
+                          {(repliesMap[reply.forumCommentId] || []).map(
+                            (nestedReply) => (
+                              <View
+                                key={nestedReply.forumCommentId}
+                                style={styles.nestedReplyItem}
+                              >
+                                <View style={styles.commentHeader}>
+                                  <View style={styles.replyAuthorContainer}>
+                                    <Ionicons
+                                      name="chatbubble-outline"
+                                      size={12}
+                                      color="#666"
+                                    />
+                                    <Text
+                                      style={[
+                                        styles.commentAuthor,
+                                        { marginLeft: 4, fontSize: 13 },
+                                      ]}
+                                    >
+                                      {nestedReply.username}
+                                    </Text>
+                                  </View>
+                                  <View style={styles.commentHeaderRight}>
+                                    <Text
+                                      style={[
+                                        styles.commentTime,
+                                        { fontSize: 11 },
+                                      ]}
+                                    >
+                                      {formatDate(nestedReply.createdAt)}
+                                    </Text>
+                                    {isCommentOwner(nestedReply) && (
+                                      <View style={styles.ownerActions}>
+                                        <TouchableOpacity
+                                          onPress={() =>
+                                            handleEditComment(nestedReply)
+                                          }
+                                          style={styles.actionButton}
+                                        >
+                                          <Ionicons
+                                            name="create-outline"
+                                            size={14}
+                                            color="#666"
+                                          />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                          onPress={() =>
+                                            handleDeleteComment(
+                                              nestedReply.forumCommentId
+                                            )
+                                          }
+                                          style={styles.actionButton}
+                                        >
+                                          <Ionicons
+                                            name="trash-outline"
+                                            size={14}
+                                            color="#ff4444"
+                                          />
+                                        </TouchableOpacity>
+                                      </View>
+                                    )}
+                                    {!isCommentOwner(nestedReply) && (
+                                      <TouchableOpacity
+                                        onPress={() =>
+                                          handleReportComment(
+                                            nestedReply.forumCommentId
+                                          )
+                                        }
+                                        style={styles.actionButton}
+                                      >
+                                        <Ionicons
+                                          name="flag-outline"
+                                          size={14}
+                                          color="#666"
+                                        />
+                                      </TouchableOpacity>
+                                    )}
+                                  </View>
+                                </View>
+                                {editingComment ===
+                                nestedReply.forumCommentId ? (
+                                  <View style={styles.editContainer}>
+                                    <TextInput
+                                      style={styles.editInput}
+                                      value={editText}
+                                      onChangeText={setEditText}
+                                      multiline
+                                      autoFocus
+                                    />
+                                    <View style={styles.editActions}>
+                                      <TouchableOpacity
+                                        onPress={() => {
+                                          setEditingComment(null);
+                                          setEditText("");
+                                        }}
+                                        style={styles.editButton}
+                                      >
+                                        <Text style={styles.editButtonText}>
+                                          {t("forum.cancel")}
+                                        </Text>
+                                      </TouchableOpacity>
+                                      <TouchableOpacity
+                                        onPress={() =>
+                                          handleSaveEdit(
+                                            nestedReply.forumCommentId
+                                          )
+                                        }
+                                        style={[
+                                          styles.editButton,
+                                          styles.saveButton,
+                                        ]}
+                                      >
+                                        <Text
+                                          style={[
+                                            styles.editButtonText,
+                                            styles.saveButtonText,
+                                          ]}
+                                        >
+                                          {t("forum.save")}
+                                        </Text>
+                                      </TouchableOpacity>
+                                    </View>
+                                  </View>
+                                ) : (
+                                  <Text
+                                    style={[
+                                      styles.commentContent,
+                                      { fontSize: 13 },
+                                    ]}
+                                  >
+                                    {nestedReply.content}
+                                  </Text>
+                                )}
+                                {nestedReply.imgPath && (
+                                  <Image
+                                    source={{ uri: nestedReply.imgPath }}
+                                    style={[
+                                      styles.commentImage,
+                                      { width: 80, height: 80 },
+                                    ]}
+                                    resizeMode="cover"
+                                  />
+                                )}
+                                <View style={styles.commentActions}>
+                                  <TouchableOpacity
+                                    style={styles.commentAction}
+                                    onPress={async () => {
+                                      if (!user?.email) {
+                                        Alert.alert(
+                                          t("forum.errorTitle"),
+                                          t("forum.loginToLike")
+                                        );
+                                        return;
+                                      }
+                                      const isLiked =
+                                        !!likedMap[nestedReply.forumCommentId];
+                                      try {
+                                        if (!isLiked) {
+                                          await addCommentReaction(
+                                            nestedReply.forumCommentId,
+                                            "LIKE",
+                                            user.email
+                                          );
+                                          nestedReply.react =
+                                            (nestedReply.react || 0) + 1;
+                                          setLikedMap((prev) => ({
+                                            ...prev,
+                                            [nestedReply.forumCommentId]: true,
+                                          }));
+                                        } else {
+                                          await addCommentReaction(
+                                            nestedReply.forumCommentId,
+                                            "LIKE",
+                                            user.email
+                                          );
+                                          nestedReply.react = Math.max(
+                                            0,
+                                            (nestedReply.react || 0) - 1
+                                          );
+                                          setLikedMap((prev) => ({
+                                            ...prev,
+                                            [nestedReply.forumCommentId]: false,
+                                          }));
+                                        }
+                                      } catch {}
+                                    }}
+                                  >
+                                    <Ionicons
+                                      name={
+                                        likedMap[nestedReply.forumCommentId]
+                                          ? "heart"
+                                          : "heart-outline"
+                                      }
+                                      size={14}
+                                      color={
+                                        likedMap[nestedReply.forumCommentId]
+                                          ? "#ff4444"
+                                          : "#666"
+                                      }
+                                    />
+                                    <Text
+                                      style={[
+                                        styles.commentActionText,
+                                        { fontSize: 11 },
+                                      ]}
+                                    >
+                                      {nestedReply.react || 0}
+                                    </Text>
+                                  </TouchableOpacity>
+                                  <TouchableOpacity
+                                    style={styles.commentAction}
+                                    onPress={async () => {
+                                      if (!user?.email) {
+                                        Alert.alert(
+                                          t("forum.errorTitle"),
+                                          t("forum.loginToReply")
+                                        );
+                                        return;
+                                      }
+                                      // Toggle reply input for this specific nested reply
+                                      const isOpen =
+                                        !!replyOpen[nestedReply.forumCommentId];
+                                      setReplyOpen((prev) => ({
+                                        ...prev,
+                                        [nestedReply.forumCommentId]: !isOpen,
+                                      }));
+                                    }}
+                                  >
+                                    <Ionicons
+                                      name="chatbubble-outline"
+                                      size={14}
+                                      color="#666"
+                                    />
+                                    <Text
+                                      style={[
+                                        styles.commentActionText,
+                                        { fontSize: 11 },
+                                      ]}
+                                    >
+                                      {getTotalCommentCount(
+                                        nestedReply.forumCommentId
+                                      )}
+                                    </Text>
+                                  </TouchableOpacity>
+                                </View>
+
+                                {/* Deep nested replies for this nested reply (Level 3+) */}
+                                {replyOpen[nestedReply.forumCommentId] && (
+                                  <View
+                                    style={styles.deepNestedRepliesContainer}
+                                  >
+                                    {(
+                                      repliesMap[nestedReply.forumCommentId] ||
+                                      []
+                                    ).map((deepNestedReply) => (
+                                      <View
+                                        key={deepNestedReply.forumCommentId}
+                                        style={styles.deepNestedReplyItem}
+                                      >
+                                        <View style={styles.commentHeader}>
+                                          <View
+                                            style={styles.replyAuthorContainer}
+                                          >
+                                            <Ionicons
+                                              name="chatbubble-outline"
+                                              size={10}
+                                              color="#666"
+                                            />
+                                            <Text
+                                              style={[
+                                                styles.commentAuthor,
+                                                {
+                                                  marginLeft: 4,
+                                                  fontSize: 12,
+                                                },
+                                              ]}
+                                            >
+                                              {deepNestedReply.username}
+                                            </Text>
+                                          </View>
+                                          <View
+                                            style={styles.commentHeaderRight}
+                                          >
+                                            <Text
+                                              style={[
+                                                styles.commentTime,
+                                                { fontSize: 10 },
+                                              ]}
+                                            >
+                                              {formatDate(
+                                                deepNestedReply.createdAt
+                                              )}
+                                            </Text>
+                                            {isCommentOwner(
+                                              deepNestedReply
+                                            ) && (
+                                              <View style={styles.ownerActions}>
+                                                <TouchableOpacity
+                                                  onPress={() =>
+                                                    handleEditComment(
+                                                      deepNestedReply
+                                                    )
+                                                  }
+                                                  style={styles.actionButton}
+                                                >
+                                                  <Ionicons
+                                                    name="create-outline"
+                                                    size={12}
+                                                    color="#666"
+                                                  />
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                  onPress={() =>
+                                                    handleDeleteComment(
+                                                      deepNestedReply.forumCommentId
+                                                    )
+                                                  }
+                                                  style={styles.actionButton}
+                                                >
+                                                  <Ionicons
+                                                    name="trash-outline"
+                                                    size={12}
+                                                    color="#ff4444"
+                                                  />
+                                                </TouchableOpacity>
+                                              </View>
+                                            )}
+                                            {!isCommentOwner(
+                                              deepNestedReply
+                                            ) && (
+                                              <TouchableOpacity
+                                                onPress={() =>
+                                                  handleReportComment(
+                                                    deepNestedReply.forumCommentId
+                                                  )
+                                                }
+                                                style={styles.actionButton}
+                                              >
+                                                <Ionicons
+                                                  name="flag-outline"
+                                                  size={12}
+                                                  color="#666"
+                                                />
+                                              </TouchableOpacity>
+                                            )}
+                                          </View>
+                                        </View>
+                                        {editingComment ===
+                                        deepNestedReply.forumCommentId ? (
+                                          <View style={styles.editContainer}>
+                                            <TextInput
+                                              style={styles.editInput}
+                                              value={editText}
+                                              onChangeText={setEditText}
+                                              multiline
+                                              autoFocus
+                                            />
+                                            <View style={styles.editActions}>
+                                              <TouchableOpacity
+                                                onPress={() => {
+                                                  setEditingComment(null);
+                                                  setEditText("");
+                                                }}
+                                                style={styles.editButton}
+                                              >
+                                                <Text
+                                                  style={styles.editButtonText}
+                                                >
+                                                  {t("forum.cancel")}
+                                                </Text>
+                                              </TouchableOpacity>
+                                              <TouchableOpacity
+                                                onPress={() =>
+                                                  handleSaveEdit(
+                                                    deepNestedReply.forumCommentId
+                                                  )
+                                                }
+                                                style={[
+                                                  styles.editButton,
+                                                  styles.saveButton,
+                                                ]}
+                                              >
+                                                <Text
+                                                  style={[
+                                                    styles.editButtonText,
+                                                    styles.saveButtonText,
+                                                  ]}
+                                                >
+                                                  {t("forum.save")}
+                                                </Text>
+                                              </TouchableOpacity>
+                                            </View>
+                                          </View>
+                                        ) : (
+                                          <Text
+                                            style={[
+                                              styles.commentContent,
+                                              { fontSize: 12 },
+                                            ]}
+                                          >
+                                            {deepNestedReply.content}
+                                          </Text>
+                                        )}
+                                        {deepNestedReply.imgPath && (
+                                          <Image
+                                            source={{
+                                              uri: deepNestedReply.imgPath,
+                                            }}
+                                            style={[
+                                              styles.commentImage,
+                                              { width: 60, height: 60 },
+                                            ]}
+                                            resizeMode="cover"
+                                          />
+                                        )}
+                                        <View style={styles.commentActions}>
+                                          <TouchableOpacity
+                                            style={styles.commentAction}
+                                            onPress={async () => {
+                                              if (!user?.email) {
+                                                Alert.alert(
+                                                  t("forum.errorTitle"),
+                                                  t("forum.loginToLike")
+                                                );
+                                                return;
+                                              }
+                                              const isLiked =
+                                                !!likedMap[
+                                                  deepNestedReply.forumCommentId
+                                                ];
+                                              try {
+                                                if (!isLiked) {
+                                                  await addCommentReaction(
+                                                    deepNestedReply.forumCommentId,
+                                                    "LIKE",
+                                                    user.email
+                                                  );
+                                                  deepNestedReply.react =
+                                                    (deepNestedReply.react ||
+                                                      0) + 1;
+                                                  setLikedMap((prev) => ({
+                                                    ...prev,
+                                                    [deepNestedReply.forumCommentId]:
+                                                      true,
+                                                  }));
+                                                } else {
+                                                  await addCommentReaction(
+                                                    deepNestedReply.forumCommentId,
+                                                    "LIKE",
+                                                    user.email
+                                                  );
+                                                  deepNestedReply.react =
+                                                    Math.max(
+                                                      0,
+                                                      (deepNestedReply.react ||
+                                                        0) - 1
+                                                    );
+                                                  setLikedMap((prev) => ({
+                                                    ...prev,
+                                                    [deepNestedReply.forumCommentId]:
+                                                      false,
+                                                  }));
+                                                }
+                                              } catch {}
+                                            }}
+                                          >
+                                            <Ionicons
+                                              name={
+                                                likedMap[
+                                                  deepNestedReply.forumCommentId
+                                                ]
+                                                  ? "heart"
+                                                  : "heart-outline"
+                                              }
+                                              size={12}
+                                              color={
+                                                likedMap[
+                                                  deepNestedReply.forumCommentId
+                                                ]
+                                                  ? "#ff4444"
+                                                  : "#666"
+                                              }
+                                            />
+                                            <Text
+                                              style={[
+                                                styles.commentActionText,
+                                                { fontSize: 10 },
+                                              ]}
+                                            >
+                                              {deepNestedReply.react || 0}
+                                            </Text>
+                                          </TouchableOpacity>
+                                          <TouchableOpacity
+                                            style={styles.commentAction}
+                                            onPress={async () => {
+                                              if (!user?.email) {
+                                                Alert.alert(
+                                                  t("forum.errorTitle"),
+                                                  t("forum.loginToReply")
+                                                );
+                                                return;
+                                              }
+                                              // Toggle reply input for this specific deep nested reply
+                                              const isOpen =
+                                                !!replyOpen[
+                                                  deepNestedReply.forumCommentId
+                                                ];
+                                              setReplyOpen((prev) => ({
+                                                ...prev,
+                                                [deepNestedReply.forumCommentId]:
+                                                  !isOpen,
+                                              }));
+                                            }}
+                                          >
+                                            <Ionicons
+                                              name="chatbubble-outline"
+                                              size={12}
+                                              color="#666"
+                                            />
+                                            <Text
+                                              style={[
+                                                styles.commentActionText,
+                                                { fontSize: 10 },
+                                              ]}
+                                            >
+                                              {getTotalCommentCount(
+                                                deepNestedReply.forumCommentId
+                                              )}
+                                            </Text>
+                                          </TouchableOpacity>
+                                        </View>
+
+                                        {/* Deep nested reply input (Level 4+) */}
+                                        {replyOpen[
+                                          deepNestedReply.forumCommentId
+                                        ] && (
+                                          <View
+                                            style={
+                                              styles.deepNestedReplyInputContainer
+                                            }
+                                          >
+                                            <View
+                                              style={
+                                                styles.deepNestedReplyInputRow
+                                              }
+                                            >
+                                              <TextInput
+                                                style={
+                                                  styles.deepNestedReplyInput
+                                                }
+                                                placeholder="Trả lời..."
+                                                value={
+                                                  replyDraft[
+                                                    deepNestedReply
+                                                      .forumCommentId
+                                                  ] || ""
+                                                }
+                                                onChangeText={(t) =>
+                                                  setReplyDraft((prev) => ({
+                                                    ...prev,
+                                                    [deepNestedReply.forumCommentId]:
+                                                      t,
+                                                  }))
+                                                }
+                                                multiline
+                                              />
+                                              <TouchableOpacity
+                                                style={
+                                                  styles.deepNestedReplySend
+                                                }
+                                                onPress={async () => {
+                                                  const text = (
+                                                    replyDraft[
+                                                      deepNestedReply
+                                                        .forumCommentId
+                                                    ] || ""
+                                                  ).trim();
+                                                  if (!text) return;
+                                                  if (!user?.email) {
+                                                    Alert.alert(
+                                                      t("forum.errorTitle"),
+                                                      t("forum.loginToReply")
+                                                    );
+                                                    return;
+                                                  }
+                                                  try {
+                                                    const newDeepNestedReply =
+                                                      await replyToComment({
+                                                        forumPostId:
+                                                          Number(postId),
+                                                        content: text,
+                                                        userEmail: user.email!,
+                                                        parentCommentId:
+                                                          deepNestedReply.forumCommentId,
+                                                      });
+
+                                                    // Debug: Check if deep nested reply has correct parentCommentId
+                                                    console.log(
+                                                      "New deep nested reply created:",
+                                                      {
+                                                        id: newDeepNestedReply.forumCommentId,
+                                                        parentId:
+                                                          newDeepNestedReply.parentCommentId,
+                                                        expectedParentId:
+                                                          deepNestedReply.forumCommentId,
+                                                      }
+                                                    );
+
+                                                    // Only add to repliesMap if it's actually a reply
+                                                    if (
+                                                      newDeepNestedReply.parentCommentId ===
+                                                      deepNestedReply.forumCommentId
+                                                    ) {
+                                                      setRepliesMap((prev) => ({
+                                                        ...prev,
+                                                        [deepNestedReply.forumCommentId]:
+                                                          [
+                                                            newDeepNestedReply,
+                                                            ...(prev[
+                                                              deepNestedReply
+                                                                .forumCommentId
+                                                            ] || []),
+                                                          ],
+                                                      }));
+                                                      setReplyDraft((prev) => ({
+                                                        ...prev,
+                                                        [deepNestedReply.forumCommentId]:
+                                                          "",
+                                                      }));
+                                                      // Update total comment count
+                                                      setTotalCommentCounts(
+                                                        (prev) => ({
+                                                          ...prev,
+                                                          [deepNestedReply.forumCommentId]:
+                                                            (prev[
+                                                              deepNestedReply
+                                                                .forumCommentId
+                                                            ] || 0) + 1,
+                                                        })
+                                                      );
+
+                                                      // IMPORTANT: Don't call onCommentAdded for deep nested replies!
+                                                      console.log(
+                                                        "Deep nested reply added to repliesMap only, not to main comments array"
+                                                      );
+                                                    } else {
+                                                      console.error(
+                                                        "Deep nested reply created with wrong parent ID:",
+                                                        newDeepNestedReply
+                                                      );
+
+                                                      // If backend returns deep nested reply as top-level comment, we need to handle it differently
+                                                      if (
+                                                        newDeepNestedReply.parentCommentId ===
+                                                          null ||
+                                                        newDeepNestedReply.parentCommentId ===
+                                                          undefined
+                                                      ) {
+                                                        console.log(
+                                                          "Backend returned deep nested reply as top-level comment, treating as reply anyway"
+                                                        );
+                                                        // Still add to repliesMap even if backend didn't set parentCommentId correctly
+                                                        setRepliesMap(
+                                                          (prev) => ({
+                                                            ...prev,
+                                                            [deepNestedReply.forumCommentId]:
+                                                              [
+                                                                newDeepNestedReply,
+                                                                ...(prev[
+                                                                  deepNestedReply
+                                                                    .forumCommentId
+                                                                ] || []),
+                                                              ],
+                                                          })
+                                                        );
+                                                        setReplyDraft(
+                                                          (prev) => ({
+                                                            ...prev,
+                                                            [deepNestedReply.forumCommentId]:
+                                                              "",
+                                                          })
+                                                        );
+                                                        // Update total comment count
+                                                        setTotalCommentCounts(
+                                                          (prev) => ({
+                                                            ...prev,
+                                                            [deepNestedReply.forumCommentId]:
+                                                              (prev[
+                                                                deepNestedReply
+                                                                  .forumCommentId
+                                                              ] || 0) + 1,
+                                                          })
+                                                        );
+                                                        console.log(
+                                                          "Deep nested reply added to repliesMap despite backend issue"
+                                                        );
+                                                      } else {
+                                                        Alert.alert(
+                                                          "Lỗi",
+                                                          "Deep nested reply được tạo với parent ID sai"
+                                                        );
+                                                      }
+                                                    }
+                                                  } catch {
+                                                    Alert.alert(
+                                                      "Lỗi",
+                                                      "Không thể gửi trả lời"
+                                                    );
+                                                  }
+                                                }}
+                                              >
+                                                <Ionicons
+                                                  name="send"
+                                                  size={14}
+                                                  color="#fff"
+                                                />
+                                              </TouchableOpacity>
+                                            </View>
+                                          </View>
+                                        )}
+                                      </View>
+                                    ))}
+
+                                    {/* Deep nested reply input for nested reply */}
+                                    <View
+                                      style={
+                                        styles.deepNestedReplyInputContainer
+                                      }
+                                    >
+                                      <View
+                                        style={styles.deepNestedReplyInputRow}
+                                      >
+                                        <TextInput
+                                          style={styles.deepNestedReplyInput}
+                                          placeholder="Trả lời..."
+                                          value={
+                                            replyDraft[
+                                              nestedReply.forumCommentId
+                                            ] || ""
+                                          }
+                                          onChangeText={(t) =>
+                                            setReplyDraft((prev) => ({
+                                              ...prev,
+                                              [nestedReply.forumCommentId]: t,
+                                            }))
+                                          }
+                                          multiline
+                                        />
+                                        <TouchableOpacity
+                                          style={styles.deepNestedReplySend}
+                                          onPress={async () => {
+                                            const text = (
+                                              replyDraft[
+                                                nestedReply.forumCommentId
+                                              ] || ""
+                                            ).trim();
+                                            if (!text) return;
+                                            if (!user?.email) {
+                                              Alert.alert(
+                                                t("forum.errorTitle"),
+                                                t("forum.loginToReply")
+                                              );
+                                              return;
+                                            }
+                                            try {
+                                              const newDeepNestedReply =
+                                                await replyToComment({
+                                                  forumPostId: Number(postId),
+                                                  content: text,
+                                                  userEmail: user.email!,
+                                                  parentCommentId:
+                                                    nestedReply.forumCommentId,
+                                                });
+
+                                              // Debug: Check if nested reply has correct parentCommentId
+                                              console.log(
+                                                "New nested reply created:",
+                                                {
+                                                  id: newDeepNestedReply.forumCommentId,
+                                                  parentId:
+                                                    newDeepNestedReply.parentCommentId,
+                                                  expectedParentId:
+                                                    nestedReply.forumCommentId,
+                                                }
+                                              );
+
+                                              // Only add to repliesMap if it's actually a reply
+                                              if (
+                                                newDeepNestedReply.parentCommentId ===
+                                                nestedReply.forumCommentId
+                                              ) {
+                                                setRepliesMap((prev) => ({
+                                                  ...prev,
+                                                  [nestedReply.forumCommentId]:
+                                                    [
+                                                      newDeepNestedReply,
+                                                      ...(prev[
+                                                        nestedReply
+                                                          .forumCommentId
+                                                      ] || []),
+                                                    ],
+                                                }));
+                                                setReplyDraft((prev) => ({
+                                                  ...prev,
+                                                  [nestedReply.forumCommentId]:
+                                                    "",
+                                                }));
+                                                // Update total comment count
+                                                setTotalCommentCounts(
+                                                  (prev) => ({
+                                                    ...prev,
+                                                    [nestedReply.forumCommentId]:
+                                                      (prev[
+                                                        nestedReply
+                                                          .forumCommentId
+                                                      ] || 0) + 1,
+                                                  })
+                                                );
+
+                                                // IMPORTANT: Don't call onCommentAdded for nested replies!
+                                                console.log(
+                                                  "Nested reply added to repliesMap only, not to main comments array"
+                                                );
+                                              } else {
+                                                console.error(
+                                                  "Nested reply created with wrong parent ID:",
+                                                  newDeepNestedReply
+                                                );
+
+                                                // If backend returns nested reply as top-level comment, we need to handle it differently
+                                                if (
+                                                  newDeepNestedReply.parentCommentId ===
+                                                    null ||
+                                                  newDeepNestedReply.parentCommentId ===
+                                                    undefined
+                                                ) {
+                                                  console.log(
+                                                    "Backend returned nested reply as top-level comment, treating as reply anyway"
+                                                  );
+                                                  // Still add to repliesMap even if backend didn't set parentCommentId correctly
+                                                  setRepliesMap((prev) => ({
+                                                    ...prev,
+                                                    [nestedReply.forumCommentId]:
+                                                      [
+                                                        newDeepNestedReply,
+                                                        ...(prev[
+                                                          nestedReply
+                                                            .forumCommentId
+                                                        ] || []),
+                                                      ],
+                                                  }));
+                                                  setReplyDraft((prev) => ({
+                                                    ...prev,
+                                                    [nestedReply.forumCommentId]:
+                                                      "",
+                                                  }));
+                                                  // Update total comment count
+                                                  setTotalCommentCounts(
+                                                    (prev) => ({
+                                                      ...prev,
+                                                      [nestedReply.forumCommentId]:
+                                                        (prev[
+                                                          nestedReply
+                                                            .forumCommentId
+                                                        ] || 0) + 1,
+                                                    })
+                                                  );
+                                                  console.log(
+                                                    "Nested reply added to repliesMap despite backend issue"
+                                                  );
+                                                } else {
+                                                  Alert.alert(
+                                                    "Lỗi",
+                                                    "Nested reply được tạo với parent ID sai"
+                                                  );
+                                                }
+                                              }
+                                            } catch {
+                                              Alert.alert(
+                                                "Lỗi",
+                                                "Không thể gửi trả lời"
+                                              );
+                                            }
+                                          }}
+                                        >
+                                          <Ionicons
+                                            name="send"
+                                            size={14}
+                                            color="#fff"
+                                          />
+                                        </TouchableOpacity>
+                                      </View>
+                                    </View>
+                                  </View>
+                                )}
+                              </View>
+                            )
+                          )}
+
+                          {/* Nested reply input */}
+                          <View style={styles.nestedReplyInputContainer}>
+                            <View style={styles.nestedReplyInputRow}>
+                              <TextInput
+                                style={styles.nestedReplyInput}
+                                placeholder="Trả lời..."
+                                value={replyDraft[reply.forumCommentId] || ""}
+                                onChangeText={(t) =>
+                                  setReplyDraft((prev) => ({
+                                    ...prev,
+                                    [reply.forumCommentId]: t,
+                                  }))
+                                }
+                                multiline
+                              />
+                              <TouchableOpacity
+                                style={styles.nestedReplySend}
+                                onPress={async () => {
+                                  const text = (
+                                    replyDraft[reply.forumCommentId] || ""
+                                  ).trim();
+                                  if (!text) return;
+                                  if (!user?.email) {
+                                    Alert.alert(
+                                      t("forum.errorTitle"),
+                                      t("forum.loginToReply")
+                                    );
+                                    return;
+                                  }
+                                  try {
+                                    const newNestedReply = await replyToComment(
+                                      {
+                                        forumPostId: Number(postId),
+                                        content: text,
+                                        userEmail: user.email!,
+                                        parentCommentId: reply.forumCommentId,
+                                      }
+                                    );
+
+                                    // Debug: Check if nested reply has correct parentCommentId
+                                    console.log("New nested reply created:", {
+                                      id: newNestedReply.forumCommentId,
+                                      parentId: newNestedReply.parentCommentId,
+                                      expectedParentId: reply.forumCommentId,
+                                    });
+
+                                    // Only add to repliesMap if it's actually a reply
+                                    if (
+                                      newNestedReply.parentCommentId ===
+                                      reply.forumCommentId
+                                    ) {
+                                      setRepliesMap((prev) => ({
+                                        ...prev,
+                                        [reply.forumCommentId]: [
+                                          newNestedReply,
+                                          ...(prev[reply.forumCommentId] || []),
+                                        ],
+                                      }));
+                                      setReplyDraft((prev) => ({
+                                        ...prev,
+                                        [reply.forumCommentId]: "",
+                                      }));
+
+                                      // IMPORTANT: Don't call onCommentAdded for nested replies!
+                                      console.log(
+                                        "Nested reply added to repliesMap only, not to main comments array"
+                                      );
+                                    } else {
+                                      console.error(
+                                        "Nested reply created with wrong parent ID:",
+                                        newNestedReply
+                                      );
+
+                                      // If backend returns nested reply as top-level comment, we need to handle it differently
+                                      if (
+                                        newNestedReply.parentCommentId ===
+                                          null ||
+                                        newNestedReply.parentCommentId ===
+                                          undefined
+                                      ) {
+                                        console.log(
+                                          "Backend returned nested reply as top-level comment, treating as reply anyway"
+                                        );
+                                        // Still add to repliesMap even if backend didn't set parentCommentId correctly
+                                        setRepliesMap((prev) => ({
+                                          ...prev,
+                                          [reply.forumCommentId]: [
+                                            newNestedReply,
+                                            ...(prev[reply.forumCommentId] ||
+                                              []),
+                                          ],
+                                        }));
+                                        setReplyDraft((prev) => ({
+                                          ...prev,
+                                          [reply.forumCommentId]: "",
+                                        }));
+                                        console.log(
+                                          "Nested reply added to repliesMap despite backend issue"
+                                        );
+                                      } else {
+                                        Alert.alert(
+                                          "Lỗi",
+                                          "Nested reply được tạo với parent ID sai"
+                                        );
+                                      }
+                                    }
+                                  } catch {
+                                    Alert.alert("Lỗi", "Không thể gửi trả lời");
+                                  }
+                                }}
+                              >
+                                <Ionicons name="send" size={16} color="#fff" />
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  ))}
+                  <View style={styles.replyInputContainer}>
+                    {isCommentOwner(comment)}
+                    <View style={styles.replyInputRow}>
+                      <TextInput
+                        style={styles.replyInput}
+                        placeholder={
+                          isCommentOwner(comment)
+                            ? t("forum.writeSelfReplyPlaceholder") ||
+                              "Thêm bình luận cho bài viết của bạn..."
+                            : t("forum.writeReplyPlaceholder")
+                        }
+                        value={replyDraft[comment.forumCommentId] || ""}
+                        onChangeText={(t) =>
+                          setReplyDraft((prev) => ({
+                            ...prev,
+                            [comment.forumCommentId]: t,
+                          }))
+                        }
+                        multiline
+                      />
+                      <TouchableOpacity
+                        style={styles.replySend}
+                        onPress={async () => {
+                          const text = (
+                            replyDraft[comment.forumCommentId] || ""
+                          ).trim();
+                          if (!text) return;
+                          if (!user?.email) {
+                            Alert.alert(
+                              t("forum.errorTitle"),
+                              t("forum.loginToReply")
+                            );
+                            return;
+                          }
+                          try {
+                            console.log(
+                              "Creating reply for comment:",
+                              comment.forumCommentId
+                            );
+                            const newReply = await replyToComment({
+                              forumPostId: Number(postId),
+                              content: text,
+                              userEmail: user.email!,
+                              parentCommentId: comment.forumCommentId,
+                            });
+
+                            // Debug: Check if reply has correct parentCommentId
+                            console.log("New reply created:", {
+                              id: newReply.forumCommentId,
+                              parentId: newReply.parentCommentId,
+                              expectedParentId: comment.forumCommentId,
+                              isReply:
+                                newReply.parentCommentId !== null &&
+                                newReply.parentCommentId !== undefined,
+                            });
+
+                            // Only add to repliesMap if it's actually a reply
+                            if (
+                              newReply.parentCommentId ===
+                              comment.forumCommentId
+                            ) {
+                              setRepliesMap((prev) => ({
+                                ...prev,
+                                [comment.forumCommentId]: [
+                                  newReply,
+                                  ...(prev[comment.forumCommentId] || []),
+                                ],
+                              }));
+                              setReplyDraft((prev) => ({
+                                ...prev,
+                                [comment.forumCommentId]: "",
+                              }));
+                              // Update total comment count
+                              setTotalCommentCounts((prev) => ({
+                                ...prev,
+                                [comment.forumCommentId]:
+                                  (prev[comment.forumCommentId] || 0) + 1,
+                              }));
+
+                              // IMPORTANT: Don't call onCommentAdded for replies!
+                              // This prevents the reply from being added to the main comments array
+                              console.log(
+                                "Reply added to repliesMap only, not to main comments array"
+                              );
+
+                              // Double check: Make sure onCommentAdded is NOT called
+                              console.log(
+                                "onCommentAdded callback:",
+                                typeof onCommentAdded
+                              );
+                              console.log(
+                                "NOT calling onCommentAdded for reply:",
+                                newReply.forumCommentId
+                              );
+                            } else {
+                              console.error(
+                                "Reply created with wrong parent ID:",
+                                newReply
+                              );
+
+                              // If backend returns reply as top-level comment, we need to handle it differently
+                              if (
+                                newReply.parentCommentId === null ||
+                                newReply.parentCommentId === undefined
+                              ) {
+                                console.log(
+                                  "Backend returned reply as top-level comment, treating as reply anyway"
+                                );
+                                // Still add to repliesMap even if backend didn't set parentCommentId correctly
+                                setRepliesMap((prev) => ({
+                                  ...prev,
+                                  [comment.forumCommentId]: [
+                                    newReply,
+                                    ...(prev[comment.forumCommentId] || []),
+                                  ],
+                                }));
+                                setReplyDraft((prev) => ({
+                                  ...prev,
+                                  [comment.forumCommentId]: "",
+                                }));
+                                // Update total comment count
+                                setTotalCommentCounts((prev) => ({
+                                  ...prev,
+                                  [comment.forumCommentId]:
+                                    (prev[comment.forumCommentId] || 0) + 1,
+                                }));
+                                console.log(
+                                  "Reply added to repliesMap despite backend issue"
+                                );
+                              } else {
+                                Alert.alert(
+                                  "Lỗi",
+                                  "Reply được tạo với parent ID sai"
+                                );
+                              }
+                            }
+                          } catch {
+                            Alert.alert("Lỗi", "Không thể gửi trả lời");
+                          }
+                        }}
+                      >
+                        <Ionicons name="send" size={18} color="#fff" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              )}
+            </View>
+          ))}
+      </View>
 
       {/* Add Comment */}
       <View style={styles.addCommentContainer}>
@@ -563,13 +1951,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   commentsList: {
-    maxHeight: 200,
+    // Remove maxHeight to allow full expansion
+    flex: 1,
   },
   commentItem: {
-    marginBottom: 12,
-    paddingBottom: 12,
+    marginBottom: 16,
+    paddingBottom: 16,
+    paddingHorizontal: 4,
     borderBottomWidth: 1,
-    borderBottomColor: "#f8f8f8",
+    borderBottomColor: "#f0f0f0",
+    backgroundColor: "#fafafa",
+    borderRadius: 8,
+    padding: 12,
   },
   commentHeader: {
     flexDirection: "row",
@@ -625,16 +2018,121 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   repliesContainer: {
-    marginTop: 8,
-    paddingLeft: 12,
-    borderLeftWidth: 2,
-    borderLeftColor: "#f0f0f0",
+    marginTop: 12,
+    paddingLeft: 20,
+    borderLeftWidth: 0,
+    borderLeftColor: "transparent",
+    backgroundColor: "#f8f9ff",
+    borderRadius: 8,
+    padding: 12,
+    marginHorizontal: 8,
   },
   replyItem: {
+    marginTop: 12,
+    paddingBottom: 12,
+    paddingHorizontal: 8,
+    backgroundColor: "#fff",
+    borderRadius: 6,
+    padding: 10,
+    borderLeftWidth: 0,
+    borderLeftColor: "transparent",
+    marginBottom: 8,
+  },
+  replyAuthorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  nestedRepliesContainer: {
+    marginTop: 12,
+    paddingLeft: 16,
+    borderLeftWidth: 0,
+    borderLeftColor: "transparent",
+    backgroundColor: "#f0f8ff",
+    borderRadius: 6,
+    padding: 10,
+    marginHorizontal: 4,
+  },
+  nestedReplyItem: {
     marginTop: 8,
     paddingBottom: 8,
+    paddingHorizontal: 6,
+    backgroundColor: "#fff",
+    borderRadius: 4,
+    padding: 8,
+    borderLeftWidth: 1,
+    borderLeftColor: "#34C759",
+    marginBottom: 4,
+  },
+  nestedReplyInputContainer: {
+    marginTop: 6,
+  },
+  nestedReplyInputRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+  },
+  nestedReplyInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#cfe8ff",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    fontSize: 13,
+    marginRight: 4,
+    backgroundColor: "#fff",
+  },
+  nestedReplySend: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#007AFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deepNestedRepliesContainer: {
+    marginTop: 6,
+    paddingLeft: 10,
+    borderLeftWidth: 0,
+    borderLeftColor: "transparent",
+    backgroundColor: "#f0f8ff",
+    borderRadius: 4,
+    padding: 6,
+  },
+  deepNestedReplyItem: {
+    marginTop: 4,
+    paddingBottom: 4,
     borderBottomWidth: 1,
-    borderBottomColor: "#fafafa",
+    borderBottomColor: "#ffe8e0",
+    backgroundColor: "#fff",
+    borderRadius: 3,
+    padding: 4,
+    marginBottom: 2,
+  },
+  deepNestedReplyInputContainer: {
+    marginTop: 4,
+  },
+  deepNestedReplyInputRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+  },
+  deepNestedReplyInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#cfe8ff",
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    fontSize: 12,
+    marginRight: 3,
+    backgroundColor: "#fff",
+  },
+  deepNestedReplySend: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#007AFF",
+    alignItems: "center",
+    justifyContent: "center",
   },
   addCommentContainer: {
     flexDirection: "row",
@@ -665,26 +2163,35 @@ const styles = StyleSheet.create({
   submitButtonDisabled: {
     backgroundColor: "#f5f5f5",
   },
+  replyInputContainer: {
+    marginTop: 8,
+  },
   replyInputRow: {
     flexDirection: "row",
     alignItems: "flex-end",
-    marginTop: 8,
+  },
+  selfReplyHint: {
+    fontSize: 12,
+    color: "#007AFF",
+    marginBottom: 4,
+    fontStyle: "italic",
   },
   replyInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
+    borderColor: "#cfe8ff",
     borderRadius: 16,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     fontSize: 14,
     marginRight: 6,
+    backgroundColor: "#fff",
   },
   replySend: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#f0f8ff",
+    backgroundColor: "#007AFF",
     alignItems: "center",
     justifyContent: "center",
   },

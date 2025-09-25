@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   dobText: {
-    fontSize: 15,
+    fontSize: 14,
     color: "#111",
     fontWeight: "600",
     letterSpacing: 0.2,

@@ -139,6 +139,7 @@
     "commentsTitle": "Comments ({{count}})",
     "writeCommentPlaceholder": "Write a comment...",
     "writeReplyPlaceholder": "Write a reply...",
+    "writeSelfReplyPlaceholder": "Add more to your comment...",
     "save": "Save",
     "delete": "Delete",
     "deletePostTitle": "Delete post",
@@ -273,6 +274,13 @@
   },
   "tour": {
     "loading": "Loading...",
+    "list": {
+      "title": "Tour List",
+      "searchPlaceholder": "Search tours...",
+      "viewPurchased": "Purchased",
+      "empty": "No tours found",
+      "emptySubtitle": "Try adjusting your search or filters."
+    },
     "detail": {
       "name": "Tour Name",
       "departurePoint": "Departure Point",
