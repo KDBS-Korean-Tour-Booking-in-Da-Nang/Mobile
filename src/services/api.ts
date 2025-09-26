@@ -7,14 +7,8 @@ const expoProd = (typeof process !== "undefined" &&
   (process.env as any)?.EXPO_PUBLIC_API_BASE_URL_PROD) as string | undefined;
 
 // Final base URLs with sensible defaults to avoid crashes
-const API_BASE_URL_DEV = (expoDev || "http://localhost:8080").replace(
-  /\/$/,
-  ""
-);
-const API_BASE_URL_PROD = (expoProd ?? "https://example.com").replace(
-  /\/$/,
-  ""
-);
+const API_BASE_URL_DEV = (expoDev || "").replace(/\/$/, "");
+const API_BASE_URL_PROD = (expoProd ?? "").replace(/\/$/, "");
 
 const API_BASE_URL = __DEV__ ? API_BASE_URL_DEV : API_BASE_URL_PROD;
 

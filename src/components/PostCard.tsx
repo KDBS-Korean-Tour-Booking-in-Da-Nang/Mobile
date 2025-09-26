@@ -28,6 +28,7 @@ import ReportModal from "./ReportModal";
 import { useAuthContext } from "../contexts/authContext";
 import CommentSection from "./CommentSection";
 import { useTranslation } from "react-i18next";
+import { useNavigation } from "../navigation";
 
 interface PostCardProps {
   post: PostResponse;
@@ -46,6 +47,7 @@ const PostCard: React.FC<PostCardProps> = ({
   onEdit,
   onLoadFullDetails,
 }) => {
+  const { navigate } = useNavigation();
   const { user } = useAuthContext();
   const { t } = useTranslation();
   const [isLiked, setIsLiked] = useState(post.userReaction === "LIKE");
@@ -302,9 +304,7 @@ const PostCard: React.FC<PostCardProps> = ({
         const postComments = await getCommentsByPost(post.id);
         setComments(postComments);
         setCommentCount(postComments.length);
-      } catch {
-        // Swallow fetch errors to avoid surfacing errors when just opening the comment box
-      }
+      } catch {}
     }
     setShowComments(!showComments);
   };
@@ -326,19 +326,51 @@ const PostCard: React.FC<PostCardProps> = ({
     }
   };
 
+  const extractTourIdFromContent = (text: string): number | null => {
+    if (!text) return null;
+    const match = text.match(/(?:https?:\/\/[^\s]+)?\/?tour\?id=(\d+)/i);
+    if (match && match[1]) {
+      const id = Number(match[1]);
+      return Number.isFinite(id) ? id : null;
+    }
+    return null;
+  };
+
+  const stripTourLinks = (text: string): string => {
+    if (!text) return "";
+    // Remove metadata markers (HTML comment or [[META:...]] style)
+    const withoutMeta = text
+      .replace(/<!--META:\{[\s\S]*?\}-->/gi, "")
+      .replace(/\[\[META:\{[\s\S]*?\}\]\]/gi, "");
+    // Remove any tour links
+    const withoutLinks = withoutMeta.replace(
+      new RegExp("(?:https?:\\/\\/[^\\s]+)?\\/?tour\\?id=\\d+", "gi"),
+      ""
+    );
+    return withoutLinks
+      .replace(/[\t ]+/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  };
+
   const renderImages = (urls: string[]) => {
     const total = urls.length;
-    // Card marginHorizontal:16 and padding:16 → available width = width - 32 (margins) - 32 (padding) = width - 64
     const containerWidth = width - 64;
+    const linkedTourId = extractTourIdFromContent(post.content || "");
+    const handleImagePress = (index: number) => {
+      if (linkedTourId) {
+        navigate(`/tour?id=${linkedTourId}`);
+        return;
+      }
+      setPreviewIndex(index);
+      setPreviewOpen(true);
+    };
 
     if (total === 1) {
       return (
         <TouchableOpacity
           activeOpacity={0.9}
-          onPress={() => {
-            setPreviewIndex(0);
-            setPreviewOpen(true);
-          }}
+          onPress={() => handleImagePress(0)}
         >
           <View
             style={{
@@ -365,10 +397,7 @@ const PostCard: React.FC<PostCardProps> = ({
             <TouchableOpacity
               key={`${post.id}-img-${i}`}
               activeOpacity={0.9}
-              onPress={() => {
-                setPreviewIndex(i);
-                setPreviewOpen(true);
-              }}
+              onPress={() => handleImagePress(i)}
             >
               <View
                 style={{
@@ -390,7 +419,6 @@ const PostCard: React.FC<PostCardProps> = ({
       );
     }
 
-    // 3 or more: large row on top (2 images), grid of 3 below (show +N on last)
     const top = urls.slice(0, 2);
     const bottom = urls.slice(2, 5);
     const remaining = total - 5;
@@ -402,10 +430,7 @@ const PostCard: React.FC<PostCardProps> = ({
             <TouchableOpacity
               key={`${post.id}-top-${i}`}
               activeOpacity={0.9}
-              onPress={() => {
-                setPreviewIndex(i);
-                setPreviewOpen(true);
-              }}
+              onPress={() => handleImagePress(i)}
             >
               <View
                 style={{
@@ -429,10 +454,7 @@ const PostCard: React.FC<PostCardProps> = ({
             <TouchableOpacity
               key={`${post.id}-bot-${i}`}
               activeOpacity={0.9}
-              onPress={() => {
-                setPreviewIndex(2 + i);
-                setPreviewOpen(true);
-              }}
+              onPress={() => handleImagePress(2 + i)}
             >
               <View
                 style={{
@@ -518,19 +540,28 @@ const PostCard: React.FC<PostCardProps> = ({
 
         {/* Content */}
         <View style={styles.content}>
-          <Text style={styles.body}>
-            {showFullContent ? post.content : getTruncatedContent(post.content)}
-          </Text>
-          {post.content.length > 100 && !showFullContent && (
-            <TouchableOpacity onPress={() => setShowFullContent(true)}>
-              <Text style={styles.seeMoreText}>See More</Text>
-            </TouchableOpacity>
-          )}
-          {showFullContent && post.content.length > 100 && (
-            <TouchableOpacity onPress={() => setShowFullContent(false)}>
-              <Text style={styles.seeMoreText}>See Less</Text>
-            </TouchableOpacity>
-          )}
+          {(() => {
+            const contentToShow = stripTourLinks(post.content || "");
+            return (
+              <Text style={styles.body}>
+                {showFullContent
+                  ? contentToShow
+                  : getTruncatedContent(contentToShow)}
+              </Text>
+            );
+          })()}
+          {stripTourLinks(post.content || "").length > 100 &&
+            !showFullContent && (
+              <TouchableOpacity onPress={() => setShowFullContent(true)}>
+                <Text style={styles.seeMoreText}>See More</Text>
+              </TouchableOpacity>
+            )}
+          {showFullContent &&
+            stripTourLinks(post.content || "").length > 100 && (
+              <TouchableOpacity onPress={() => setShowFullContent(false)}>
+                <Text style={styles.seeMoreText}>See Less</Text>
+              </TouchableOpacity>
+            )}
 
           {/* Hashtags */}
           {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
@@ -561,12 +592,106 @@ const PostCard: React.FC<PostCardProps> = ({
             </View>
           )}
 
-          {/* Images */}
-          {Array.isArray(post.imageUrls) && post.imageUrls.length > 0 && (
-            <View style={styles.imagesContainer}>
-              {renderImages(post.imageUrls)}
-            </View>
-          )}
+          {(() => {
+            const contentRaw = post.content || "";
+            const hasMeta =
+              /<!--META:(\{[\s\S]*?\})-->/i.test(contentRaw) ||
+              /\[\[META:(\{[\s\S]*?\})\]\]/i.test(contentRaw);
+            const hasLink = !!extractTourIdFromContent(contentRaw);
+            if (hasMeta || hasLink) return null;
+            if (Array.isArray(post.imageUrls) && post.imageUrls.length > 0) {
+              return (
+                <View style={styles.imagesContainer}>
+                  {renderImages(post.imageUrls)}
+                </View>
+              );
+            }
+            return null;
+          })()}
+
+          {(() => {
+            let tourId: number | null = null;
+            let coverFromMeta: string | undefined;
+            let tourNameFromMeta: string | undefined;
+            let tourDescFromMeta: string | undefined;
+            const metaMatch =
+              (post.content || "").match(/<!--META:(\{[\s\S]*?\})-->/i) ||
+              (post.content || "").match(/\[\[META:(\{[\s\S]*?\})\]\]/i);
+            if (metaMatch && metaMatch[1]) {
+              try {
+                const meta = JSON.parse(metaMatch[1]);
+                if (
+                  meta &&
+                  meta.shareType === "TOUR" &&
+                  Number.isFinite(meta.tourId)
+                ) {
+                  tourId = Number(meta.tourId);
+                  coverFromMeta =
+                    typeof meta.cover === "string" ? meta.cover : undefined;
+                  tourNameFromMeta =
+                    typeof meta.tourName === "string"
+                      ? meta.tourName
+                      : undefined;
+                  tourDescFromMeta =
+                    typeof meta.tourDescription === "string"
+                      ? meta.tourDescription
+                      : undefined;
+                }
+              } catch {}
+            }
+            if (!tourId) tourId = extractTourIdFromContent(post.content || "");
+            if (!tourId) return null;
+            const cover = coverFromMeta || (post.imageUrls || [])[0];
+            return (
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => navigate(`/tour?id=${tourId}`)}
+                style={{
+                  backgroundColor: "#fff",
+                  borderRadius: 12,
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: "#e9ecef",
+                  marginTop: 8,
+                }}
+              >
+                {cover ? (
+                  <Image
+                    source={{ uri: cover }}
+                    style={{
+                      width: "100%",
+                      height: 180,
+                      borderRadius: 8,
+                      marginBottom: 8,
+                    }}
+                    resizeMode="cover"
+                  />
+                ) : null}
+                <Text
+                  style={{ fontWeight: "700", fontSize: 16 }}
+                  numberOfLines={1}
+                >
+                  {(tourNameFromMeta && tourNameFromMeta.trim()) || post.title}
+                </Text>
+                {tourDescFromMeta && tourDescFromMeta.trim() ? (
+                  <Text
+                    style={{ color: "#555", marginTop: 6 }}
+                    numberOfLines={2}
+                  >
+                    {tourDescFromMeta.trim()}
+                  </Text>
+                ) : null}
+                <TouchableOpacity
+                  onPress={() => navigate(`/tour?id=${tourId}`)}
+                  style={{ marginTop: 6 }}
+                >
+                  <Text
+                    style={{ color: "#007AFF" }}
+                  >{`/tour?id=${tourId}`}</Text>
+                </TouchableOpacity>
+              </TouchableOpacity>
+            );
+          })()}
         </View>
 
         {/* Menu Dropdown */}

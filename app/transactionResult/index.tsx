@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import * as MailComposer from "expo-mail-composer";
 import api from "../../src/services/api";
 
 interface TransactionResultParams {
@@ -51,6 +52,7 @@ export default function TransactionResult() {
 
   const isSuccess = responseCode === "00";
   const isFailed = responseCode && responseCode !== "00";
+  const emailAttemptedRef = useRef(false);
 
   useEffect(() => {
     if (orderId) {
@@ -59,6 +61,42 @@ export default function TransactionResult() {
       setLoading(false);
     }
   }, [orderId]);
+
+  // After success, attempt to send confirmation email once
+  useEffect(() => {
+    const trySendEmail = async () => {
+      if (!isSuccess || !bookingId || emailAttemptedRef.current) return;
+      emailAttemptedRef.current = true;
+
+      // 1) Try backend endpoint if available
+      try {
+        await api.post(`/api/bookings/${bookingId}/send-confirmation-email`);
+        console.log("Booking confirmation email sent via backend.");
+        return; // if succeeds, stop here
+      } catch (e) {
+        console.warn("Backend email API failed or not available", e);
+      }
+
+      // 2) Fallback: open mail composer for the user to send manually
+      try {
+        const available = await MailComposer.isAvailableAsync();
+        if (!available) {
+          console.warn("MailComposer not available on this device");
+          return;
+        }
+        const subject = `${t("payment.result.details")} - #${bookingId}`;
+        const body = `${t("payment.result.successMessage")}\n${t(
+          "payment.result.orderId"
+        )}: ${orderId || "-"}`;
+        await MailComposer.composeAsync({ subject, body });
+        console.log("Opened MailComposer for manual send");
+      } catch (e) {
+        console.warn("MailComposer compose failed", e);
+      }
+    };
+
+    trySendEmail();
+  }, [isSuccess, bookingId, orderId, t]);
 
   const fetchTransactionDetails = async () => {
     try {

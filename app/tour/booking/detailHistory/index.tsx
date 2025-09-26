@@ -11,8 +11,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import MainLayout from "../../../../src/components/MainLayout";
 import { useTranslation } from "react-i18next";
 import { tourService } from "../../../../src/services/tourService";
-import { BookingResponse } from "../../../../src/types/tour";
-// Removed transaction and auth imports since status is always SUCCESS on purchased detail
+import { BookingResponse, TourResponse } from "../../../../src/types/tour";
 
 export default function BookingDetail() {
   const { t } = useTranslation();
@@ -28,6 +27,7 @@ export default function BookingDetail() {
 
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<BookingResponse | null>(null);
+  const [totalAmount, setTotalAmount] = useState<number | null>(null);
   // Purchased bookings imply SUCCESS status
 
   const loadBooking = useCallback(async () => {
@@ -36,6 +36,18 @@ export default function BookingDetail() {
       if (!bookingId || Number.isNaN(bookingId)) return;
       const data = await tourService.getBookingById(bookingId);
       setBooking(data);
+
+      // Compute total amount from tour prices and guest counts
+      try {
+        const tour: TourResponse = await tourService.getTourById(data.tourId);
+        const total =
+          (tour.adultPrice || 0) * (data.adultsCount || 0) +
+          (tour.childrenPrice || 0) * (data.childrenCount || 0) +
+          (tour.babyPrice || 0) * (data.babiesCount || 0);
+        setTotalAmount(total);
+      } catch {
+        setTotalAmount(null);
+      }
 
       // Always success for purchased detail view
     } catch {
@@ -91,6 +103,9 @@ export default function BookingDetail() {
     return t("common.na");
   };
 
+  const formatPrice = (price: number) =>
+    (price || 0).toLocaleString("vi-VN") + " VND";
+
   return (
     <MainLayout>
       <ScrollView style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
@@ -108,7 +123,7 @@ export default function BookingDetail() {
           }}
         >
           <TouchableOpacity
-            onPress={() => router.replace("/transactionResult" as any)}
+            onPress={() => router.back()}
             style={{
               width: 40,
               height: 40,
@@ -178,6 +193,22 @@ export default function BookingDetail() {
               </Text>
               <Text style={{ fontWeight: "600" }}>{booking.totalGuests}</Text>
             </View>
+            {typeof totalAmount === "number" && (
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginBottom: 6,
+                }}
+              >
+                <Text style={{ color: "#6c757d" }}>
+                  {t("tour.confirm.priceSummary")}
+                </Text>
+                <Text style={{ fontWeight: "700", color: "#111" }}>
+                  {formatPrice(totalAmount)}
+                </Text>
+              </View>
+            )}
             <View
               style={{ flexDirection: "row", justifyContent: "space-between" }}
             >

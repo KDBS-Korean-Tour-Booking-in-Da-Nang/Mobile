@@ -93,11 +93,7 @@ export default function TourDetail() {
         ? [tour!.tourImgPath.trim()]
         : [];
     const all = [...cover, ...contentImages];
-    return all.length > 0
-      ? all
-      : [
-          "",
-        ];
+    return all.length > 0 ? all : [""];
   }, [tour]);
 
   if (loading) {
