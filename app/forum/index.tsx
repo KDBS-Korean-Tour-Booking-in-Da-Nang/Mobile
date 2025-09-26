@@ -502,7 +502,7 @@ export default function Forum() {
                 <Ionicons name="search" size={18} color="#6c757d" />
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="Search for hashtags, keywords"
+                  placeholder={t("forum.searchPlaceholder")}
                   placeholderTextColor="#6c757d"
                   value={searchQuery}
                   onChangeText={(text) => {
@@ -584,7 +584,7 @@ export default function Forum() {
                   viewingMyPosts && styles.navButtonTextActive,
                 ]}
               >
-                My Posts
+                {t("forum.myPosts")}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -603,7 +603,7 @@ export default function Forum() {
                   viewingSaved && styles.navButtonTextActive,
                 ]}
               >
-                Saved Posts
+                {t("forum.savedPosts")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -646,7 +646,9 @@ export default function Forum() {
             ]}
             onPress={openCreateModal}
           >
-            <Text style={styles.createPostButtonText}>Create a post</Text>
+            <Text style={styles.createPostButtonText}>
+              {t("forum.createPost")}
+            </Text>
           </TouchableOpacity>
 
           {/* Create Post Modal */}

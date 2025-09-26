@@ -94,8 +94,28 @@
   },
   "forum": {
     "title": "Forum",
+    "post": "Post",
+    "content": "Description",
+    "chooseHashtags": "Choose your hashtags:",
+    "hashtag": "hashtag",
     "placeholderCreatePost": "What's on your mind?",
-    "searchPlaceholder": "Search posts...",
+    "searchPlaceholder": "Search for hashtags, keywords",
+    "myPosts": "My Posts",
+    "savedPosts": "Saved Posts",
+    "createPost": "Create a post",
+    "createPostModal": {
+      "title": "Create Post",
+      "close": "Close",
+      "upload": "Upload",
+      "postTitle": "Post Title",
+      "shortTitle": "Short Title",
+      "textField": "Text Field",
+      "description": "Description",
+      "tapToAdd": "Tap to Add",
+      "photoVideo": "Photo/ Video",
+      "chooseHashtags": "Choose your hashtags:",
+      "hashtag": "hashtag"
+    },
     "trending": "Trending",
     "comingSoon": "This feature is coming soon.",
     "friendSuggestions": "Friend suggestions",
@@ -387,6 +407,21 @@
       "paymentRedirect": "Payment Redirect",
       "paymentSuccess": "Payment Successful",
       "paymentFailed": "Payment Failed"
+    },
+    "share": {
+      "title": "Share Tour",
+      "modalTitle": "Share to Forum",
+      "shareButton": "Share",
+      "titlePlaceholder": "Enter post title...",
+      "contentPlaceholder": "Write your thoughts about this tour...",
+      "hashtagPlaceholder": "Add hashtags (separate with space or comma)",
+      "addHashtag": "Add",
+      "posting": "Posting...",
+      "success": "Tour shared successfully!",
+      "errors": {
+        "loginRequired": "Please login to share tours",
+        "shareFailed": "Failed to share tour. Please try again"
+      }
     }
   },
   "payment": {
@@ -431,5 +466,38 @@
     "hotTopic": "Hot Topics",
     "seeAll": "See All",
     "article": "Articles"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "View and set your account preferences",
+    "signOut": "Sign Out",
+    "confirmTitle": "Sign out",
+    "confirmMessage": "Are you sure you want to sign out? You will need to log in again to continue using the app.",
+    "signOutConfirm": "Sign out",
+    "options": {
+      "language": "Language",
+      "notifications": "Notifications",
+      "transactions": "Transactions"
+    }
+  },
+  "profile": {
+    "editProfile": "Edit Profile",
+    "upgradePremium": "Upgrade to Premium",
+    "order": {
+      "title": "Your Order",
+      "subtitle": "View your order and transaction history here"
+    },
+    "payment": {
+      "title": "Payment Method",
+      "subtitle": "Save your preferred payment method for smoother transactions"
+    },
+    "coupon": {
+      "title": "Coupon & Voucher",
+      "subtitle": "Claim vouchers and discounts for reduced prices or free shipping"
+    },
+    "supportCenter": {
+      "title": "Support Center",
+      "subtitle": "Find the best answer to your question"
+    }
   }
 }

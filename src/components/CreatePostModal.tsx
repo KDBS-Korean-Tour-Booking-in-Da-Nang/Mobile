@@ -187,9 +187,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleClose} style={styles.headerButton}>
-            <Text style={styles.headerButtonText}>Close</Text>
+            <Text style={styles.headerButtonText}>
+              {t("forum.createPostModal.close")}
+            </Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Create Post</Text>
+          <Text style={styles.headerTitle}>
+            {t("forum.createPostModal.title")}
+          </Text>
           <TouchableOpacity
             onPress={handleSubmit}
             style={[
@@ -206,7 +210,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   styles.headerButtonTextDisabled,
               ]}
             >
-              Upload
+              {t("forum.createPostModal.upload")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -214,13 +218,17 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Post Title Section */}
           <View style={styles.titleSection}>
-            <Text style={styles.sectionTitle}>Post Title</Text>
+            <Text style={styles.sectionTitle}>
+              {t("forum.createPostModal.postTitle")}
+            </Text>
             <View style={styles.titleInputContainer}>
-              <Text style={styles.titleLabel}>Short Title</Text>
+              <Text style={styles.titleLabel}>
+                {t("forum.createPostModal.shortTitle")}
+              </Text>
               <Text style={styles.colon}>:</Text>
               <TextInput
                 style={styles.titleInput}
-                placeholder="Text Field"
+                placeholder={t("forum.createPostModal.textField")}
                 value={title}
                 onChangeText={setTitle}
                 maxLength={100}
@@ -230,10 +238,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
           {/* Description Section */}
           <View style={styles.descriptionSection}>
-            <Text style={styles.sectionTitle}>Description</Text>
+            <Text style={styles.sectionTitle}>
+              {t("forum.createPostModal.description")}
+            </Text>
             <TextInput
               style={styles.descriptionInput}
-              placeholder="Description"
+              placeholder={t("forum.createPostModal.description")}
               value={content}
               onChangeText={setContent}
               multiline
@@ -246,8 +256,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           <View style={styles.uploadSection}>
             <View style={styles.uploadContainer}>
               <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
-                <Text style={styles.uploadText}>Tap to Add</Text>
-                <Text style={styles.uploadText}>Photo/ Video</Text>
+                <Text style={styles.uploadText}>
+                  {t("forum.createPostModal.tapToAdd")}
+                </Text>
+                <Text style={styles.uploadText}>
+                  {t("forum.createPostModal.photoVideo")}
+                </Text>
               </TouchableOpacity>
 
               {/* Selected Images */}
@@ -270,15 +284,19 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
           {/* Hashtags Section */}
           <View style={styles.hashtagSection}>
-            <Text style={styles.sectionTitle}>Choose your hashtags:</Text>
+            <Text style={styles.sectionTitle}>
+              {t("forum.createPostModal.chooseHashtags")}
+            </Text>
 
             {/* Hashtag Input */}
             <View style={styles.hashtagInputContainer}>
-              <Text style={styles.hashtagLabel}>hashtag</Text>
+              <Text style={styles.hashtagLabel}>
+                {t("forum.createPostModal.hashtag")}
+              </Text>
               <Text style={styles.colon}>:</Text>
               <TextInput
                 style={styles.hashtagInput}
-                placeholder="Text Field"
+                placeholder={t("forum.createPostModal.textField")}
                 value={hashtagInput}
                 onChangeText={setHashtagInput}
                 onSubmitEditing={addHashtag}

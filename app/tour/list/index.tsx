@@ -140,7 +140,10 @@ export default function TourList() {
       const token = await AsyncStorage.getItem("authToken");
       const email = user?.email;
       if (!token || !email) {
-        Alert.alert(t("forum.errorTitle"), t("forum.loginRequiredAction"));
+        Alert.alert(
+          t("forum.errorTitle"),
+          t("tour.share.errors.loginRequired")
+        );
         return;
       }
       setShareSubmitting(true);
@@ -168,7 +171,7 @@ export default function TourList() {
       // Go to forum feed and rely on feed refresh to show the new post
       navigate("/forum");
     } catch {
-      Alert.alert(t("forum.errorTitle"), t("forum.cannotCreateUpdate"));
+      Alert.alert(t("forum.errorTitle"), t("tour.share.errors.shareFailed"));
     } finally {
       setShareSubmitting(false);
     }
@@ -327,7 +330,7 @@ export default function TourList() {
                     color="#fff"
                   />
                   <Text style={{ color: "#fff", fontWeight: "600" }}>
-                    Share
+                    {t("tour.share.shareButton")}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -367,9 +370,13 @@ export default function TourList() {
             }}
           >
             <TouchableOpacity onPress={() => setShareOpen(false)}>
-              <Text style={{ color: "#007AFF", fontWeight: "600" }}>Close</Text>
+              <Text style={{ color: "#007AFF", fontWeight: "600" }}>
+                {t("common.cancel")}
+              </Text>
             </TouchableOpacity>
-            <Text style={{ fontSize: 18, fontWeight: "700" }}>Share Tour</Text>
+            <Text style={{ fontSize: 18, fontWeight: "700" }}>
+              {t("tour.share.modalTitle")}
+            </Text>
             <TouchableOpacity onPress={submitShare} disabled={shareSubmitting}>
               <Text
                 style={{
@@ -377,7 +384,7 @@ export default function TourList() {
                   fontWeight: "600",
                 }}
               >
-                Post
+                {shareSubmitting ? t("tour.share.posting") : t("forum.post")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -387,7 +394,7 @@ export default function TourList() {
           >
             <View style={{ marginBottom: 16 }}>
               <Text style={{ fontSize: 18, fontWeight: "700", color: "#000" }}>
-                Post Title
+                {t("forum.title")}
               </Text>
               <View
                 style={{
@@ -399,7 +406,7 @@ export default function TourList() {
                 <Text
                   style={{ fontSize: 14, color: "#6c757d", marginRight: 8 }}
                 >
-                  Short Title
+                  {t("tour.share.title")}
                 </Text>
                 <Text
                   style={{ fontSize: 14, color: "#6c757d", marginRight: 32 }}
@@ -416,7 +423,7 @@ export default function TourList() {
                     fontSize: 14,
                     color: "#000",
                   }}
-                  placeholder="Text Field"
+                  placeholder={t("tour.share.titlePlaceholder")}
                   value={shareTitle}
                   onChangeText={setShareTitle}
                   maxLength={100}
@@ -426,7 +433,7 @@ export default function TourList() {
 
             <View style={{ marginBottom: 16 }}>
               <Text style={{ fontSize: 18, fontWeight: "700", color: "#000" }}>
-                Description
+                {t("forum.content")}
               </Text>
               <TextInput
                 style={{
@@ -440,7 +447,7 @@ export default function TourList() {
                   borderWidth: 1,
                   borderColor: "#e9ecef",
                 }}
-                placeholder="Description"
+                placeholder={t("tour.share.contentPlaceholder")}
                 value={shareContent}
                 onChangeText={setShareContent}
                 multiline
@@ -496,7 +503,7 @@ export default function TourList() {
                   marginBottom: 12,
                 }}
               >
-                Choose your hashtags:
+                {t("forum.chooseHashtags")}
               </Text>
               <View
                 style={{
@@ -508,7 +515,7 @@ export default function TourList() {
                 <Text
                   style={{ fontSize: 14, color: "#6c757d", marginRight: 8 }}
                 >
-                  hashtag
+                  {t("forum.hashtag")}
                 </Text>
                 <Text
                   style={{ fontSize: 14, color: "#6c757d", marginRight: 32 }}
@@ -525,7 +532,7 @@ export default function TourList() {
                     fontSize: 14,
                     color: "#6c757d",
                   }}
-                  placeholder="Add hashtag (press Enter or tap Add)"
+                  placeholder={t("tour.share.hashtagPlaceholder")}
                   value={shareHashtagInput}
                   onChangeText={setShareHashtagInput}
                   onSubmitEditing={addShareHashtag}
@@ -542,7 +549,9 @@ export default function TourList() {
                     borderRadius: 8,
                   }}
                 >
-                  <Text style={{ color: "#fff", fontWeight: "600" }}>Add</Text>
+                  <Text style={{ color: "#fff", fontWeight: "600" }}>
+                    {t("tour.share.addHashtag")}
+                  </Text>
                 </TouchableOpacity>
               </View>
               {shareHashtags.length > 0 && (

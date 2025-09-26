@@ -105,8 +105,28 @@
   },
   "forum": {
     "title": "Diễn đàn",
+    "post": "Đăng",
+    "content": "Nội dung",
+    "chooseHashtags": "Chọn hashtag:",
+    "hashtag": "hashtag",
     "placeholderCreatePost": "Bạn đang nghĩ gì?",
-    "searchPlaceholder": "Tìm kiếm bài viết...",
+    "searchPlaceholder": "Tìm kiếm hashtag, từ khóa",
+    "myPosts": "Bài viết của tôi",
+    "savedPosts": "Bài viết đã lưu",
+    "createPost": "Tạo bài viết",
+    "createPostModal": {
+      "title": "Tạo bài viết",
+      "close": "Đóng",
+      "upload": "Đăng",
+      "postTitle": "Tiêu đề bài viết",
+      "shortTitle": "Tiêu đề ngắn",
+      "textField": "Trường văn bản",
+      "description": "Mô tả",
+      "tapToAdd": "Chạm để thêm",
+      "photoVideo": "Ảnh/ Video",
+      "chooseHashtags": "Chọn hashtag:",
+      "hashtag": "hashtag"
+    },
     "trending": "Xu hướng",
     "comingSoon": "Tính năng này sẽ sớm ra mắt.",
     "friendSuggestions": "Gợi ý kết bạn",
@@ -399,6 +419,21 @@
       "paymentRedirect": "Chuyển hướng thanh toán",
       "paymentSuccess": "Thanh toán thành công",
       "paymentFailed": "Thanh toán thất bại"
+    },
+    "share": {
+      "title": "Chia sẻ Tour",
+      "modalTitle": "Chia sẻ lên Diễn đàn",
+      "shareButton": "Chia sẻ",
+      "titlePlaceholder": "Nhập tiêu đề bài viết...",
+      "contentPlaceholder": "Viết suy nghĩ của bạn về tour này...",
+      "hashtagPlaceholder": "Thêm hashtag (cách nhau bằng dấu cách hoặc dấu phẩy)",
+      "addHashtag": "Thêm",
+      "posting": "Đang đăng...",
+      "success": "Chia sẻ tour thành công!",
+      "errors": {
+        "loginRequired": "Vui lòng đăng nhập để chia sẻ tour",
+        "shareFailed": "Chia sẻ tour thất bại. Vui lòng thử lại"
+      }
     }
   },
   "payment": {
@@ -443,5 +478,38 @@
     "hotTopic": "Chủ đề nóng",
     "seeAll": "Xem tất cả",
     "article": "Bài viết"
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "subtitle": "Xem và thiết lập tuỳ chọn tài khoản",
+    "signOut": "Đăng xuất",
+    "confirmTitle": "Đăng xuất",
+    "confirmMessage": "Bạn có chắc muốn đăng xuất? Bạn sẽ cần đăng nhập lại để tiếp tục sử dụng ứng dụng.",
+    "signOutConfirm": "Đăng xuất",
+    "options": {
+      "language": "Ngôn ngữ",
+      "notifications": "Thông báo",
+      "transactions": "Giao dịch"
+    }
+  },
+  "profile": {
+    "editProfile": "Chỉnh sửa hồ sơ",
+    "upgradePremium": "Nâng cấp Premium",
+    "order": {
+      "title": "Đơn hàng của bạn",
+      "subtitle": "Xem đơn hàng và lịch sử giao dịch tại đây"
+    },
+    "payment": {
+      "title": "Phương thức thanh toán",
+      "subtitle": "Lưu phương thức thanh toán ưa thích để giao dịch mượt hơn"
+    },
+    "coupon": {
+      "title": "Mã giảm giá & Voucher",
+      "subtitle": "Nhận mã giảm giá và ưu đãi để giảm chi phí hoặc miễn phí vận chuyển"
+    },
+    "supportCenter": {
+      "title": "Trung tâm hỗ trợ",
+      "subtitle": "Tìm câu trả lời phù hợp cho câu hỏi của bạn"
+    }
   }
 }
