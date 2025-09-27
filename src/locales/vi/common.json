@@ -434,6 +434,27 @@
         "loginRequired": "Vui lòng đăng nhập để chia sẻ tour",
         "shareFailed": "Chia sẻ tour thất bại. Vui lòng thử lại"
       }
+    },
+    "rate": {
+      "title": "Đánh giá Tour",
+      "editTitle": "Chỉnh sửa đánh giá",
+      "name": "Họ tên",
+      "namePlaceholder": "Tên của bạn",
+      "content": "Nội dung đánh giá",
+      "contentPlaceholder": "Chia sẻ trải nghiệm của bạn về tour này...",
+      "rating": "Đánh giá",
+      "submit": "Gửi đánh giá",
+      "submitting": "Đang gửi...",
+      "reviews": "Đánh giá từ khách hàng",
+      "successTitle": "Thành công",
+      "successMessage": "Đánh giá của bạn đã được gửi thành công!",
+      "errorTitle": "Lỗi",
+      "contentRequired": "Vui lòng nhập nội dung đánh giá",
+      "starsRequired": "Vui lòng chọn số sao đánh giá",
+      "loginRequired": "Vui lòng đăng nhập để đánh giá tour",
+      "submitError": "Gửi đánh giá thất bại. Vui lòng thử lại",
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa đánh giá này?",
+      "noReviews": "Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá tour này!"
     }
   },
   "payment": {
@@ -477,7 +498,9 @@
     "na": "Không có",
     "hotTopic": "Chủ đề nóng",
     "seeAll": "Xem tất cả",
-    "article": "Bài viết"
+    "article": "Bài viết",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa"
   },
   "settings": {
     "title": "Cài đặt",

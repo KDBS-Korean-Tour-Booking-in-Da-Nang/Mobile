@@ -413,6 +413,26 @@
         "loginRequired": "투어를 공유하려면 로그인해주세요",
         "shareFailed": "투어 공유에 실패했습니다. 다시 시도해주세요"
       }
+    },
+    "rate": {
+      "title": "투어 평가",
+      "name": "이름",
+      "namePlaceholder": "귀하의 이름",
+      "content": "평가 내용",
+      "contentPlaceholder": "이 투어에 대한 경험을 공유해주세요...",
+      "rating": "평점",
+      "submit": "평가 제출",
+      "submitting": "제출 중...",
+      "reviews": "고객 평가",
+      "successTitle": "성공",
+      "successMessage": "평가가 성공적으로 제출되었습니다!",
+      "errorTitle": "오류",
+      "contentRequired": "평가 내용을 입력해주세요",
+      "starsRequired": "별점을 선택해주세요",
+      "loginRequired": "투어를 평가하려면 로그인해주세요",
+      "submitError": "평가 제출에 실패했습니다. 다시 시도해주세요",
+      "deleteConfirm": "이 평가를 삭제하시겠습니까?",
+      "noReviews": "아직 평가가 없습니다. 이 투어의 첫 번째 평가자가 되어보세요!"
     }
   },
   "payment": {
@@ -456,7 +476,9 @@
     "na": "없음",
     "hotTopic": "인기 주제",
     "seeAll": "모두 보기",
-    "article": "기사"
+    "article": "기사",
+    "edit": "수정",
+    "delete": "삭제"
   },
   "settings": {
     "title": "설정",

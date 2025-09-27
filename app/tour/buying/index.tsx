@@ -37,7 +37,6 @@ export default function BuyingTour() {
   const [booking] = React.useState(false);
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
 
-  // Navigation scroll effects
   const [isNavVisible, setIsNavVisible] = React.useState(true);
   const lastScrollY = React.useRef(0);
   const lastScrollUpdateTs = React.useRef(0);
@@ -51,13 +50,11 @@ export default function BuyingTour() {
     string | null
   >(null);
 
-  // Close dropdowns when clicking outside
   const closeDropdowns = () => {
     setShowGenderPicker(null);
     setShowNationalityPicker(null);
   };
 
-  // Load tour data
   React.useEffect(() => {
     const loadTour = async () => {
       try {
@@ -80,11 +77,10 @@ export default function BuyingTour() {
     loadTour();
   }, [tourId, t]);
 
-  // Handle scroll for navigation effects - hide when scrolling down, show when scrolling up
   const handleScroll = React.useCallback(
     (event: any) => {
       const now = Date.now();
-      if (now - lastScrollUpdateTs.current < 120) return; // throttle ~8fps
+      if (now - lastScrollUpdateTs.current < 120) return; 
       lastScrollUpdateTs.current = now;
 
       const currentScrollY = event.nativeEvent.contentOffset.y;
@@ -106,7 +102,6 @@ export default function BuyingTour() {
   );
   const [babyDob, setBabyDob] = React.useState<Record<number, string>>({});
 
-  // Guest information states
   const [adultInfo, setAdultInfo] = React.useState<
     Record<
       number,
@@ -144,7 +139,6 @@ export default function BuyingTour() {
     >
   >({});
 
-  // Personal information toggle and form data
   const [usePersonalInfo, setUsePersonalInfo] = React.useState<boolean>(false);
   const [formData, setFormData] = React.useState({
     fullName: "",
@@ -166,25 +160,22 @@ export default function BuyingTour() {
     if (type === "baby") setBabyCount((c) => Math.max(0, c - 1));
   }, []);
 
-  // Handle personal information toggle
   const handleTogglePersonalInfo = () => {
     const newValue = !usePersonalInfo;
     setUsePersonalInfo(newValue);
 
     if (newValue && user) {
-      // Auto-fill with user data
       setFormData({
         fullName: user.username || "",
-        address: "", // User might not have address in profile
+        address: "", 
         phoneNumber: user.phone || "",
         email: user.email || "",
-        pickUpPoint: formData.pickUpPoint, // Keep existing value
-        note: formData.note, // Keep existing value
+        pickUpPoint: formData.pickUpPoint, 
+        note: formData.note, 
       });
     }
   };
 
-  // Check if field needs update
   const needsUpdate = (field: string) => {
     if (!usePersonalInfo || !user) return false;
 
@@ -192,17 +183,16 @@ export default function BuyingTour() {
       case "fullName":
         return !user.username;
       case "address":
-        return true; // Address is not in user profile
+        return true; 
       case "phoneNumber":
         return !user.phone;
       case "email":
-        return false; // Email is always available
+        return false; 
       default:
         return false;
     }
   };
 
-  // Calculate total price using real tour data
   const calculateTotal = () => {
     if (!tour) return 0;
     const adultTotal = adultCount * (tour.adultPrice || 0);
@@ -217,10 +207,7 @@ export default function BuyingTour() {
 
   const isValidEmail = (value: string) =>
     /[^\s@]+@[^\s@]+\.[^\s@]+/.test(value);
-  // const isValidPhone = (value: string) =>
-  //   /^\d{10}$/.test(value.replace(/\D/g, ""));
-  // const isValidTenDigitId = (value: string) =>
-  //   /^\d{10}$/.test((value || "").replace(/\D/g, ""));
+  
 
   const validateBeforeBooking = (): boolean => {
     if (adultCount < 1) {
