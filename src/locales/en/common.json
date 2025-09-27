@@ -94,8 +94,28 @@
   },
   "forum": {
     "title": "Forum",
+    "post": "Post",
+    "content": "Description",
+    "chooseHashtags": "Choose your hashtags:",
+    "hashtag": "hashtag",
     "placeholderCreatePost": "What's on your mind?",
-    "searchPlaceholder": "Search posts...",
+    "searchPlaceholder": "Search for hashtags, keywords",
+    "myPosts": "My Posts",
+    "savedPosts": "Saved Posts",
+    "createPost": "Create a post",
+    "createPostModal": {
+      "title": "Create Post",
+      "close": "Close",
+      "upload": "Upload",
+      "postTitle": "Post Title",
+      "shortTitle": "Short Title",
+      "textField": "Text Field",
+      "description": "Description",
+      "tapToAdd": "Tap to Add",
+      "photoVideo": "Photo/ Video",
+      "chooseHashtags": "Choose your hashtags:",
+      "hashtag": "hashtag"
+    },
     "trending": "Trending",
     "comingSoon": "This feature is coming soon.",
     "friendSuggestions": "Friend suggestions",
@@ -139,6 +159,7 @@
     "commentsTitle": "Comments ({{count}})",
     "writeCommentPlaceholder": "Write a comment...",
     "writeReplyPlaceholder": "Write a reply...",
+    "writeSelfReplyPlaceholder": "Add more to your comment...",
     "save": "Save",
     "delete": "Delete",
     "deletePostTitle": "Delete post",
@@ -273,6 +294,13 @@
   },
   "tour": {
     "loading": "Loading...",
+    "list": {
+      "title": "Tour List",
+      "searchPlaceholder": "Search tours...",
+      "viewPurchased": "Purchased",
+      "empty": "No tours found",
+      "emptySubtitle": "Try adjusting your search or filters."
+    },
     "detail": {
       "name": "Tour Name",
       "departurePoint": "Departure Point",
@@ -379,6 +407,41 @@
       "paymentRedirect": "Payment Redirect",
       "paymentSuccess": "Payment Successful",
       "paymentFailed": "Payment Failed"
+    },
+    "share": {
+      "title": "Share Tour",
+      "modalTitle": "Share to Forum",
+      "shareButton": "Share",
+      "titlePlaceholder": "Enter post title...",
+      "contentPlaceholder": "Write your thoughts about this tour...",
+      "hashtagPlaceholder": "Add hashtags (separate with space or comma)",
+      "addHashtag": "Add",
+      "posting": "Posting...",
+      "success": "Tour shared successfully!",
+      "errors": {
+        "loginRequired": "Please login to share tours",
+        "shareFailed": "Failed to share tour. Please try again"
+      }
+    },
+    "rate": {
+      "title": "Rate Tour",
+      "name": "Full Name",
+      "namePlaceholder": "Your name",
+      "content": "Review Content",
+      "contentPlaceholder": "Share your experience about this tour...",
+      "rating": "Rating",
+      "submit": "Submit Review",
+      "submitting": "Submitting...",
+      "reviews": "Customer Reviews",
+      "successTitle": "Success",
+      "successMessage": "Your review has been submitted successfully!",
+      "errorTitle": "Error",
+      "contentRequired": "Please enter review content",
+      "starsRequired": "Please select a star rating",
+      "loginRequired": "Please login to rate this tour",
+      "submitError": "Failed to submit review. Please try again",
+      "deleteConfirm": "Are you sure you want to delete this review?",
+      "noReviews": "No reviews yet. Be the first to rate this tour!"
     }
   },
   "payment": {
@@ -422,6 +485,41 @@
     "na": "N/A",
     "hotTopic": "Hot Topics",
     "seeAll": "See All",
-    "article": "Articles"
+    "article": "Articles",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "View and set your account preferences",
+    "signOut": "Sign Out",
+    "confirmTitle": "Sign out",
+    "confirmMessage": "Are you sure you want to sign out? You will need to log in again to continue using the app.",
+    "signOutConfirm": "Sign out",
+    "options": {
+      "language": "Language",
+      "notifications": "Notifications",
+      "transactions": "Transactions"
+    }
+  },
+  "profile": {
+    "editProfile": "Edit Profile",
+    "upgradePremium": "Upgrade to Premium",
+    "order": {
+      "title": "Your Order",
+      "subtitle": "View your order and transaction history here"
+    },
+    "payment": {
+      "title": "Payment Method",
+      "subtitle": "Save your preferred payment method for smoother transactions"
+    },
+    "coupon": {
+      "title": "Coupon & Voucher",
+      "subtitle": "Claim vouchers and discounts for reduced prices or free shipping"
+    },
+    "supportCenter": {
+      "title": "Support Center",
+      "subtitle": "Find the best answer to your question"
+    }
   }
 }

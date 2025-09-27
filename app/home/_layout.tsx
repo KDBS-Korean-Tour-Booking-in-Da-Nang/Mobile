@@ -5,7 +5,6 @@ export default function HomeLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="settings/index" />
-      <Stack.Screen name="adminDashboard" />
     </Stack>
   );
 }

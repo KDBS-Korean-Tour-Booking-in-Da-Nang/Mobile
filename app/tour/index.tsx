@@ -5,8 +5,8 @@ import React, {
   useEffect,
   useMemo,
 } from "react";
-import { Dimensions } from "react-native";
 import {
+  Dimensions,
   View,
   Text,
   Image,
@@ -20,6 +20,7 @@ import MainLayout from "../../src/components/MainLayout";
 import { useNavigation } from "../../src/navigation";
 import { useLocalSearchParams } from "expo-router";
 import BookingButton from "../../src/components/BookingButton";
+import RateTour from "../../src/components/RateTour";
 import { useTranslation } from "react-i18next";
 import { tourService } from "../../src/services/tourService";
 import { TourResponse } from "../../src/types/tour";
@@ -93,11 +94,7 @@ export default function TourDetail() {
         ? [tour!.tourImgPath.trim()]
         : [];
     const all = [...cover, ...contentImages];
-    return all.length > 0
-      ? all
-      : [
-          "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
-        ];
+    return all.length > 0 ? all : [""];
   }, [tour]);
 
   if (loading) {
@@ -455,6 +452,15 @@ export default function TourDetail() {
 
           {/* Booking button appears at the very end of content */}
           <BookingButton onPress={handleBooking} />
+
+          {/* Rate Tour Section */}
+          <RateTour
+            tourId={tour?.id || 0}
+            onRateSubmitted={(rate) => {
+              console.log("New rate submitted:", rate);
+            }}
+          />
+
           {/* Spacer after button so it's fully visible above system/nav bars when scrolled to end */}
           <View style={styles.bottomSpace} />
         </View>

@@ -5,43 +5,41 @@ import { useNavigation } from "../../../src/navigation";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import MainLayout from "../../../src/components/MainLayout";
 import styles from "./styles";
+import { useTranslation } from "react-i18next";
 
 export default function Settings() {
   const { goBack, navigate } = useNavigation();
   const { logout } = useAuthContext();
+  const { t } = useTranslation();
 
   const handleSignOut = () => {
-    Alert.alert(
-      "Đăng xuất",
-      "Bạn có chắc chắn muốn đăng xuất? Bạn sẽ cần đăng nhập lại để tiếp tục sử dụng ứng dụng.",
-      [
-        {
-          text: "Hủy",
-          style: "cancel",
+    Alert.alert(t("settings.confirmTitle"), t("settings.confirmMessage"), [
+      {
+        text: t("common.cancel"),
+        style: "cancel",
+      },
+      {
+        text: t("settings.signOutConfirm"),
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await logout();
+            // Navigate to login screen after logout
+            navigate("/auth/login/userLogin");
+          } catch (error) {
+            console.error("Logout error:", error);
+            // Still navigate to login even if logout fails
+            navigate("/auth/login/userLogin");
+          }
         },
-        {
-          text: "Đăng xuất",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await logout();
-              // Navigate to login screen after logout
-              navigate("/auth/login/userLogin");
-            } catch (error) {
-              console.error("Logout error:", error);
-              // Still navigate to login even if logout fails
-              navigate("/auth/login/userLogin");
-            }
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   const settingsOptions = [
     {
       id: "language",
-      title: "Language",
+      title: t("settings.options.language"),
       icon: "globe-outline",
       onPress: () => {
         // TODO: Navigate to language settings
@@ -49,7 +47,7 @@ export default function Settings() {
     },
     {
       id: "notifications",
-      title: "Notifications",
+      title: t("settings.options.notifications"),
       icon: "notifications-outline",
       onPress: () => {
         // TODO: Navigate to notification settings
@@ -57,7 +55,7 @@ export default function Settings() {
     },
     {
       id: "transactions",
-      title: "Transactions",
+      title: t("settings.options.transactions"),
       icon: "card-outline",
       onPress: () => {
         // TODO: Navigate to transaction history
@@ -72,13 +70,13 @@ export default function Settings() {
         <View style={styles.header}>
           <TouchableOpacity onPress={goBack} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color="#000" />
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backText}>{t("common.goBack")}</Text>
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Settings Title */}
-          <Text style={styles.pageTitle}>Settings</Text>
+          <Text style={styles.pageTitle}>{t("settings.title")}</Text>
 
           {/* Settings Options */}
           <View style={styles.optionsContainer}>
@@ -117,7 +115,7 @@ export default function Settings() {
               <View style={styles.signOutIconContainer}>
                 <Ionicons name="log-out-outline" size={24} color="#fff" />
               </View>
-              <Text style={styles.signOutText}>Sign Out</Text>
+              <Text style={styles.signOutText}>{t("settings.signOut")}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#fff" />
           </TouchableOpacity>

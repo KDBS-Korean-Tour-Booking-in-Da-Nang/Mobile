@@ -34,7 +34,7 @@ i18next
   .use(initReactI18next)
   .init({
     fallbackLng: "vi",
-    debug: __DEV__,
+    debug: false,
     resources: {
       en: {
         common: en,
@@ -52,6 +52,10 @@ i18next
     },
     interpolation: {
       escapeValue: false, // React already safes from xss
+    },
+    missingKeyHandler: (lng, ns, key) => {
+      // Suppress missing key warnings
+      return key;
     },
   });
 

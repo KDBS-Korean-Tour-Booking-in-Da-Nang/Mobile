@@ -1,9 +1,14 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Environment variables for API configuration
-const API_BASE_URL_DEV = "http://172.16.0.157:8080";
-const API_BASE_URL_PROD = "https://kdbs.com/api";
+const expoDev = (typeof process !== "undefined" &&
+  (process.env as any)?.EXPO_PUBLIC_API_BASE_URL_DEV) as string | undefined;
+const expoProd = (typeof process !== "undefined" &&
+  (process.env as any)?.EXPO_PUBLIC_API_BASE_URL_PROD) as string | undefined;
+
+// Final base URLs with sensible defaults to avoid crashes
+const API_BASE_URL_DEV = (expoDev || "").replace(/\/$/, "");
+const API_BASE_URL_PROD = (expoProd ?? "").replace(/\/$/, "");
 
 const API_BASE_URL = __DEV__ ? API_BASE_URL_DEV : API_BASE_URL_PROD;
 

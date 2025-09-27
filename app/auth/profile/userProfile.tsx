@@ -13,10 +13,12 @@ import { useNavigation } from "../../../src/navigation";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import { colors } from "../../../src/constants/theme";
 import MainLayout from "../../../src/components/MainLayout";
+import { useTranslation } from "react-i18next";
 
 export default function UserProfile() {
   const { goBack, navigate } = useNavigation();
   const { user } = useAuthContext();
+  const { t } = useTranslation();
 
   return (
     <MainLayout>
@@ -25,7 +27,7 @@ export default function UserProfile() {
         <View style={styles.header}>
           <TouchableOpacity onPress={goBack} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color="#6c757d" />
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backText}>{t("common.goBack")}</Text>
           </TouchableOpacity>
         </View>
 
@@ -51,10 +53,14 @@ export default function UserProfile() {
                 onPress={() => navigate("/auth/profile/edit")}
               >
                 <Text style={styles.username}>{user?.username}</Text>
-                <Text style={styles.editProfileText}>Edit Profile</Text>
+                <Text style={styles.editProfileText}>
+                  {t("profile.editProfile")}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.upgradeButton}>
-                <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
+                <Text style={styles.upgradeButtonText}>
+                  {t("profile.upgradePremium")}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -64,46 +70,53 @@ export default function UserProfile() {
             {/* Your Order Card */}
             <TouchableOpacity style={styles.optionCard}>
               <View style={styles.optionContent}>
-                <Text style={styles.optionTitle}>Your Order</Text>
+                <Text style={styles.optionTitle}>
+                  {t("profile.order.title")}
+                </Text>
                 <Text style={styles.optionDescription}>
-                  View your order and transaction history here
+                  {t("profile.order.subtitle")}
                 </Text>
               </View>
-              <Text style={styles.seeAllText}>See all</Text>
+              <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
             </TouchableOpacity>
 
             {/* Payment Method Card */}
             <TouchableOpacity style={styles.optionCard}>
               <View style={styles.optionContent}>
-                <Text style={styles.optionTitle}>Payment Method</Text>
+                <Text style={styles.optionTitle}>
+                  {t("profile.payment.title")}
+                </Text>
                 <Text style={styles.optionDescription}>
-                  Save your preferred payment method for smoother transactions
+                  {t("profile.payment.subtitle")}
                 </Text>
               </View>
-              <Text style={styles.seeAllText}>See all</Text>
+              <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
             </TouchableOpacity>
 
             {/* Coupon & Voucher Card */}
             <TouchableOpacity style={styles.optionCard}>
               <View style={styles.optionContent}>
-                <Text style={styles.optionTitle}>Coupon & Voucher</Text>
+                <Text style={styles.optionTitle}>
+                  {t("profile.coupon.title")}
+                </Text>
                 <Text style={styles.optionDescription}>
-                  Claim vouchers and discounts for reduced prices or free
-                  shipping
+                  {t("profile.coupon.subtitle")}
                 </Text>
               </View>
-              <Text style={styles.seeAllText}>See all</Text>
+              <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
             </TouchableOpacity>
 
             {/* Support Center Card */}
             <TouchableOpacity style={styles.optionCard}>
               <View style={styles.optionContent}>
-                <Text style={styles.optionTitle}>Support Center</Text>
+                <Text style={styles.optionTitle}>
+                  {t("profile.supportCenter.title")}
+                </Text>
                 <Text style={styles.optionDescription}>
-                  Find the best answer to your question
+                  {t("profile.supportCenter.subtitle")}
                 </Text>
               </View>
-              <Text style={styles.seeAllText}>See all</Text>
+              <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
             </TouchableOpacity>
 
             {/* Settings Card */}
@@ -112,12 +125,12 @@ export default function UserProfile() {
               onPress={() => navigate("/home/settings")}
             >
               <View style={styles.optionContent}>
-                <Text style={styles.optionTitle}>Settings</Text>
+                <Text style={styles.optionTitle}>{t("settings.title")}</Text>
                 <Text style={styles.optionDescription}>
-                  View and set your account preferences
+                  {t("settings.subtitle")}
                 </Text>
               </View>
-              <Text style={styles.seeAllText}>See all</Text>
+              <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
             </TouchableOpacity>
 
             {/* Extra spacing at bottom */}

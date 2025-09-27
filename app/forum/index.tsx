@@ -10,6 +10,7 @@ import {
   TextInput,
   TouchableWithoutFeedback,
   Platform,
+  Animated,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
@@ -55,6 +56,7 @@ export default function Forum() {
   const lastScrollY = useRef(0);
   const scrollThreshold = 50;
   const flatListRef = useRef<FlatList>(null);
+  const buttonAnimation = useRef(new Animated.Value(1)).current;
 
   // Search dropdown
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
@@ -408,21 +410,34 @@ export default function Forum() {
   );
 
   // Handle scroll for navigation effects - hide when scrolling down, show when scrolling up
-  const handleScroll = useCallback((event: any) => {
-    const currentScrollY = event.nativeEvent.contentOffset.y;
-    const scrollDifference = Math.abs(currentScrollY - lastScrollY.current);
+  const handleScroll = useCallback(
+    (event: any) => {
+      const currentScrollY = event.nativeEvent.contentOffset.y;
+      const scrollDifference = Math.abs(currentScrollY - lastScrollY.current);
 
-    if (scrollDifference > scrollThreshold) {
-      if (currentScrollY > lastScrollY.current) {
-        // Scrolling down - hide navbar
-        setIsNavVisible(false);
-      } else {
-        // Scrolling up - show navbar
-        setIsNavVisible(true);
+      if (scrollDifference > scrollThreshold) {
+        if (currentScrollY > lastScrollY.current) {
+          // Scrolling down - hide navbar and button
+          setIsNavVisible(false);
+          Animated.timing(buttonAnimation, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }).start();
+        } else {
+          // Scrolling up - show navbar and button
+          setIsNavVisible(true);
+          Animated.timing(buttonAnimation, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }).start();
+        }
+        lastScrollY.current = currentScrollY;
       }
-      lastScrollY.current = currentScrollY;
-    }
-  }, []);
+    },
+    [buttonAnimation]
+  );
 
   // Function to load full post details when needed
   const loadFullPostDetails = useCallback(async (postId: number) => {
@@ -502,7 +517,7 @@ export default function Forum() {
                 <Ionicons name="search" size={18} color="#6c757d" />
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="Search for hashtags, keywords"
+                  placeholder={t("forum.searchPlaceholder")}
                   placeholderTextColor="#6c757d"
                   value={searchQuery}
                   onChangeText={(text) => {
@@ -584,7 +599,7 @@ export default function Forum() {
                   viewingMyPosts && styles.navButtonTextActive,
                 ]}
               >
-                My Posts
+                {t("forum.myPosts")}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -603,7 +618,7 @@ export default function Forum() {
                   viewingSaved && styles.navButtonTextActive,
                 ]}
               >
-                Saved Posts
+                {t("forum.savedPosts")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -636,18 +651,37 @@ export default function Forum() {
             }}
           />
 
-          {/* Create Post Button - Fixed at Bottom */}
-          <TouchableOpacity
+          {/* Create Post Button - Fixed at Bottom with Hide/Show Animation */}
+          <Animated.View
             style={[
               styles.createPostButton,
               {
                 bottom: insets.bottom + (Platform.OS === "android" ? 140 : 60),
+                opacity: buttonAnimation,
+                transform: [
+                  {
+                    translateY: buttonAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [100, 0],
+                    }),
+                  },
+                ],
               },
             ]}
-            onPress={openCreateModal}
           >
-            <Text style={styles.createPostButtonText}>Create a post</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+              onPress={openCreateModal}
+            >
+              <Text style={styles.createPostButtonText}>
+                {t("forum.createPost")}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
 
           {/* Create Post Modal */}
           <CreatePostModal
