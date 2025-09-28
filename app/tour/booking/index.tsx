@@ -16,8 +16,12 @@ import { tourService } from "../../../src/services/tourService";
 import { BookingResponse } from "../../../src/types/tour";
 
 export default function BookingView() {
-  const { id } = useLocalSearchParams();
-  const bookingId = id ? Number(id) : NaN;
+  const { id, bookingId: bookingIdParam } = useLocalSearchParams();
+  const bookingId = id
+    ? Number(id)
+    : bookingIdParam
+    ? Number(bookingIdParam)
+    : NaN;
   const { goBack } = useNavigation();
   const { t } = useTranslation();
 
@@ -38,7 +42,6 @@ export default function BookingView() {
         const data = await tourService.getBookingById(bookingId);
         setBooking(data);
       } catch (err: any) {
-        console.error("Error loading booking:", err);
         setError(
           err?.response?.data?.message || t("tour.errors.bookingFailed")
         );
@@ -65,7 +68,9 @@ export default function BookingView() {
       <MainLayout>
         <View style={styles.centerWrap}>
           <Ionicons name="alert-circle-outline" size={64} color="#ff6b6b" />
-          <Text style={styles.errorTitle}>{error || t("tour.errors.notFound")}</Text>
+          <Text style={styles.errorTitle}>
+            {error || t("tour.errors.notFound")}
+          </Text>
           <TouchableOpacity style={styles.retryButton} onPress={goBack}>
             <Text style={styles.retryButtonText}>{t("common.goBack")}</Text>
           </TouchableOpacity>
@@ -88,56 +93,58 @@ export default function BookingView() {
 
         <View style={styles.card}>
           <Text style={styles.title}>{booking.tourName}</Text>
-          <View style={styles.row}> 
+          <View style={styles.row}>
             <Text style={styles.label}>{t("payment.result.bookingId")}</Text>
             <Text style={styles.value}>{booking.bookingId}</Text>
           </View>
-          <View style={styles.row}> 
+          <View style={styles.row}>
             <Text style={styles.label}>{t("payment.result.orderId")}</Text>
             <Text style={styles.value}>{booking.bookingId}</Text>
           </View>
-          <View style={styles.row}> 
+          <View style={styles.row}>
             <Text style={styles.label}>{t("tour.booking.departureDate")}</Text>
             <Text style={styles.value}>{booking.departureDate}</Text>
           </View>
-          <View style={styles.row}> 
+          <View style={styles.row}>
             <Text style={styles.label}>{t("tour.booking.totalGuests")}</Text>
             <Text style={styles.value}>{booking.totalGuests}</Text>
           </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>{t("tour.confirm.contactInfo")}</Text>
-          <View style={styles.row}> 
+          <Text style={styles.sectionTitle}>
+            {t("tour.confirm.contactInfo")}
+          </Text>
+          <View style={styles.row}>
             <Text style={styles.label}>{t("tour.booking.fullName")}</Text>
             <Text style={styles.value}>{booking.contactName}</Text>
           </View>
           {!!booking.contactPhone && (
-            <View style={styles.row}> 
+            <View style={styles.row}>
               <Text style={styles.label}>{t("tour.booking.phoneNumber")}</Text>
               <Text style={styles.value}>{booking.contactPhone}</Text>
             </View>
           )}
           {!!booking.contactEmail && (
-            <View style={styles.row}> 
+            <View style={styles.row}>
               <Text style={styles.label}>{t("tour.booking.email")}</Text>
               <Text style={styles.value}>{booking.contactEmail}</Text>
             </View>
           )}
           {!!booking.contactAddress && (
-            <View style={styles.row}> 
+            <View style={styles.row}>
               <Text style={styles.label}>{t("tour.booking.address")}</Text>
               <Text style={styles.value}>{booking.contactAddress}</Text>
             </View>
           )}
           {!!booking.pickupPoint && (
-            <View style={styles.row}> 
+            <View style={styles.row}>
               <Text style={styles.label}>{t("tour.booking.pickUpPoint")}</Text>
               <Text style={styles.value}>{booking.pickupPoint}</Text>
             </View>
           )}
           {!!booking.note && (
-            <View style={styles.row}> 
+            <View style={styles.row}>
               <Text style={styles.label}>{t("tour.booking.note")}</Text>
               <Text style={styles.value}>{booking.note}</Text>
             </View>
@@ -146,9 +153,11 @@ export default function BookingView() {
 
         {booking.guests?.length ? (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>{t("tour.confirm.guestDetails")}</Text>
+            <Text style={styles.sectionTitle}>
+              {t("tour.confirm.guestDetails")}
+            </Text>
             {booking.guests.map((g, idx) => (
-              <View key={g.guestId || idx} style={styles.guestItem}>
+              <View key={g.bookingGuestId || idx} style={styles.guestItem}>
                 <Text style={styles.guestIndex}>{idx + 1}</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.guestName}>{g.fullName}</Text>
@@ -302,5 +311,3 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
-
-

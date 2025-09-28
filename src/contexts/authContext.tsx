@@ -121,7 +121,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await api.post("/api/auth/logout");
     } catch (e) {
       // Continue with logout even if backend call fails
-      console.log("Backend logout failed, continuing with local logout");
+      
     } finally {
       // Clear all stored authentication data
       await AsyncStorage.removeItem("authToken");
@@ -140,7 +140,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           "lastLoginTime"
         ]);
       } catch (error) {
-        console.log("Error clearing additional storage:", error);
+        
       }
       
       // Update auth state

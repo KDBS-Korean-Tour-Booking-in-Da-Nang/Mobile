@@ -485,7 +485,8 @@
       "responseTime": "Thời gian phản hồi",
       "viewBooking": "Xem đặt chỗ",
       "goHome": "Về trang chủ",
-      "fetchError": "Không thể tải chi tiết giao dịch"
+      "fetchError": "Không thể tải chi tiết giao dịch",
+      "premiumSuccessMessage": "Chúc mừng! Bạn đã nâng cấp lên Premium thành công!"
     }
   },
   "common": {
@@ -500,7 +501,30 @@
     "seeAll": "Xem tất cả",
     "article": "Bài viết",
     "edit": "Chỉnh sửa",
-    "delete": "Xóa"
+    "delete": "Xóa",
+    "close": "Đóng"
+  },
+  "premium": {
+    "title": "Premium",
+    "activeStatus": "Tài khoản Premium đang hoạt động",
+    "validUntil": "Có hiệu lực đến",
+    "yourBenefits": "Quyền lợi của bạn",
+    "benefitsTitle": "Quyền lợi Premium",
+    "choosePlan": "Chọn gói",
+    "plan1Month": "1 tháng",
+    "plan3Months": "3 tháng",
+    "purchase": "Mua ngay",
+    "successTitle": "Thành công",
+    "purchaseSuccess": "Bạn đã nâng cấp lên Premium thành công!",
+    "developmentTitle": "Đang phát triển",
+    "developmentMessage": "Tính năng mua Premium đang được phát triển. Vui lòng quay lại sau!",
+    "benefits": {
+      "unlimitedTours": "Truy cập không giới hạn tất cả tour",
+      "prioritySupport": "Hỗ trợ ưu tiên 24/7",
+      "exclusiveContent": "Nội dung độc quyền và tour mới",
+      "noAds": "Trải nghiệm không quảng cáo",
+      "advancedFeatures": "Tính năng nâng cao và cá nhân hóa"
+    }
   },
   "settings": {
     "title": "Cài đặt",

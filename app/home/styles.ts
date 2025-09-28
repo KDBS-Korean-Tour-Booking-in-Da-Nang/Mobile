@@ -1,8 +1,7 @@
 import { StyleSheet, Dimensions, Platform } from "react-native";
 import { colors, spacing, borderRadius } from "../../src/constants/theme";
 
-const { width, height } = Dimensions.get("window");
-const isSmallScreen = width <= 360 || height <= 700;
+const { width } = Dimensions.get("window");
 
 const styles = StyleSheet.create({
   container: {
@@ -34,11 +33,19 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     marginBottom: 2,
   },
+  usernameContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   usernameText: {
     fontSize: 20,
     fontWeight: "700",
     color: "#212529",
     letterSpacing: -0.5,
+  },
+  premiumIconContainer: {
+    padding: 4,
   },
   rightActions: {
     flexDirection: "row",
@@ -233,7 +240,7 @@ const styles = StyleSheet.create({
     marginBottom: -12,
   },
   tourCard: {
-    width: width * 0.5,
+    width: width * 0.6,
     backgroundColor: colors.surface.primary,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
@@ -246,11 +253,42 @@ const styles = StyleSheet.create({
     elevation: 3,
     overflow: "hidden",
   },
+  imageContainer: {
+    position: "relative",
+    width: "100%",
+    height: 180,
+  },
   tourImage: {
     width: "100%",
-    height: 150,
+    height: 180,
     borderTopLeftRadius: borderRadius.lg,
     borderTopRightRadius: borderRadius.lg,
+  },
+  imageLoadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+  },
+  noImageContainer: {
+    width: "100%",
+    height: 180,
+    backgroundColor: "#f5f5f5",
+    justifyContent: "center",
+    alignItems: "center",
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+  },
+  noImageText: {
+    color: "#999",
+    fontSize: 12,
+    marginTop: 8,
   },
   durationBadge: {
     position: "absolute",
@@ -281,6 +319,11 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginBottom: spacing.sm,
     marginTop: 8,
+  },
+  tourPrice: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: colors.primary.main,
   },
   tourMeta: {
     flexDirection: "row",

@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  Image,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import {
   CommentResponse,
@@ -454,7 +454,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                 <Image
                   source={{ uri: comment.imgPath }}
                   style={styles.commentImage}
-                  resizeMode="cover"
+                  contentFit="cover"
                 />
               )}
               <View style={styles.commentActions}>
@@ -643,7 +643,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                         <Image
                           source={{ uri: reply.imgPath }}
                           style={styles.commentImage}
-                          resizeMode="cover"
+                          contentFit="cover"
                         />
                       )}
 
@@ -879,7 +879,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                       styles.commentImage,
                                       { width: 80, height: 80 },
                                     ]}
-                                    resizeMode="cover"
+                                    contentFit="cover"
                                   />
                                 )}
                                 <View style={styles.commentActions}>
@@ -1151,7 +1151,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                               styles.commentImage,
                                               { width: 60, height: 60 },
                                             ]}
-                                            resizeMode="cover"
+                                            contentFit="cover"
                                           />
                                         )}
                                         <View style={styles.commentActions}>

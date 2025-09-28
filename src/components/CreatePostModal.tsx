@@ -7,9 +7,9 @@ import {
   StyleSheet,
   Modal,
   ScrollView,
-  Image,
   Alert,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import {
@@ -270,6 +270,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   <Image
                     source={{ uri: image.uri }}
                     style={styles.selectedImage}
+                    contentFit="cover"
                   />
                   <TouchableOpacity
                     style={styles.removeImageButton}

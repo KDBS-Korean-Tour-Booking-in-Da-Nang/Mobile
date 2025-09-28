@@ -17,7 +17,7 @@ import { tourService } from "../../../src/services/tourService";
 import {
   TourResponse,
   BookingRequest,
-  GuestRequest,
+  BookingGuestRequest,
 } from "../../../src/types/tour";
 import styles from "./styles";
 
@@ -95,7 +95,7 @@ export default function ConfirmTour() {
       setConfirming(true);
 
       // Prepare guests data
-      const guests: GuestRequest[] = [];
+      const guests: BookingGuestRequest[] = [];
 
       // Add adult guests
       if (bookingData.adultInfo) {
@@ -118,7 +118,7 @@ export default function ConfirmTour() {
             gender: (guest.gender || "OTHER").toUpperCase(),
             idNumber: guest.idNumber || "",
             nationality: guest.nationality || "Vietnamese",
-            guestType: "ADULT",
+            bookingGuestType: "ADULT",
           });
         });
       }
@@ -144,7 +144,7 @@ export default function ConfirmTour() {
             gender: (guest.gender || "OTHER").toUpperCase(),
             idNumber: guest.idNumber || "",
             nationality: guest.nationality || "Vietnamese",
-            guestType: "CHILD", // Fixed: CHILD not CHILDREN
+            bookingGuestType: "CHILD", // Fixed: CHILD not CHILDREN
           });
         });
       }
@@ -170,7 +170,7 @@ export default function ConfirmTour() {
             gender: (guest.gender || "OTHER").toUpperCase(),
             idNumber: guest.idNumber || "",
             nationality: guest.nationality || "Vietnamese",
-            guestType: "BABY",
+            bookingGuestType: "BABY",
           });
         });
       }
@@ -235,7 +235,7 @@ export default function ConfirmTour() {
         adultsCount: bookingData.adultCount || 0,
         childrenCount: bookingData.childrenCount || 0,
         babiesCount: bookingData.babyCount || 0,
-        guests: guests,
+        bookingGuestRequests: guests,
       };
 
       // Validate guests
@@ -245,18 +245,7 @@ export default function ConfirmTour() {
         return;
       }
 
-      // Debug: Log booking request
-      console.log("=== BOOKING DEBUG ===");
-      console.log("Tour ID:", tour.id);
-      console.log("Booking Data:", JSON.stringify(bookingData, null, 2));
-      console.log("Booking Request:", JSON.stringify(bookingRequest, null, 2));
-      console.log("Guests:", JSON.stringify(guests, null, 2));
-      console.log("Adults Count:", bookingData.adultCount);
-      console.log("Children Count:", bookingData.childrenCount);
-      console.log("Babies Count:", bookingData.babyCount);
-      console.log("===================");
-
-      // Create booking
+     
       const bookingResponse = await tourService.createBooking(bookingRequest);
 
       // Create payment for the booking

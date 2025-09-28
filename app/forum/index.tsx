@@ -447,7 +447,7 @@ export default function Forum() {
         return prev.map((p) => (p.id === postId ? fullPost : p));
       });
     } catch (error) {
-      console.log("Could not load full post details:", error);
+      
     }
   }, []);
 
@@ -647,7 +647,7 @@ export default function Forum() {
             scrollEventThrottle={16}
             onScrollToIndexFailed={(info) => {
               // Handle scroll to index failure
-              console.log("Scroll to index failed:", info);
+              
             }}
           />
 

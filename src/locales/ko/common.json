@@ -463,7 +463,8 @@
       "responseTime": "응답 시간",
       "viewBooking": "예약 보기",
       "goHome": "홈으로",
-      "fetchError": "거래 상세를 불러오지 못했습니다"
+      "fetchError": "거래 상세를 불러오지 못했습니다",
+      "premiumSuccessMessage": "축하합니다! 프리미엄으로 성공적으로 업그레이드되었습니다!"
     }
   },
   "common": {
@@ -478,7 +479,30 @@
     "seeAll": "모두 보기",
     "article": "기사",
     "edit": "수정",
-    "delete": "삭제"
+    "delete": "삭제",
+    "close": "닫기"
+  },
+  "premium": {
+    "title": "프리미엄",
+    "activeStatus": "프리미엄 계정 활성화",
+    "validUntil": "유효 기간",
+    "yourBenefits": "귀하의 혜택",
+    "benefitsTitle": "프리미엄 혜택",
+    "choosePlan": "플랜 선택",
+    "plan1Month": "1개월",
+    "plan3Months": "3개월",
+    "purchase": "구매하기",
+    "successTitle": "성공",
+    "purchaseSuccess": "프리미엄으로 성공적으로 업그레이드되었습니다!",
+    "developmentTitle": "개발 중",
+    "developmentMessage": "프리미엄 구매 기능이 개발 중입니다. 나중에 다시 방문해주세요!",
+    "benefits": {
+      "unlimitedTours": "모든 투어 무제한 접근",
+      "prioritySupport": "24/7 우선 지원",
+      "exclusiveContent": "독점 콘텐츠 및 새로운 투어",
+      "noAds": "광고 없는 경험",
+      "advancedFeatures": "고급 기능 및 개인화"
+    }
   },
   "settings": {
     "title": "설정",

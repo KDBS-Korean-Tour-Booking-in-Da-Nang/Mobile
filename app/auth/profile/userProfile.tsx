@@ -5,9 +5,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Image,
   Platform,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../../src/navigation";
 import { useAuthContext } from "../../../src/contexts/authContext";
@@ -37,7 +37,11 @@ export default function UserProfile() {
             <View style={styles.profileCard}>
               <View style={styles.avatarContainer}>
                 {user?.avatar ? (
-                  <Image source={{ uri: user.avatar }} style={styles.avatar} />
+                  <Image
+                    source={{ uri: user.avatar }}
+                    style={styles.avatar}
+                    contentFit="cover"
+                  />
                 ) : (
                   <View style={styles.avatar}>
                     <Ionicons

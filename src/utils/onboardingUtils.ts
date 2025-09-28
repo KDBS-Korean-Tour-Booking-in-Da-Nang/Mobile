@@ -19,7 +19,7 @@ export const hasSeenOnboarding = async (): Promise<boolean> => {
 export const markOnboardingCompleted = async (): Promise<void> => {
   try {
     await AsyncStorage.setItem("hasSeenOnboarding", "true");
-    console.log("Onboarding marked as completed");
+    
   } catch (error) {
     console.error("Error marking onboarding as completed:", error);
     throw error;
@@ -32,7 +32,7 @@ export const markOnboardingCompleted = async (): Promise<void> => {
 export const resetOnboardingStatus = async (): Promise<void> => {
   try {
     await AsyncStorage.removeItem("hasSeenOnboarding");
-    console.log("Onboarding status reset - user will see onboarding again");
+    
   } catch (error) {
     console.error("Error resetting onboarding status:", error);
     throw error;
@@ -51,7 +51,7 @@ export const clearAllAppData = async (): Promise<void> => {
       "userPreferences",
       "lastLoginTime",
     ]);
-    console.log("All app data cleared");
+    
   } catch (error) {
     console.error("Error clearing app data:", error);
     throw error;

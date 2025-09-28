@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,12 +12,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import * as MailComposer from "expo-mail-composer";
 import api from "../../src/services/api";
+import { premiumService } from "../../src/services/premiumService";
 
 interface TransactionResultParams {
   orderId: string;
   responseCode: string;
   paymentMethod: string;
-  bookingId: string;
+  bookingId?: string;
+  type?: "booking" | "premium";
+  plan?: "1month" | "3months";
+  durationInMonths?: string;
 }
 
 interface TransactionDetails {
@@ -46,59 +50,24 @@ export default function TransactionResult() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [premiumStatus, setPremiumStatus] = useState<{
+    isPremium: boolean;
+    expiryDate?: string;
+  } | null>(null);
 
-  const { orderId, responseCode, paymentMethod, bookingId } =
-    params as unknown as TransactionResultParams;
+  const {
+    orderId,
+    responseCode,
+    paymentMethod,
+    bookingId,
+    type = "booking",
+  } = params as unknown as TransactionResultParams;
 
   const isSuccess = responseCode === "00";
   const isFailed = responseCode && responseCode !== "00";
   const emailAttemptedRef = useRef(false);
 
-  useEffect(() => {
-    if (orderId) {
-      fetchTransactionDetails();
-    } else {
-      setLoading(false);
-    }
-  }, [orderId]);
-
-  // After success, attempt to send confirmation email once
-  useEffect(() => {
-    const trySendEmail = async () => {
-      if (!isSuccess || !bookingId || emailAttemptedRef.current) return;
-      emailAttemptedRef.current = true;
-
-      // 1) Try backend endpoint if available
-      try {
-        await api.post(`/api/bookings/${bookingId}/send-confirmation-email`);
-        console.log("Booking confirmation email sent via backend.");
-        return; // if succeeds, stop here
-      } catch (e) {
-        console.warn("Backend email API failed or not available", e);
-      }
-
-      // 2) Fallback: open mail composer for the user to send manually
-      try {
-        const available = await MailComposer.isAvailableAsync();
-        if (!available) {
-          console.warn("MailComposer not available on this device");
-          return;
-        }
-        const subject = `${t("payment.result.details")} - #${bookingId}`;
-        const body = `${t("payment.result.successMessage")}\n${t(
-          "payment.result.orderId"
-        )}: ${orderId || "-"}`;
-        await MailComposer.composeAsync({ subject, body });
-        console.log("Opened MailComposer for manual send");
-      } catch (e) {
-        console.warn("MailComposer compose failed", e);
-      }
-    };
-
-    trySendEmail();
-  }, [isSuccess, bookingId, orderId, t]);
-
-  const fetchTransactionDetails = async () => {
+  const fetchTransactionDetails = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get(`/api/vnpay/transaction/${orderId}`);
@@ -109,7 +78,81 @@ export default function TransactionResult() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderId, t]);
+
+  useEffect(() => {
+    if (orderId) {
+      fetchTransactionDetails();
+    } else {
+      setLoading(false);
+    }
+  }, [orderId, fetchTransactionDetails]);
+
+  // After success, handle premium upgrade or send confirmation email
+  useEffect(() => {
+    const handleSuccess = async () => {
+      if (!isSuccess || emailAttemptedRef.current) return;
+      emailAttemptedRef.current = true;
+
+      // Handle premium payment
+      if (type === "premium" && orderId) {
+        console.log("=== HANDLING PREMIUM UPGRADE ===");
+        try {
+          const upgradeResult = await premiumService.completePremiumUpgrade(
+            orderId
+          );
+          console.log("Premium upgrade result:", upgradeResult);
+
+          if (upgradeResult.success) {
+            setPremiumStatus({
+              isPremium: upgradeResult.isPremium || false,
+              expiryDate: upgradeResult.expiryDate,
+            });
+        } catch (error) {
+          console.error("Premium upgrade error:", error);
+          // Try to refresh premium status as fallback
+          try {
+            const refreshedStatus = await premiumService.refreshPremiumStatus();
+            setPremiumStatus(refreshedStatus);
+          } catch (refreshError) {
+            console.error("Failed to refresh premium status:", refreshError);
+          }
+        }
+        return;
+      }
+
+      // Handle booking confirmation email
+      if (bookingId) {
+        // 1) Try backend endpoint if available
+        try {
+          await api.post(`/api/bookings/${bookingId}/send-confirmation-email`);
+          console.log("Booking confirmation email sent via backend.");
+          return; // if succeeds, stop here
+        } catch (e) {
+          console.warn("Backend email API failed or not available", e);
+        }
+
+        // 2) Fallback: open mail composer for the user to send manually
+        try {
+          const available = await MailComposer.isAvailableAsync();
+          if (!available) {
+            console.warn("MailComposer not available on this device");
+            return;
+          }
+          const subject = `${t("payment.result.details")} - #${bookingId}`;
+          const body = `${t("payment.result.successMessage")}\n${t(
+            "payment.result.orderId"
+          )}: ${orderId || "-"}`;
+          await MailComposer.composeAsync({ subject, body });
+          console.log("Opened MailComposer for manual send");
+        } catch (e) {
+          console.warn("MailComposer compose failed", e);
+        }
+      }
+    };
+
+    handleSuccess();
+  }, [isSuccess, bookingId, orderId, type, t]);
 
   const getStatusIcon = () => {
     if (isSuccess) {
@@ -139,9 +182,11 @@ export default function TransactionResult() {
     router.replace("/home");
   };
 
+
   const handleViewBooking = () => {
-    if (bookingId) {
-      router.push(`/tour/booking/${bookingId}` as any);
+    if (orderId) {
+      // Navigate to transaction details page
+      router.push(`/transaction/detail/${orderId}` as any);
     } else {
       router.push("/home");
     }
@@ -169,7 +214,13 @@ export default function TransactionResult() {
           </Text>
           <Text style={styles.statusSubtext}>
             {isSuccess
-              ? t("payment.result.successMessage")
+              ? type === "premium"
+                ? premiumStatus?.isPremium
+                  ? `Premium upgrade successful! Valid until: ${
+                      premiumStatus.expiryDate || "N/A"
+                    }`
+                  : t("payment.result.premiumSuccessMessage")
+                : t("payment.result.successMessage")
               : isFailed
               ? t("payment.result.failedMessage")
               : t("payment.result.pendingMessage")}
@@ -267,7 +318,20 @@ export default function TransactionResult() {
 
         {/* Action Buttons */}
         <View style={styles.buttonContainer}>
-          {isSuccess && bookingId && (
+          {isSuccess && type === "premium" && premiumStatus?.isPremium && (
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={handleGoHome}
+            >
+              <Ionicons name="diamond" size={20} color="#fff" />
+              <Text style={styles.primaryButtonText}>
+                Enjoy Premium Features
+              </Text>
+            </TouchableOpacity>
+          )}
+
+
+          {isSuccess && bookingId && type === "booking" && (
             <TouchableOpacity
               style={styles.primaryButton}
               onPress={handleViewBooking}
@@ -394,6 +458,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     gap: 8,
+  },
+  primaryButtonDisabled: {
+    backgroundColor: "#B0B0B0",
   },
   primaryButtonText: {
     color: "#fff",

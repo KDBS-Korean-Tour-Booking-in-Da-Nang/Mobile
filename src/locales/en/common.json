@@ -472,7 +472,8 @@
       "responseTime": "Response Time",
       "viewBooking": "View Booking",
       "goHome": "Go Home",
-      "fetchError": "Failed to fetch transaction details"
+      "fetchError": "Failed to fetch transaction details",
+      "premiumSuccessMessage": "Congratulations! You have successfully upgraded to Premium!"
     }
   },
   "common": {
@@ -487,7 +488,30 @@
     "seeAll": "See All",
     "article": "Articles",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "close": "Close"
+  },
+  "premium": {
+    "title": "Premium",
+    "activeStatus": "Premium Account Active",
+    "validUntil": "Valid until",
+    "yourBenefits": "Your Benefits",
+    "benefitsTitle": "Premium Benefits",
+    "choosePlan": "Choose Plan",
+    "plan1Month": "1 month",
+    "plan3Months": "3 months",
+    "purchase": "Purchase",
+    "successTitle": "Success",
+    "purchaseSuccess": "You have successfully upgraded to Premium!",
+    "developmentTitle": "Under Development",
+    "developmentMessage": "Premium purchase feature is under development. Please come back later!",
+    "benefits": {
+      "unlimitedTours": "Unlimited access to all tours",
+      "prioritySupport": "24/7 priority support",
+      "exclusiveContent": "Exclusive content and new tours",
+      "noAds": "Ad-free experience",
+      "advancedFeatures": "Advanced features and personalization"
+    }
   },
   "settings": {
     "title": "Settings",

@@ -9,12 +9,12 @@ import {
   Dimensions,
   View,
   Text,
-  Image,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import MainLayout from "../../src/components/MainLayout";
 import { useNavigation } from "../../src/navigation";
@@ -145,6 +145,8 @@ export default function TourDetail() {
           <Image
             source={{ uri: imageList[currentImageIndex] }}
             style={styles.heroImage}
+            contentFit="cover"
+            cachePolicy="disk"
           />
           <TouchableOpacity style={styles.backBtn} onPress={goBack}>
             <View style={styles.backCircle}>
@@ -454,12 +456,7 @@ export default function TourDetail() {
           <BookingButton onPress={handleBooking} />
 
           {/* Rate Tour Section */}
-          <RateTour
-            tourId={tour?.id || 0}
-            onRateSubmitted={(rate) => {
-              console.log("New rate submitted:", rate);
-            }}
-          />
+          <RateTour tourId={tour?.id || 0} onRateSubmitted={(rate) => {}} />
 
           {/* Spacer after button so it's fully visible above system/nav bars when scrolled to end */}
           <View style={styles.bottomSpace} />
