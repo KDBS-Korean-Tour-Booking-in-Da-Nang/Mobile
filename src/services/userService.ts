@@ -1,4 +1,5 @@
 import api from "./api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export interface UserUpdateRequest {
   username?: string;
@@ -12,6 +13,12 @@ export interface UserUpdateResponse {
   success: boolean;
   message: string;
   user?: any;
+}
+
+export interface UserLite {
+  id: number;
+  username: string;
+  email?: string;
 }
 
 // Real API call to backend
@@ -92,5 +99,61 @@ export const updateUserProfile = async (
       success: false,
       message: "Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại sau",
     };
+  }
+};
+
+export const getAllUsers = async (): Promise<UserLite[]> => {
+  const token = await AsyncStorage.getItem("authToken");
+  const res = await api.get("/api/users", {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  const data = (res?.data?.result ?? res?.data) as any[];
+  if (Array.isArray(data)) {
+    return data
+      .map((u: any) => {
+        const normalizedId = u?.id ?? u?.userId ?? u?.user_id;
+        return {
+          id: normalizedId,
+          username:
+            u?.username ||
+            u?.fullName ||
+            u?.name ||
+            (u?.email ? String(u.email).split("@")[0] : undefined),
+          email: u?.email,
+        } as UserLite;
+      })
+      .filter((u: any) => u?.id != null && u?.username);
+  }
+  return [];
+};
+
+export const getUserLiteById = async (
+  userId: number
+): Promise<UserLite | null> => {
+  try {
+    const token = await AsyncStorage.getItem("authToken");
+    const res = await api.get(`/api/users`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    const data = (res?.data?.result ?? res?.data) as any[];
+    if (Array.isArray(data)) {
+      const u = data.find((x: any) => {
+        const xid = x?.id ?? x?.userId ?? x?.user_id;
+        return String(xid) === String(userId);
+      });
+      if (!u) return null;
+      return {
+        id: u?.id ?? u?.userId ?? u?.user_id,
+        username:
+          u?.username ||
+          u?.fullName ||
+          u?.name ||
+          (u?.email ? String(u.email).split("@")[0] : undefined),
+        email: u?.email,
+      };
+    }
+    return null;
+  } catch {
+    return null;
   }
 };

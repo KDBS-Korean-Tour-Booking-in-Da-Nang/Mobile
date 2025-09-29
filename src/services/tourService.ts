@@ -159,9 +159,10 @@ export const tourService = {
     comment: string;
     createdAt: string;
   }> => {
-    // Get user email from AsyncStorage
+    // Get user email and auth token from AsyncStorage
     const userData = await AsyncStorage.getItem("userData");
     const user = userData ? JSON.parse(userData) : null;
+    const authToken = await AsyncStorage.getItem("authToken");
 
     const formData = new FormData();
     formData.append("tourId", ratingData.tourId.toString());
@@ -169,9 +170,10 @@ export const tourService = {
     formData.append("star", ratingData.stars.toString());
     formData.append("comment", ratingData.content);
 
-    const response = await api.post("/api/tour/rated", formData, {
+    const response = await api.post("/api/tourRated", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
       },
     });
     return response.data;
@@ -186,9 +188,14 @@ export const tourService = {
       comment: string;
       createdAt: string;
       userEmail?: string;
+      userId?: number;
+      username?: string;
     }[]
   > => {
-    const response = await api.get(`/api/tour/rated/tour/${tourId}`);
+    const authToken = await AsyncStorage.getItem("authToken");
+    const response = await api.get(`/api/tourRated/tour/${tourId}`, {
+      headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
+    });
     return response.data;
   },
 

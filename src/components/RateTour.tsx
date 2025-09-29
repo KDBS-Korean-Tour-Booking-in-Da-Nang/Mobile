@@ -13,7 +13,11 @@ import { useAuthContext } from "../contexts/authContext";
 import { useTranslation } from "react-i18next";
 import { colors } from "../constants/theme";
 import { tourService } from "../services/tourService";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  getAllUsers,
+  getUserLiteById,
+  UserLite,
+} from "../services/userService";
 
 interface RateTourProps {
   tourId: number;
@@ -31,6 +35,8 @@ interface Rate {
   comment: string;
   createdAt: string;
   userEmail?: string;
+  userId?: number;
+  username?: string;
 }
 
 const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
@@ -42,68 +48,50 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
   const [rates, setRates] = useState<Rate[]>([]);
   const [hasUserRated, setHasUserRated] = useState(false);
   const [userRating, setUserRating] = useState<Rate | null>(null);
+  const [userMap, setUserMap] = useState<Record<string, string>>({});
 
   // Animation for stars
   const starAnimations = useRef(
     Array.from({ length: 5 }, () => new Animated.Value(0))
   ).current;
 
-  // Load ratings from database when component mounts
   useEffect(() => {
     const loadRatings = async () => {
       try {
         const ratings = await tourService.getTourRatings(tourId);
-        setRates(ratings);
-
-        // Check if current user has already rated this tour
-        if (user?.email) {
-          // Check localStorage first for quick check
-          const ratedToursKey = `ratedTours_${user.email}`;
-          const ratedTours = await AsyncStorage.getItem(ratedToursKey);
-          const ratedToursList = ratedTours ? JSON.parse(ratedTours) : [];
-
-          if (ratedToursList.includes(tourId)) {
+        // Normalize backend fields to FE shape
+        const normalized = ratings.map((r: any) => ({
+          ...r,
+          userId:
+            r?.userId ??
+            r?.user_id ??
+            r?.user?.id ??
+            r?.user?.userId ??
+            r?.user?.user_id,
+          username: r?.username ?? r?.user?.username,
+          userEmail: r?.userEmail ?? r?.user_email ?? r?.user?.email,
+        }));
+        setRates(normalized);
+        // Build initial map from all users (best-effort)
+        const map: Record<string, string> = {};
+        try {
+          const allUsers: UserLite[] = await getAllUsers();
+          allUsers.forEach((u) => {
+            if (u?.id != null && u?.username) map[String(u.id)] = u.username;
+          });
+        } catch {}
+        setUserMap(map);
+        if (user) {
+          const userRate = normalized.find(
+            (rate) =>
+              (rate.userId != null &&
+                (user as any)?.userId != null &&
+                String(rate.userId) === String((user as any).userId)) ||
+              rate.userEmail === (user as any)?.email
+          );
+          if (userRate) {
             setHasUserRated(true);
-
-            // Get the rating ID from localStorage
-            const ratingIdKey = `ratingId_${user.email}_${tourId}`;
-            const savedRatingId = await AsyncStorage.getItem(ratingIdKey);
-
-            if (savedRatingId) {
-              // Try to find the rating by ID
-              const userRate = ratings.find(
-                (rate) => rate.id === parseInt(savedRatingId)
-              );
-              if (userRate) {
-                setUserRating(userRate);
-              } else {
-                // Create a dummy rating for display
-                setUserRating({
-                  id: parseInt(savedRatingId),
-                  star: 5,
-                  comment: "Đã đánh giá",
-                  createdAt: new Date().toISOString(),
-                  userEmail: user.email,
-                });
-              }
-            } else {
-              // Fallback: try to find by userEmail
-              const userRate = ratings.find(
-                (rate) => rate.userEmail === user.email
-              );
-              if (userRate) {
-                setUserRating(userRate);
-              } else {
-                // Create a dummy rating for display
-                setUserRating({
-                  id: 0,
-                  star: 5,
-                  comment: "Đã đánh giá",
-                  createdAt: new Date().toISOString(),
-                  userEmail: user.email,
-                });
-              }
-            }
+            setUserRating(userRate);
           } else {
             setHasUserRated(false);
             setUserRating(null);
@@ -116,7 +104,32 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
     };
 
     loadRatings();
-  }, [tourId, user?.email]);
+  }, [tourId, user]);
+
+  // Lazily hydrate missing usernames by userId
+  useEffect(() => {
+    const hydrateMissingNames = async () => {
+      const missing = rates
+        .filter(
+          (r) => !r.username && r.userId != null && !userMap[String(r.userId)]
+        )
+        .slice(0, 5); // cap to avoid spamming
+      if (missing.length === 0) return;
+      const updates: Record<string, string> = {};
+      await Promise.all(
+        missing.map(async (r) => {
+          const info = await getUserLiteById(Number(r.userId));
+          if (info?.username) {
+            updates[String(info.id)] = info.username;
+          }
+        })
+      );
+      if (Object.keys(updates).length > 0) {
+        setUserMap((prev) => ({ ...prev, ...updates }));
+      }
+    };
+    hydrateMissingNames();
+  }, [rates, userMap]);
 
   const handleStarPress = (starIndex: number) => {
     const newStars = starIndex + 1;
@@ -157,7 +170,12 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
         stars,
       });
 
-      const rateWithUser = { ...newRate, userEmail: user.email };
+      const rateWithUser = {
+        ...newRate,
+        userEmail: user.email,
+        userId: (user as any)?.userId,
+        username: (user as any)?.username || undefined,
+      };
 
       setRates((prev) => [rateWithUser, ...prev]);
       setHasUserRated(true);
@@ -165,22 +183,7 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
       setContent("");
       setStars(0);
 
-      if (user?.email) {
-        const ratedToursKey = `ratedTours_${user.email}`;
-        const ratedTours = await AsyncStorage.getItem(ratedToursKey);
-        const ratedToursList = ratedTours ? JSON.parse(ratedTours) : [];
-        if (!ratedToursList.includes(tourId)) {
-          ratedToursList.push(tourId);
-          await AsyncStorage.setItem(
-            ratedToursKey,
-            JSON.stringify(ratedToursList)
-          );
-        }
-
-        // Also save the rating ID for this tour
-        const ratingIdKey = `ratingId_${user.email}_${tourId}`;
-        await AsyncStorage.setItem(ratingIdKey, newRate.id.toString());
-      }
+      // No local flags; rely on backend
 
       starAnimations.forEach((anim) => {
         Animated.timing(anim, {
@@ -193,11 +196,9 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
       onRateSubmitted?.(rateWithUser);
       Alert.alert(t("tour.rate.successTitle"), t("tour.rate.successMessage"));
     } catch (error: any) {
-      // Handle specific error cases
-      if (error?.response?.status === 400) {
-        // User already rated this tour
-        setHasUserRated(true);
-        Alert.alert(t("tour.rate.errorTitle"), "Bạn đã đánh giá tour này rồi!");
+      const backendMsg = error?.response?.data?.message;
+      if (error?.response?.status === 400 && backendMsg) {
+        Alert.alert(t("tour.rate.errorTitle"), backendMsg);
       } else {
         Alert.alert(t("tour.rate.errorTitle"), t("tour.rate.submitError"));
       }
@@ -243,14 +244,12 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
   };
 
   const renderRateItem = (rate: Rate) => {
-    // Check if this is the current user's rating by comparing with userRating state
-    const isCurrentUser = userRating && rate.id === userRating.id;
-    const displayName = isCurrentUser
-      ? user?.username || "Bạn"
-      : "Người dùng khác";
+    // Show owner name from the rate itself (no cross-item inference)
+    const displayName =
+      rate.username || userMap[String(rate.userId ?? "")] || "Người dùng";
 
     return (
-      <View key={rate.id} style={styles.rateItem}>
+      <View style={styles.rateItem}>
         <View style={styles.rateHeader}>
           <Text style={styles.rateUsername}>{displayName}</Text>
           <View style={styles.rateActions}>
@@ -276,7 +275,6 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
 
   return (
     <View style={styles.container}>
-      {/* Only show form if user hasn't rated yet */}
       {!hasUserRated && (
         <View style={styles.formContainer}>
           <View style={styles.formHeader}>
@@ -326,7 +324,6 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
         </View>
       )}
 
-      {/* Show message if user has already rated */}
       {hasUserRated && userRating && (
         <View style={styles.alreadyRatedContainer}>
           <Text style={styles.alreadyRatedText}>
@@ -339,7 +336,16 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
       <View style={styles.ratesContainer}>
         <Text style={styles.ratesTitle}>{t("tour.rate.reviews")}</Text>
         {rates.length > 0 ? (
-          rates.map(renderRateItem)
+          rates.map((rate) => (
+            <View
+              key={String(
+                rate.id ??
+                  `${rate.userId ?? rate.userEmail ?? "u"}_${rate.createdAt}`
+              )}
+            >
+              {renderRateItem(rate)}
+            </View>
+          ))
         ) : (
           <Text style={styles.emptyRatesText}>{t("tour.rate.noReviews")}</Text>
         )}
