@@ -51,8 +51,8 @@ export default function TransactionResult() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [premiumStatus, setPremiumStatus] = useState<{
-    isPremium: boolean;
     expiryDate?: string;
+    premiumType?: string;
   } | null>(null);
 
   const {
@@ -105,9 +105,10 @@ export default function TransactionResult() {
 
           if (upgradeResult.success) {
             setPremiumStatus({
-              isPremium: upgradeResult.isPremium || false,
               expiryDate: upgradeResult.expiryDate,
+              premiumType: upgradeResult.premiumType,
             });
+          }
         } catch (error) {
           console.error("Premium upgrade error:", error);
           // Try to refresh premium status as fallback
@@ -182,7 +183,6 @@ export default function TransactionResult() {
     router.replace("/home");
   };
 
-
   const handleViewBooking = () => {
     if (orderId) {
       // Navigate to transaction details page
@@ -215,7 +215,7 @@ export default function TransactionResult() {
           <Text style={styles.statusSubtext}>
             {isSuccess
               ? type === "premium"
-                ? premiumStatus?.isPremium
+                ? premiumStatus?.premiumType === "PREMIUM"
                   ? `Premium upgrade successful! Valid until: ${
                       premiumStatus.expiryDate || "N/A"
                     }`
@@ -318,18 +318,19 @@ export default function TransactionResult() {
 
         {/* Action Buttons */}
         <View style={styles.buttonContainer}>
-          {isSuccess && type === "premium" && premiumStatus?.isPremium && (
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={handleGoHome}
-            >
-              <Ionicons name="diamond" size={20} color="#fff" />
-              <Text style={styles.primaryButtonText}>
-                Enjoy Premium Features
-              </Text>
-            </TouchableOpacity>
-          )}
-
+          {isSuccess &&
+            type === "premium" &&
+            premiumStatus?.premiumType === "PREMIUM" && (
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={handleGoHome}
+              >
+                <Ionicons name="diamond" size={20} color="#fff" />
+                <Text style={styles.primaryButtonText}>
+                  Enjoy Premium Features
+                </Text>
+              </TouchableOpacity>
+            )}
 
           {isSuccess && bookingId && type === "booking" && (
             <TouchableOpacity

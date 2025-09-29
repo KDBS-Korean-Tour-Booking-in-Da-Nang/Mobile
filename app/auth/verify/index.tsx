@@ -30,7 +30,6 @@ export default function VerifyEmail() {
 
   useEffect(() => {
     sendOTP();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -45,13 +44,11 @@ export default function VerifyEmail() {
     setResendLoading(true);
     try {
       if (isSignUp) {
-        // Sign up flow
         const resp = await api.post("/api/users/regenerate-otp", { email });
         if (resp?.data?.code === 1000 || resp?.data?.code === 0)
           setCountdown(60);
         else Alert.alert("Error", resp?.data?.message || "Request failed");
       } else {
-        // Forgot password flow
         const resp = await api.post("/api/auth/forgot-password/request", {
           email,
         });

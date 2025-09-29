@@ -35,6 +35,67 @@ const PremiumModal: React.FC<PremiumModalProps> = ({
   );
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const formatDate = (value?: string): string => {
+    if (!value) return "";
+    try {
+      let input = String(value).trim();
+
+      // Epoch millis
+      if (/^\d{11,}$/.test(input)) {
+        const d = new Date(Number(input));
+        if (!isNaN(d.getTime())) return toDDMMYYYY(d);
+      }
+
+      // Manual parse for "YYYY-MM-DD HH:mm:ss(.fraction)"
+      const re =
+        /^(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?$/;
+      const m = input.match(re);
+      if (m) {
+        const [, y, mo, d, h, mi, s, frac = "0"] = m;
+        const ms = Number(frac.slice(0, 3).padEnd(3, "0"));
+        const date = new Date(
+          Number(y),
+          Number(mo) - 1,
+          Number(d),
+          Number(h),
+          Number(mi),
+          Number(s),
+          ms
+        );
+        if (!isNaN(date.getTime())) return toDDMMYYYY(date);
+      }
+
+      // ISO-like fallback
+      let iso = input.replace(" ", "T");
+      if (iso.includes(".")) iso = iso.replace(/\.(\d{3})\d+$/, ".$1");
+      if (!/[zZ]|[+\-]\d{2}:?\d{2}$/.test(iso)) iso = iso + "Z";
+      const date = new Date(iso);
+      if (isNaN(date.getTime())) return "";
+      return toDDMMYYYY(date);
+    } catch {
+      return "";
+    }
+  };
+
+  const toDDMMYYYY = (date: Date): string => {
+    const dd = String(date.getDate()).padStart(2, "0");
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
+  const getDisplayExpiry = (raw?: string): string => {
+    const formatted = formatDate(raw);
+    if (formatted) return formatted;
+    if (!raw) return "";
+    const datePartMatch = String(raw).match(/^(\d{4}-\d{2}-\d{2})/);
+    if (datePartMatch) {
+      const [y, m, d] = datePartMatch[1].split("-");
+      return `${d}/${m}/${y}`;
+    }
+    return String(raw);
+  };
+
   const handlePurchase = async () => {
     if (isProcessing) return;
 
@@ -144,7 +205,8 @@ const PremiumModal: React.FC<PremiumModalProps> = ({
                 {t("premium.activeStatus")}
               </Text>
               <Text style={styles.statusSubtitle}>
-                {t("premium.validUntil")}: {premiumExpiry || "dd/mm/yyyy"}
+                {t("premium.validUntil")}:{" "}
+                {getDisplayExpiry(premiumExpiry) || "dd/mm/yyyy"}
               </Text>
             </View>
 

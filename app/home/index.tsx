@@ -23,11 +23,10 @@ import {
 import { tourService } from "../../src/services/tourService";
 import { TourResponse } from "../../src/types/tour";
 import PremiumModal from "../../src/components/PremiumModal";
+import { premiumService } from "../../src/services/premiumService";
+import { useFocusEffect } from "@react-navigation/native";
 import styles from "./styles";
 
-// width no longer used here; used inside styles.ts
-
-// Language dropdown component
 const LanguageDropdown = ({
   currentLanguage,
   onLanguageSelect,
@@ -137,9 +136,29 @@ export default function Home() {
     i18n.language as "en" | "ko" | "vi"
   );
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [isPremium] = useState(false); // Mock premium status
+  const [premiumType, setPremiumType] = useState<string | undefined>(undefined);
+  const [premiumExpiry, setPremiumExpiry] = useState<string | undefined>(
+    undefined
+  );
+  const isPremium = premiumType === "PREMIUM";
+  useFocusEffect(
+    React.useCallback(() => {
+      let isActive = true;
+      (async () => {
+        try {
+          const status = await premiumService.refreshPremiumStatus();
+          if (isActive) {
+            setPremiumType(status.premiumType);
+            setPremiumExpiry(status.expiryDate);
+          }
+        } catch {}
+      })();
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
 
-  // Function to handle language selection
   const handleLanguageSelect = (language: "en" | "ko" | "vi") => {
     setCurrentLanguage(language);
     i18n.changeLanguage(language);
@@ -159,7 +178,6 @@ export default function Home() {
           return;
         }
 
-        // Hiển thị tất cả tours, đảm bảo tours là array
         const validTours = Array.isArray(tours) ? tours : [];
         setFeaturedTours(validTours);
       } catch (error) {
@@ -173,7 +191,6 @@ export default function Home() {
     loadTours();
   }, []);
 
-  // Memoize image URLs to prevent recalculation
   const tourImageUrls = useMemo(() => {
     if (!featuredTours || featuredTours.length === 0) return {};
 
@@ -183,13 +200,11 @@ export default function Home() {
       const isHttp = (u?: string) =>
         !!u && /^https?:\/\//i.test((u || "").trim());
 
-      // Try tourImgPath first (main tour image)
       if (isHttp(tour?.tourImgPath)) {
         urls[tour.id] = (tour.tourImgPath as string).trim();
         return;
       }
 
-      // Try first content's first image only (simplified)
       const firstContent = tour?.contents?.[0];
       if (
         firstContent?.images &&
@@ -202,19 +217,14 @@ export default function Home() {
           return;
         }
       }
-
-      urls[tour.id] =
-        "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=250&fit=crop";
+      urls[tour.id] = "";
     });
 
     return urls;
   }, [featuredTours]);
 
   const resolveTourCardImage = (t: any): string => {
-    return (
-      tourImageUrls[t.id] ||
-      "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=250&fit=crop"
-    );
+    return tourImageUrls[t.id];
   };
 
   const renderTourCards = () => {
@@ -299,7 +309,6 @@ export default function Home() {
     (async () => {
       try {
         const posts = await getAllPosts();
-        // Lấy 5 bài viết mới nhất có hashtag
         const postsWithHashtags = posts
           .filter((p) => p.hashtags && p.hashtags.length > 0)
           .sort(
@@ -308,7 +317,6 @@ export default function Home() {
           )
           .slice(0, 5);
 
-        // Lấy reaction summary cho mỗi bài viết
         const postsWithReactions = await Promise.all(
           postsWithHashtags.map(async (post) => {
             try {
@@ -320,7 +328,6 @@ export default function Home() {
                 dislikeCount: reactionSummary?.dislikeCount || 0,
               };
             } catch {
-              // Nếu không lấy được reaction, giữ nguyên giá trị cũ
               return post;
             }
           })
@@ -345,7 +352,6 @@ export default function Home() {
   return (
     <ScrollableLayout>
       <View style={[styles.container, isSmall && styles.containerSm]}>
-        {/* Header: Welcome + username (left), language + settings (right) */}
         <View style={[styles.topHeader, isSmall && styles.topHeaderSm]}>
           <View>
             <Text style={styles.welcomeLabel}>{t("home.welcome.heading")}</Text>
@@ -506,7 +512,7 @@ export default function Home() {
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
         isPremium={isPremium}
-        premiumExpiry="31/12/2024"
+        premiumExpiry={premiumExpiry}
       />
     </ScrollableLayout>
   );

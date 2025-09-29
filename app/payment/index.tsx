@@ -16,14 +16,8 @@ import api from "../../src/services/api";
 interface PaymentParams {
   bookingId?: string;
   userEmail?: string;
-  amount: string;
-  orderInfo?: string;
-  // Premium payment params
   type?: "booking" | "premium";
   plan?: "1month" | "3months";
-  planName?: string;
-  description?: string;
-  // VNPay direct payment params
   payUrl?: string;
   orderId?: string;
   durationInMonths?: string;
@@ -41,12 +35,8 @@ export default function PaymentScreen() {
   const {
     bookingId = "",
     userEmail = "",
-    amount = "0",
-    orderInfo = "",
     type = "booking",
     plan = "1month",
-    planName = "",
-    description = "",
     payUrl: directPayUrl = "",
     orderId: directOrderId = "",
     durationInMonths = "",
@@ -67,25 +57,20 @@ export default function PaymentScreen() {
         return;
       }
 
-      // Otherwise, create payment through VNPay API
-      console.log("=== CREATING VNPAY PAYMENT ===");
+      let response;
 
-      // Determine order info based on payment type
-      let finalOrderInfo = orderInfo;
       if (type === "premium") {
-        finalOrderInfo = `${planName} - ${description}`;
+        console.log("Using premium payment API");
+        response = await api.post("/api/premium/payment", {
+          durationInMonths: parseInt(durationInMonths) || 1,
+          userEmail: userEmail,
+        });
       } else {
-        finalOrderInfo = orderInfo || t("payment.orderInfo", { bookingId });
+        response = await api.post("/api/booking/payment", {
+          bookingId: parseInt(bookingId) || 0,
+          userEmail: userEmail,
+        });
       }
-
-      const response = await api.post("/api/vnpay/create", {
-        amount: parseFloat(amount),
-        userEmail: userEmail,
-        orderInfo: finalOrderInfo,
-        isMobile: true, // Flag to indicate mobile request
-        type: type, // Add payment type
-        plan: type === "premium" ? plan : undefined, // Add plan for premium
-      });
 
       if (response.data.success && response.data.payUrl) {
         setPaymentUrl(response.data.payUrl);
@@ -99,14 +84,10 @@ export default function PaymentScreen() {
       setLoading(false);
     }
   }, [
-    amount,
     userEmail,
-    orderInfo,
     type,
-    plan,
-    planName,
-    description,
     bookingId,
+    durationInMonths,
     directPayUrl,
     directOrderId,
     t,
