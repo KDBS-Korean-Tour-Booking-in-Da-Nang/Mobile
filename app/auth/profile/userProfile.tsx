@@ -1,24 +1,43 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Image,
   Platform,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../../src/navigation";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import { colors } from "../../../src/constants/theme";
 import MainLayout from "../../../src/components/MainLayout";
 import { useTranslation } from "react-i18next";
+import { useFocusEffect } from "@react-navigation/native";
+import { premiumService } from "../../../src/services/premiumService";
 
 export default function UserProfile() {
   const { goBack, navigate } = useNavigation();
   const { user } = useAuthContext();
   const { t } = useTranslation();
+  const [premiumType, setPremiumType] = useState<string | undefined>(undefined);
+  const isPremium = premiumType === "PREMIUM";
+
+  useFocusEffect(
+    React.useCallback(() => {
+      let active = true;
+      (async () => {
+        try {
+          const status = await premiumService.refreshPremiumStatus();
+          if (active) setPremiumType(status.premiumType);
+        } catch {}
+      })();
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
 
   return (
     <MainLayout>
@@ -37,7 +56,11 @@ export default function UserProfile() {
             <View style={styles.profileCard}>
               <View style={styles.avatarContainer}>
                 {user?.avatar ? (
-                  <Image source={{ uri: user.avatar }} style={styles.avatar} />
+                  <Image
+                    source={{ uri: user.avatar }}
+                    style={styles.avatar}
+                    contentFit="cover"
+                  />
                 ) : (
                   <View style={styles.avatar}>
                     <Ionicons
@@ -57,11 +80,18 @@ export default function UserProfile() {
                   {t("profile.editProfile")}
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.upgradeButton}>
-                <Text style={styles.upgradeButtonText}>
-                  {t("profile.upgradePremium")}
-                </Text>
-              </TouchableOpacity>
+              {isPremium ? (
+                <View style={styles.premiumBadge}>
+                  <Ionicons name="diamond" size={16} color="#FFD700" />
+                  <Text style={styles.premiumBadgeText}>Premium</Text>
+                </View>
+              ) : (
+                <TouchableOpacity style={styles.upgradeButton}>
+                  <Text style={styles.upgradeButtonText}>
+                    {t("profile.upgradePremium")}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 
@@ -217,6 +247,22 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 12,
     fontWeight: "600",
+  },
+  premiumBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF8E1",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#FFE082",
+    gap: 6,
+  },
+  premiumBadgeText: {
+    color: "#FF8F00",
+    fontSize: 12,
+    fontWeight: "700",
   },
   optionsContainer: {
     paddingHorizontal: 20,

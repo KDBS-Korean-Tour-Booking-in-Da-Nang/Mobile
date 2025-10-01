@@ -295,9 +295,27 @@ export interface ReactionResponse {
 export async function addReaction(
   data: ReactionRequest
 ): Promise<ReactionResponse | null> {
+  // Include userEmail as query param when available to satisfy backends that require it
+  let params: any = undefined;
+  let userEmail: string | undefined = undefined;
+  try {
+    const stored = await AsyncStorage.getItem("userData");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      userEmail =
+        parsed?.email ||
+        parsed?.userEmail ||
+        parsed?.emailAddress ||
+        parsed?.mail;
+      if (userEmail) params = { userEmail };
+    }
+  } catch {}
+  const body: any = { ...data };
+  if (userEmail) body.userEmail = userEmail;
   const response = await api.post<{ result: ReactionResponse }>(
     "/api/reactions/add",
-    data
+    body,
+    { params }
   );
   return response.data.result || null;
 }
@@ -307,7 +325,15 @@ export async function removeReaction(
   targetType: "POST" | "COMMENT"
 ): Promise<void> {
   // Align with Website behavior: toggle-off via POST to /api/reactions/{type}/{id}
-  await api.post(`/api/reactions/${targetType}/${targetId}`);
+  let params: any = undefined;
+  try {
+    const stored = await AsyncStorage.getItem("userData");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed?.email) params = { userEmail: parsed.email };
+    }
+  } catch {}
+  await api.post(`/api/reactions/${targetType}/${targetId}`, null, { params });
 }
 
 export async function getReactionSummary(
@@ -317,11 +343,20 @@ export async function getReactionSummary(
 ): Promise<ApiReactionSummary> {
   const params = userEmail ? { userEmail } : undefined;
   if (targetType === "POST") {
-    const response = await api.get<
-      ReactionSummaryResponse | { result: ApiReactionSummary }
-    >(`/api/reactions/post/${targetId}/summary`, { params });
-    const data: any = response.data as any;
-    return (data.result ?? data) as ApiReactionSummary;
+    try {
+      const response = await api.get<
+        ReactionSummaryResponse | { result: ApiReactionSummary }
+      >(`/api/reactions/post/${targetId}/summary`, { params });
+      const data: any = response.data as any;
+      return (data.result ?? data) as ApiReactionSummary;
+    } catch {
+      // Fallback to uppercase path if backend expects it
+      const response2 = await api.get<
+        ReactionSummaryResponse | { result: ApiReactionSummary }
+      >(`/api/reactions/POST/${targetId}/summary`, { params });
+      const data2: any = response2.data as any;
+      return (data2.result ?? data2) as ApiReactionSummary;
+    }
   }
 
   const response = await api.get<

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../services/api";
 
-// This hook remains for login form logic
 export const useLogin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -11,7 +10,6 @@ export const useLogin = () => {
     setLoading(true);
     setError(null);
     try {
-      // Align with AuthContext and backend contract
       const response = await api.post("/api/auth/login", { email, password });
       return response?.data ?? null;
     } catch (err: any) {
@@ -25,7 +23,6 @@ export const useLogin = () => {
   return { login, loading, error };
 };
 
-// This hook can be used to get the initial auth status without causing dependency cycles
 export const useAuthStatus = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -48,7 +45,6 @@ export const useAuthStatus = () => {
   return { isAuthenticated, loading };
 };
 
-// Other hooks like useSignUp, useForgotPassword can remain here as they are independent
 export const useSignUp = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,13 +58,11 @@ export const useSignUp = () => {
     setLoading(true);
     setError(null);
     try {
-      // Align with Website: use /api/users/register and send username, email, password
       const response = await api.post("/api/users/register", {
         username: fullName,
         email,
         password,
       });
-      // Treat any 2xx as success; some backends return a boolean or message
       return response?.data ?? true;
     } catch (err: any) {
       setError(err.message);
@@ -81,7 +75,6 @@ export const useSignUp = () => {
   return { signUp, loading, error };
 };
 
-// Forgot password flow hooks
 export const useForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -111,7 +104,6 @@ export const useForgotPassword = () => {
           params: { email, otpCode },
         }
       );
-      // backend returns { result: boolean }
       return Boolean(res?.data?.result ?? res?.data);
     } catch (err: any) {
       setError(err?.response?.data?.message || err.message || "Verify failed");

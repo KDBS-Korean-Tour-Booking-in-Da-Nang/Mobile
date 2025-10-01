@@ -95,8 +95,8 @@ export default function BookingDetail() {
     );
   }
 
-  const renderGuestType = (guestType?: string) => {
-    const gt = String(guestType || "").toUpperCase();
+  const renderGuestType = (bookingGuestType?: string) => {
+    const gt = String(bookingGuestType || "").toUpperCase();
     if (gt === "ADULT") return t("tour.detail.adult");
     if (gt === "CHILD" || gt === "CHILDREN") return t("tour.detail.children");
     if (gt === "BABY") return t("tour.detail.baby");
@@ -285,7 +285,7 @@ export default function BookingDetail() {
             {booking.guests && booking.guests.length > 0 ? (
               booking.guests.map((g) => (
                 <View
-                  key={g.guestId}
+                  key={g.bookingGuestId}
                   style={{
                     paddingVertical: 8,
                     borderBottomWidth: 1,
@@ -296,7 +296,7 @@ export default function BookingDetail() {
                   <Text style={{ color: "#6c757d" }}>
                     {t("tour.booking.gender")}: {g.gender} ·{" "}
                     {t("tour.booking.idNumber")}: {g.idNumber} ·{" "}
-                    {renderGuestType(g.guestType)}
+                    {renderGuestType(g.bookingGuestType)}
                   </Text>
                 </View>
               ))

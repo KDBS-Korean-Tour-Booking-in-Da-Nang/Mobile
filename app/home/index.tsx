@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  Image,
   Platform,
   ActivityIndicator,
   Dimensions,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../src/navigation";
 import { useTranslation } from "react-i18next";
@@ -22,11 +22,11 @@ import {
 } from "../../src/endpoints/forum";
 import { tourService } from "../../src/services/tourService";
 import { TourResponse } from "../../src/types/tour";
+import PremiumModal from "../../src/components/PremiumModal";
+import { premiumService } from "../../src/services/premiumService";
+import { useFocusEffect } from "@react-navigation/native";
 import styles from "./styles";
 
-// width no longer used here; used inside styles.ts
-
-// Language dropdown component
 const LanguageDropdown = ({
   currentLanguage,
   onLanguageSelect,
@@ -135,21 +135,41 @@ export default function Home() {
   const [currentLanguage, setCurrentLanguage] = useState<"en" | "ko" | "vi">(
     i18n.language as "en" | "ko" | "vi"
   );
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [premiumType, setPremiumType] = useState<string | undefined>(undefined);
+  const [premiumExpiry, setPremiumExpiry] = useState<string | undefined>(
+    undefined
+  );
+  const isPremium = premiumType === "PREMIUM";
+  useFocusEffect(
+    React.useCallback(() => {
+      let isActive = true;
+      (async () => {
+        try {
+          const status = await premiumService.refreshPremiumStatus();
+          if (isActive) {
+            setPremiumType(status.premiumType);
+            setPremiumExpiry(status.expiryDate);
+          }
+        } catch {}
+      })();
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
 
-  // Function to handle language selection
   const handleLanguageSelect = (language: "en" | "ko" | "vi") => {
     setCurrentLanguage(language);
     i18n.changeLanguage(language);
   };
 
-  // Load featured tours from API
   useEffect(() => {
     const loadTours = async () => {
       try {
         setToursLoading(true);
         const tours = await tourService.getAllTours();
 
-        // Kiểm tra nếu tours là HTML (trang login)
         if (
           typeof tours === "string" &&
           (tours as string).includes("<!DOCTYPE html>")
@@ -158,12 +178,10 @@ export default function Home() {
           return;
         }
 
-        // Hiển thị tất cả tours, đảm bảo tours là array
         const validTours = Array.isArray(tours) ? tours : [];
         setFeaturedTours(validTours);
       } catch (error) {
         console.error("Error loading tours:", error);
-        // Fallback to empty array if API fails
         setFeaturedTours([]);
       } finally {
         setToursLoading(false);
@@ -173,15 +191,87 @@ export default function Home() {
     loadTours();
   }, []);
 
+  const tourImageUrls = useMemo(() => {
+    if (!featuredTours || featuredTours.length === 0) return {};
+
+    const urls: Record<number, string> = {};
+
+    featuredTours.forEach((tour) => {
+      const isHttp = (u?: string) =>
+        !!u && /^https?:\/\//i.test((u || "").trim());
+
+      if (isHttp(tour?.tourImgPath)) {
+        urls[tour.id] = (tour.tourImgPath as string).trim();
+        return;
+      }
+
+      const firstContent = tour?.contents?.[0];
+      if (
+        firstContent?.images &&
+        Array.isArray(firstContent.images) &&
+        firstContent.images.length > 0
+      ) {
+        const firstImage = firstContent.images[0];
+        if (typeof firstImage === "string" && isHttp(firstImage)) {
+          urls[tour.id] = firstImage.trim();
+          return;
+        }
+      }
+      urls[tour.id] = "";
+    });
+
+    return urls;
+  }, [featuredTours]);
+
   const resolveTourCardImage = (t: any): string => {
-    const isHttp = (u?: string) =>
-      !!u && /^https?:\/\//i.test((u || "").trim());
-    if (isHttp(t?.tourImgPath)) return (t.tourImgPath as string).trim();
-    const first = ((t?.contents || []) as any[])
-      .flatMap((c) => (Array.isArray(c?.images) ? c.images : []))
-      .map((u) => (typeof u === "string" ? u.trim() : ""))
-      .find((u) => u && isHttp(u));
-    return first || "";
+    return tourImageUrls[t.id];
+  };
+
+  const renderTourCards = () => {
+    if (!featuredTours || featuredTours.length === 0) return null;
+
+    return featuredTours.map((tour) => (
+      <TouchableOpacity
+        key={tour.id}
+        style={styles.tourCard}
+        onPress={() => navigate(`/tour?id=${tour.id}`)}
+      >
+        <View style={styles.imageContainer}>
+          <Image
+            source={{
+              uri: resolveTourCardImage(tour),
+            }}
+            style={styles.tourImage}
+            contentFit="cover"
+            transition={0}
+            cachePolicy="disk"
+          />
+        </View>
+        <View style={styles.durationBadge}>
+          <Text style={styles.durationText}>{tour.tourDuration || "3N2D"}</Text>
+        </View>
+        <View style={styles.tourContent}>
+          <Text style={[styles.tourTitle]}>{tour.tourName}</Text>
+          <View style={styles.tourRow}>
+            <View style={styles.locationContainer}>
+              <Ionicons
+                name="location-outline"
+                size={14}
+                color={colors.text.secondary}
+              />
+              <Text style={styles.tourLocation}>
+                {tour.tourDeparturePoint || "Đà Nẵng"}
+              </Text>
+            </View>
+            <Text style={styles.tourPrice}>
+              {tour.adultPrice
+                ? `${tour.adultPrice.toLocaleString()} VND`
+                : "Liên hệ"}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    ));
   };
 
   const newsItems = [
@@ -219,7 +309,6 @@ export default function Home() {
     (async () => {
       try {
         const posts = await getAllPosts();
-        // Lấy 5 bài viết mới nhất có hashtag
         const postsWithHashtags = posts
           .filter((p) => p.hashtags && p.hashtags.length > 0)
           .sort(
@@ -228,20 +317,34 @@ export default function Home() {
           )
           .slice(0, 5);
 
-        // Lấy reaction summary cho mỗi bài viết
         const postsWithReactions = await Promise.all(
           postsWithHashtags.map(async (post) => {
             try {
-              const reactionSummary = await getReactionSummary(post.id, "POST");
+              const reactionSummary = await getReactionSummary(
+                post.id,
+                "POST",
+                user?.email
+              );
+              const like = reactionSummary?.likeCount || 0;
+              const dislike = reactionSummary?.dislikeCount || 0;
+              const total =
+                reactionSummary?.totalReactions !== undefined
+                  ? reactionSummary.totalReactions
+                  : like + dislike;
               return {
                 ...post,
-                totalReactions: reactionSummary?.totalReactions || 0,
-                likeCount: reactionSummary?.likeCount || 0,
-                dislikeCount: reactionSummary?.dislikeCount || 0,
+                totalReactions: total,
+                likeCount: like,
+                dislikeCount: dislike,
               };
             } catch {
-              // Nếu không lấy được reaction, giữ nguyên giá trị cũ
-              return post;
+              return {
+                ...post,
+                totalReactions:
+                  typeof post.totalReactions === "number"
+                    ? post.totalReactions
+                    : (post.likeCount || 0) + (post.dislikeCount || 0),
+              } as PostResponse;
             }
           })
         );
@@ -265,13 +368,24 @@ export default function Home() {
   return (
     <ScrollableLayout>
       <View style={[styles.container, isSmall && styles.containerSm]}>
-        {/* Header: Welcome + username (left), language + settings (right) */}
         <View style={[styles.topHeader, isSmall && styles.topHeaderSm]}>
           <View>
             <Text style={styles.welcomeLabel}>{t("home.welcome.heading")}</Text>
-            <Text style={[styles.usernameText, langAdjust]}>
-              {user?.username || "Guest"}
-            </Text>
+            <View style={styles.usernameContainer}>
+              <Text style={[styles.usernameText, langAdjust]}>
+                {user?.username || "Guest"}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowPremiumModal(true)}
+                style={styles.premiumIconContainer}
+              >
+                <Ionicons
+                  name="diamond"
+                  size={20}
+                  color={isPremium ? "#FFD700" : "#C0C0C0"}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
           <View style={styles.rightActions}>
             <LanguageDropdown
@@ -314,6 +428,13 @@ export default function Home() {
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.toursContainer}
+            removeClippedSubviews={false}
+            decelerationRate="fast"
+            snapToInterval={Dimensions.get("window").width * 0.5 + 16}
+            snapToAlignment="start"
+            pagingEnabled={false}
+            bounces={false}
+            scrollEventThrottle={16}
           >
             {toursLoading ? (
               <View style={styles.loadingContainer}>
@@ -321,65 +442,7 @@ export default function Home() {
                 <Text style={styles.loadingText}>{t("tour.loading")}</Text>
               </View>
             ) : featuredTours && featuredTours.length > 0 ? (
-              featuredTours.map((tour) => (
-                <TouchableOpacity
-                  key={tour.id}
-                  style={styles.tourCard}
-                  onPress={() => navigate(`/tour?id=${tour.id}`)}
-                >
-                  <Image
-                    source={{
-                      uri: resolveTourCardImage(tour),
-                    }}
-                    style={styles.tourImage}
-                  />
-                  <View style={styles.durationBadge}>
-                    <Text style={styles.durationText}>
-                      {tour.tourDuration || "3N2D"}
-                    </Text>
-                  </View>
-                  <View style={styles.tourContent}>
-                    <Text
-                      style={[
-                        styles.tourTitle,
-                        isSmall && styles.tourTitleSm,
-                        langAdjust,
-                      ]}
-                    >
-                      {tour.tourName}
-                    </Text>
-                    <View style={styles.tourRow}>
-                      <View style={styles.locationContainer}>
-                        <Ionicons
-                          name="location-outline"
-                          size={14}
-                          color={colors.text.secondary}
-                        />
-                        <Text style={styles.tourLocation}>
-                          {tour.tourDeparturePoint}
-                        </Text>
-                      </View>
-                      <View style={styles.ratingContainer}>
-                        <Ionicons name="star" size={16} color="#FFD700" />
-                        <Text style={styles.ratingText}>4.5</Text>
-                      </View>
-                    </View>
-                    <View style={styles.priceContainer}>
-                      <Text
-                        style={[
-                          styles.priceText,
-                          isSmall && styles.priceTextSm,
-                        ]}
-                      >
-                        {tour.adultPrice
-                          ? `${tour.adultPrice.toLocaleString()} Đ`
-                          : "500,000 Đ"}
-                      </Text>
-                      <Text style={styles.priceUnit}>/person</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))
+              renderTourCards()
             ) : (
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>
@@ -459,6 +522,14 @@ export default function Home() {
         </View>
         {Platform.OS === "android" && <View style={styles.bottomSpacing} />}
       </View>
+
+      {/* Premium Modal */}
+      <PremiumModal
+        visible={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        isPremium={isPremium}
+        premiumExpiry={premiumExpiry}
+      />
     </ScrollableLayout>
   );
 }

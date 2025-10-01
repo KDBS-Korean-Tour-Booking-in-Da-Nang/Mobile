@@ -75,16 +75,16 @@ export interface BookingRequest {
   adultsCount: number;
   childrenCount: number;
   babiesCount: number;
-  guests: GuestRequest[];
+  bookingGuestRequests: BookingGuestRequest[];
 }
 
-export interface GuestRequest {
+export interface BookingGuestRequest {
   fullName: string;
   birthDate: string;
   gender: string;
   idNumber: string;
   nationality: string;
-  guestType: string;
+  bookingGuestType: string;
 }
 
 export interface BookingResponse {
@@ -107,13 +107,13 @@ export interface BookingResponse {
 }
 
 export interface GuestResponse {
-  guestId: number;
+  bookingGuestId: number;
   fullName: string;
   birthDate: string;
   gender: string;
   idNumber: string;
   nationality: string;
-  guestType: string;
+  bookingGuestType: string;
 }
 
 export interface BookingPaymentRequest {

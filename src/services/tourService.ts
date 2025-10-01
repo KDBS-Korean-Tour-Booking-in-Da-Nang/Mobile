@@ -8,6 +8,7 @@ import {
   BookingSummaryResponse,
   VNPayPaymentResponse,
 } from "../types/tour";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const tourService = {
   // Get all tours
@@ -145,6 +146,85 @@ export const tourService = {
   ): Promise<{ success: string; message: string }> => {
     const response = await api.post(`/api/booking/id/${bookingId}/send-email`);
     return response.data;
+  },
+
+  // Tour Rating APIs - using TourRatedController endpoints
+  createTourRating: async (ratingData: {
+    tourId: number;
+    content: string;
+    stars: number;
+  }): Promise<{
+    id: number;
+    star: number;
+    comment: string;
+    createdAt: string;
+  }> => {
+    // Get user email and auth token from AsyncStorage
+    const userData = await AsyncStorage.getItem("userData");
+    const user = userData ? JSON.parse(userData) : null;
+    const authToken = await AsyncStorage.getItem("authToken");
+
+    const formData = new FormData();
+    formData.append("tourId", ratingData.tourId.toString());
+    formData.append("userEmail", user?.email || "");
+    formData.append("star", ratingData.stars.toString());
+    formData.append("comment", ratingData.content);
+
+    const response = await api.post("/api/tourRated", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+    });
+    return response.data;
+  },
+
+  getTourRatings: async (
+    tourId: number
+  ): Promise<
+    {
+      id: number;
+      star: number;
+      comment: string;
+      createdAt: string;
+      userEmail?: string;
+      userId?: number;
+      username?: string;
+    }[]
+  > => {
+    const authToken = await AsyncStorage.getItem("authToken");
+    const response = await api.get(`/api/tourRated/tour/${tourId}`, {
+      headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
+    });
+    return response.data;
+  },
+
+  updateTourRating: async (
+    ratingId: number,
+    ratingData: {
+      content: string;
+      stars: number;
+    }
+  ): Promise<{
+    id: number;
+    star: number;
+    comment: string;
+    createdAt: string;
+  }> => {
+    const formData = new FormData();
+    formData.append("comment", ratingData.content);
+    formData.append("star", ratingData.stars.toString());
+
+    const response = await api.put(`/api/tour/rated/${ratingId}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
+
+  deleteTourRating: async (ratingId: number): Promise<void> => {
+    await api.delete(`/api/tour/rated/${ratingId}`);
   },
 };
 

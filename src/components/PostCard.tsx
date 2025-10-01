@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
   StyleSheet,
   Alert,
@@ -10,6 +9,7 @@ import {
   Dimensions,
   TouchableWithoutFeedback,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -383,7 +383,7 @@ const PostCard: React.FC<PostCardProps> = ({
             <Image
               source={{ uri: urls[0] }}
               style={{ width: "100%", height: "100%" }}
-              resizeMode="cover"
+              contentFit="cover"
             />
           </View>
         </TouchableOpacity>
@@ -410,7 +410,7 @@ const PostCard: React.FC<PostCardProps> = ({
                 <Image
                   source={{ uri: u }}
                   style={{ width: "100%", height: "100%" }}
-                  resizeMode="cover"
+                  contentFit="cover"
                 />
               </View>
             </TouchableOpacity>
@@ -443,7 +443,7 @@ const PostCard: React.FC<PostCardProps> = ({
                 <Image
                   source={{ uri: u }}
                   style={{ width: "100%", height: "100%" }}
-                  resizeMode="cover"
+                  contentFit="cover"
                 />
               </View>
             </TouchableOpacity>
@@ -467,7 +467,7 @@ const PostCard: React.FC<PostCardProps> = ({
                 <Image
                   source={{ uri: u }}
                   style={{ width: "100%", height: "100%" }}
-                  resizeMode="cover"
+                  contentFit="cover"
                 />
                 {i === 2 && remaining > 0 && (
                   <View
@@ -517,6 +517,7 @@ const PostCard: React.FC<PostCardProps> = ({
                   "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.pinterest.com%2Fpin%2F300404237650498609%2F&psig=AOvVaw2FuMEvODdlA_lCA6G3gQp9&ust=1757299985491000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCIiX4t3SxY8DFQAAAAAdAAAAABAE ",
               }}
               style={styles.avatar}
+              contentFit="cover"
             />
             <View style={styles.userDetails}>
               <View style={styles.usernameRow}>
@@ -664,7 +665,7 @@ const PostCard: React.FC<PostCardProps> = ({
                       borderRadius: 8,
                       marginBottom: 8,
                     }}
-                    resizeMode="cover"
+                    contentFit="cover"
                   />
                 ) : null}
                 <Text
@@ -894,7 +895,7 @@ const PostCard: React.FC<PostCardProps> = ({
                   <Image
                     source={{ uri: img }}
                     style={{ width, height: Dimensions.get("window").height }}
-                    resizeMode="contain"
+                    contentFit="contain"
                   />
                 </View>
               ))}

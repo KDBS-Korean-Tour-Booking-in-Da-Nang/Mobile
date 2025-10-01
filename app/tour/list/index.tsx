@@ -10,7 +10,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Image,
   ActivityIndicator,
   Alert,
   RefreshControl,
@@ -19,6 +18,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import MainLayout from "../../../src/components/MainLayout";
 import { useNavigation } from "../../../src/navigation";
@@ -270,6 +270,8 @@ export default function TourList() {
                   <Image
                     source={{ uri: resolveTourCardImage(tour) }}
                     style={styles.tourImage}
+                    contentFit="cover"
+                    cachePolicy="disk"
                   />
                   <View style={styles.tourContent}>
                     <Text style={styles.tourTitle} numberOfLines={2}>
@@ -488,6 +490,8 @@ export default function TourList() {
                       borderRadius: 8,
                       marginBottom: 8,
                     }}
+                    contentFit="cover"
+                    cachePolicy="disk"
                   />
                   <Text style={{ fontWeight: "700", fontSize: 16 }}>
                     {shareTour.tourName}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -14,10 +14,13 @@ import { useTranslation } from "react-i18next";
 import api from "../../src/services/api";
 
 interface PaymentParams {
-  bookingId: string;
-  userEmail: string;
-  amount: string;
-  orderInfo: string;
+  bookingId?: string;
+  userEmail?: string;
+  type?: "booking" | "premium";
+  plan?: "1month" | "3months";
+  payUrl?: string;
+  orderId?: string;
+  durationInMonths?: string;
 }
 
 export default function PaymentScreen() {
@@ -32,25 +35,42 @@ export default function PaymentScreen() {
   const {
     bookingId = "",
     userEmail = "",
-    amount = "0",
-    orderInfo = "",
+    type = "booking",
+    plan = "1month",
+    payUrl: directPayUrl = "",
+    orderId: directOrderId = "",
+    durationInMonths = "",
   } = params;
 
-  useEffect(() => {
-    createPayment();
-  }, []);
-
-  const createPayment = async () => {
+  const createPayment = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await api.post("/api/vnpay/create", {
-        amount: parseFloat(amount),
-        userEmail: userEmail,
-        orderInfo: orderInfo || t("payment.orderInfo", { bookingId }),
-        isMobile: true, // Flag to indicate mobile request
-      });
+      // If we already have a direct payUrl from premium API, use it
+      if (directPayUrl && type === "premium") {
+        console.log("=== USING DIRECT PAY URL ===");
+        console.log("Pay URL:", directPayUrl);
+        console.log("Order ID:", directOrderId);
+        setPaymentUrl(directPayUrl);
+        setLoading(false);
+        return;
+      }
+
+      let response;
+
+      if (type === "premium") {
+        console.log("Using premium payment API");
+        response = await api.post("/api/premium/payment", {
+          durationInMonths: parseInt(durationInMonths) || 1,
+          userEmail: userEmail,
+        });
+      } else {
+        response = await api.post("/api/booking/payment", {
+          bookingId: parseInt(bookingId) || 0,
+          userEmail: userEmail,
+        });
+      }
 
       if (response.data.success && response.data.payUrl) {
         setPaymentUrl(response.data.payUrl);
@@ -63,7 +83,19 @@ export default function PaymentScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    userEmail,
+    type,
+    bookingId,
+    durationInMonths,
+    directPayUrl,
+    directOrderId,
+    t,
+  ]);
+
+  useEffect(() => {
+    createPayment();
+  }, [createPayment]);
 
   const handleWebViewRequest = (request: any) => {
     const url = request.url;
@@ -89,10 +121,13 @@ export default function PaymentScreen() {
         router.replace({
           pathname: "/transactionResult",
           params: {
-            orderId: orderId || "",
+            orderId: orderId || directOrderId || "",
             responseCode: responseCode || "",
             paymentMethod: paymentMethod || "vnpay",
             bookingId: bookingId,
+            type: type,
+            plan: type === "premium" ? plan : undefined,
+            durationInMonths: durationInMonths,
           },
         });
 
@@ -201,9 +236,7 @@ export default function PaymentScreen() {
           console.error("WebView error:", nativeEvent);
           setError(t("payment.loadFailed"));
         }}
-        onHttpError={(e) => {
-          console.log("WebView HTTP error:", e.nativeEvent);
-        }}
+        onHttpError={(e) => {}}
       />
     </View>
   );
