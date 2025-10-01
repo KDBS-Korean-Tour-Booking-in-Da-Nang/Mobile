@@ -320,15 +320,31 @@ export default function Home() {
         const postsWithReactions = await Promise.all(
           postsWithHashtags.map(async (post) => {
             try {
-              const reactionSummary = await getReactionSummary(post.id, "POST");
+              const reactionSummary = await getReactionSummary(
+                post.id,
+                "POST",
+                user?.email
+              );
+              const like = reactionSummary?.likeCount || 0;
+              const dislike = reactionSummary?.dislikeCount || 0;
+              const total =
+                reactionSummary?.totalReactions !== undefined
+                  ? reactionSummary.totalReactions
+                  : like + dislike;
               return {
                 ...post,
-                totalReactions: reactionSummary?.totalReactions || 0,
-                likeCount: reactionSummary?.likeCount || 0,
-                dislikeCount: reactionSummary?.dislikeCount || 0,
+                totalReactions: total,
+                likeCount: like,
+                dislikeCount: dislike,
               };
             } catch {
-              return post;
+              return {
+                ...post,
+                totalReactions:
+                  typeof post.totalReactions === "number"
+                    ? post.totalReactions
+                    : (post.likeCount || 0) + (post.dislikeCount || 0),
+              } as PostResponse;
             }
           })
         );

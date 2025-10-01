@@ -1,4 +1,10 @@
-import React, { createContext, useEffect, useContext, ReactNode, useReducer } from "react";
+import React, {
+  createContext,
+  useEffect,
+  useContext,
+  ReactNode,
+  useReducer,
+} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../services/api";
 
@@ -28,7 +34,10 @@ type AuthState = {
 
 type AuthAction =
   | { type: "INIT" }
-  | { type: "SET_AUTH"; payload: { isAuthenticated: boolean; user: User | null } }
+  | {
+      type: "SET_AUTH";
+      payload: { isAuthenticated: boolean; user: User | null };
+    }
   | { type: "LOGIN_SUCCESS"; payload: { token: string; user: User } }
   | { type: "LOGOUT" }
   | { type: "ERROR"; payload: string | null };
@@ -53,9 +62,21 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         error: null,
       };
     case "LOGIN_SUCCESS":
-      return { ...state, isAuthenticated: true, user: action.payload.user, loading: false, error: null };
+      return {
+        ...state,
+        isAuthenticated: true,
+        user: action.payload.user,
+        loading: false,
+        error: null,
+      };
     case "LOGOUT":
-      return { ...state, isAuthenticated: false, user: null, loading: false, error: null };
+      return {
+        ...state,
+        isAuthenticated: false,
+        user: null,
+        loading: false,
+        error: null,
+      };
     case "ERROR":
       return { ...state, error: action.payload, loading: false };
     default:
@@ -75,7 +96,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   const checkAuthStatus = async () => {
@@ -83,10 +106,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const token = await AsyncStorage.getItem("authToken");
       const userDataRaw = await AsyncStorage.getItem("userData");
-      const userData: User | null = userDataRaw ? JSON.parse(userDataRaw) : null;
-      dispatch({ type: "SET_AUTH", payload: { isAuthenticated: !!token, user: userData } });
+      let userData: User | null = userDataRaw ? JSON.parse(userDataRaw) : null;
+      // Ensure email is present for APIs that require it
+      if (userData && !userData.email) {
+        const anyUser: any = userData as any;
+        const fallbackEmail =
+          anyUser.userEmail || anyUser.emailAddress || anyUser.mail;
+        if (fallbackEmail && typeof fallbackEmail === "string") {
+          userData = { ...(userData as any), email: fallbackEmail } as User;
+          await AsyncStorage.setItem("userData", JSON.stringify(userData));
+        }
+      }
+      dispatch({
+        type: "SET_AUTH",
+        payload: { isAuthenticated: !!token, user: userData },
+      });
     } catch (error) {
-      dispatch({ type: "SET_AUTH", payload: { isAuthenticated: false, user: null } });
+      dispatch({
+        type: "SET_AUTH",
+        payload: { isAuthenticated: false, user: null },
+      });
     }
   };
 
@@ -103,7 +142,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         user?: User;
       };
       const token = payload?.token as string;
-      const user = payload?.user as User;
+      let user = payload?.user as any;
+      // Normalize email field to ensure presence
+      if (user && !user.email) {
+        const fallbackEmail = user.userEmail || user.emailAddress || user.mail;
+        if (fallbackEmail && typeof fallbackEmail === "string") {
+          user = { ...user, email: fallbackEmail };
+        }
+      }
       await AsyncStorage.setItem("authToken", token);
       await AsyncStorage.setItem("userData", JSON.stringify(user));
       dispatch({ type: "LOGIN_SUCCESS", payload: { token, user } });
@@ -121,28 +167,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await api.post("/api/auth/logout");
     } catch (e) {
       // Continue with logout even if backend call fails
-      
     } finally {
       // Clear all stored authentication data
       await AsyncStorage.removeItem("authToken");
       await AsyncStorage.removeItem("userData");
       await AsyncStorage.removeItem("hasSeenOnboarding");
       await AsyncStorage.removeItem("lastRoute");
-      
+
       // Clear any other user-related data
       try {
         await AsyncStorage.multiRemove([
           "authToken",
-          "userData", 
+          "userData",
           "hasSeenOnboarding",
           "lastRoute",
           "userPreferences",
-          "lastLoginTime"
+          "lastLoginTime",
         ]);
-      } catch (error) {
-        
-      }
-      
+      } catch (error) {}
+
       // Update auth state
       dispatch({ type: "LOGOUT" });
     }

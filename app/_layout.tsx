@@ -4,7 +4,6 @@ import { View } from "react-native";
 import { useEffect, useRef } from "react";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NavigationProvider } from "../src/navigation";
 import { AuthProvider, useAuthContext } from "../src/contexts/authContext";
 
@@ -19,26 +18,8 @@ function RootLayoutNav() {
     const redirect = async () => {
       if (loading || hasRedirectedRef.current) return;
 
-      // Check if user has seen onboarding
-      const hasSeenOnboarding = await AsyncStorage.getItem("hasSeenOnboarding");
-
-      // Try to restore last route if user was authenticated
-      const lastRoute = await AsyncStorage.getItem("lastRoute");
-
-      if (!hasSeenOnboarding) {
-        // First time user - show onboarding
-        router.replace("/onboarding" as any);
-      } else if (!isAuthenticated) {
-        // User has seen onboarding but not logged in - go to auth
-        router.replace("/auth" as any);
-      } else {
-        // User is authenticated - try to restore last route or go to home
-        if (lastRoute && lastRoute !== "/onboarding" && lastRoute !== "/auth") {
-          router.replace(lastRoute as any);
-        } else {
-          router.replace("/home" as any);
-        }
-      }
+      // Always show onboarding first on app launch
+      router.replace("/onboarding" as any);
 
       hasRedirectedRef.current = true;
     };

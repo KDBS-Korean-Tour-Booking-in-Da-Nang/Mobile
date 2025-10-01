@@ -37,8 +37,12 @@ api.interceptors.request.use(
 
       if (userData) {
         const user = JSON.parse(userData);
-        if (user.email) {
-          (config.headers as any)["User-Email"] = user.email;
+        let email: string | undefined = user?.email;
+        if (!email) {
+          email = user?.userEmail || user?.emailAddress || user?.mail;
+        }
+        if (email) {
+          (config.headers as any)["User-Email"] = email;
         }
       }
 
