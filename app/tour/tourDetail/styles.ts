@@ -1,5 +1,5 @@
 import { StyleSheet, Dimensions } from "react-native";
-import { typography } from "../../src/constants/theme";
+import { typography } from "../../../src/constants/theme";
 
 const { width, height } = Dimensions.get("window");
 const isSmallScreen = width <= 360 || height <= 700;

@@ -148,10 +148,8 @@
     "cannotLoadSavedPosts": "Không thể tải bài viết đã lưu",
     "cannotLoadMyPosts": "Không thể tải bài viết của bạn",
     "explore": "Khám phá",
-    "myPosts": "Bài viết của tôi",
     "viewMyPosts": "Xem bài viết của tôi",
     "backToFeed": "Quay lại nguồn bài viết",
-    "savedPosts": "Bài viết đã lưu",
     "viewSaved": "Xem danh sách đã lưu",
     "featuredHashtags": "Hashtag nổi bật",
     "searchHashtagPlaceholder": "Tìm hashtag...",
@@ -171,7 +169,6 @@
     "writeCommentPlaceholder": "Viết bình luận...",
     "writeReplyPlaceholder": "Viết trả lời...",
     "writeSelfReplyPlaceholder": "Thêm bình luận cho bài viết của bạn...",
-    "save": "Lưu",
     "delete": "Xóa",
     "deletePostTitle": "Xóa bài viết",
     "deletePostMessage": "Bạn có chắc chắn muốn xóa bài viết này?",
@@ -199,7 +196,12 @@
     "searchResultsFor": "Kết quả tìm kiếm cho \"{{keyword}}\"",
     "viewingSavedBanner": "Bài viết đã lưu",
     "viewingMyPostsBanner": "Bài viết của bạn",
-    "filterHashtagBanner": "Lọc theo #{{hashtag}}"
+    "filterHashtagBanner": "Lọc theo #{{hashtag}}",
+    "seeMore": "Xem thêm",
+    "seeLess": "Thu gọn",
+    "save": "Lưu",
+    "unsave": "Bỏ lưu",
+    "report": "Báo cáo"
   },
   "nav": {
     "home": "Trang chủ",
@@ -395,7 +397,14 @@
         "fullNameRequired": "Họ tên là bắt buộc",
         "phoneInvalid": "Số điện thoại không hợp lệ",
         "emailInvalid": "Địa chỉ email không hợp lệ",
-        "pickUpPointRequired": "Vui lòng nhập điểm đón"
+        "phoneTenDigits": "Số điện thoại phải gồm đúng 10 số",
+        "pickUpPointRequired": "Vui lòng nhập điểm đón",
+        "adultDobInvalid": "Người lớn {{index}}: Vui lòng chọn ngày sinh hợp lệ",
+        "adultAgeMin": "Người lớn {{index}}: Tuổi phải từ 18 trở lên",
+        "childDobInvalid": "Trẻ em {{index}}: Vui lòng chọn ngày sinh hợp lệ",
+        "childAgeRange": "Trẻ em {{index}}: Tuổi phải từ 2 đến dưới 18",
+        "babyDobInvalid": "Em bé {{index}}: Vui lòng chọn ngày sinh hợp lệ",
+        "babyAgeMax": "Em bé {{index}}: Tuổi phải dưới 2"
       }
     },
     "errors": {
@@ -454,7 +463,8 @@
       "loginRequired": "Vui lòng đăng nhập để đánh giá tour",
       "submitError": "Gửi đánh giá thất bại. Vui lòng thử lại",
       "deleteConfirm": "Bạn có chắc chắn muốn xóa đánh giá này?",
-      "noReviews": "Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá tour này!"
+      "noReviews": "Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá tour này!",
+      "alreadyRated": "Bạn đã đánh giá tour này với {{star}} sao"
     }
   },
   "payment": {
@@ -466,6 +476,7 @@
     "loadFailed": "Tải trang thanh toán thất bại",
     "createFailed": "Tạo thanh toán thất bại",
     "orderInfo": "Thanh toán đặt tour cho mã đặt: {{bookingId}}",
+    "cancelConfirm": "Bạn có chắc chắn muốn hủy thanh toán?",
     "result": {
       "loading": "Đang tải giao dịch...",
       "success": "Thanh toán thành công",
@@ -495,6 +506,8 @@
     "retry": "Thử lại",
     "goBack": "Quay lại",
     "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "save": "Lưu",
     "ok": "OK",
     "na": "Không có",
     "hotTopic": "Chủ đề nóng",

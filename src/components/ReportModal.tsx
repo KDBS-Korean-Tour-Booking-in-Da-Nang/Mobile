@@ -48,7 +48,6 @@ const ReportModal: React.FC<ReportModalProps> = ({
       return;
     }
     await onSubmit(selectedReasons, description.trim());
-    // Reset state after submission
     setSelectedReasons([]);
     setDescription("");
   };

@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { colors, spacing, borderRadius } from "../constants/theme";
 
 interface EditPostModalProps {
@@ -35,6 +36,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
   onCancel,
   loading = false,
 }) => {
+  const { t } = useTranslation();
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
   const [hashtags, setHashtags] = useState<string[]>(initialHashtags);
@@ -62,7 +64,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
 
   const handleSave = async () => {
     if (!title.trim() || !content.trim()) {
-      Alert.alert("Lỗi", "Vui lòng nhập tiêu đề và nội dung bài viết.");
+      Alert.alert(t("common.error"), t("forum.titleRequired"));
       return;
     }
 
@@ -73,7 +75,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
         hashtags,
       });
     } catch {
-      Alert.alert("Lỗi", "Không thể cập nhật bài viết. Vui lòng thử lại.");
+      Alert.alert(t("common.error"), t("forum.cannotCreateUpdate"));
     }
   };
 
@@ -82,7 +84,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
       <View style={styles.backdrop}>
         <View style={styles.card}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Chỉnh sửa bài viết</Text>
+            <Text style={styles.headerTitle}>{t("forum.editTitle")}</Text>
             <TouchableOpacity onPress={onCancel} style={styles.closeButton}>
               <Ionicons name="close" size={24} color={colors.text.primary} />
             </TouchableOpacity>
@@ -91,7 +93,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
           <ScrollView style={styles.content}>
             <TextInput
               style={styles.input}
-              placeholder="Tiêu đề bài viết..."
+              placeholder={t("forum.titlePlaceholder")}
               value={title}
               onChangeText={setTitle}
               placeholderTextColor={colors.text.secondary}
@@ -99,19 +101,18 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
 
             <TextInput
               style={[styles.input, styles.textarea]}
-              placeholder="Bạn đang nghĩ gì?"
+              placeholder={t("forum.contentPlaceholder")}
               value={content}
               onChangeText={setContent}
               placeholderTextColor={colors.text.secondary}
               multiline
             />
 
-            {/* Hashtags */}
             <View style={styles.hashtagContainer}>
               <View style={styles.hashtagInputContainer}>
                 <TextInput
                   style={styles.hashtagInput}
-                  placeholder="Nhập hashtag và nhấn Enter..."
+                  placeholder={t("forum.hashtagPlaceholder")}
                   value={currentHashtag}
                   onChangeText={setCurrentHashtag}
                   onSubmitEditing={handleAddHashtag}
@@ -147,7 +148,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
               onPress={onCancel}
               disabled={loading}
             >
-              <Text style={styles.btnGhostText}>Hủy</Text>
+              <Text style={styles.btnGhostText}>{t("common.cancel")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -160,7 +161,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
               disabled={loading || !title.trim() || !content.trim()}
             >
               <Text style={styles.btnPrimaryText}>
-                {loading ? "Đang lưu..." : "Lưu"}
+                {loading ? t("forum.submittingPost") : t("common.save")}
               </Text>
             </TouchableOpacity>
           </View>

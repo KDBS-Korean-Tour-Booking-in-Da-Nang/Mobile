@@ -2,7 +2,6 @@ import i18next from "i18next";
 import { initReactI18next } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Import your translation files
 import en from "./locales/en/common.json";
 import vi from "./locales/vi/common.json";
 import ko from "./locales/ko/common.json";
@@ -51,15 +50,13 @@ i18next
       useSuspense: false,
     },
     interpolation: {
-      escapeValue: false, // React already safes from xss
+      escapeValue: false, 
     },
     missingKeyHandler: (lng, ns, key) => {
-      // Suppress missing key warnings
       return key;
     },
   });
 
-// Listen for language changes and cache them
 i18next.on("languageChanged", async (lng) => {
   try {
     await AsyncStorage.setItem(LANGUAGE_KEY, lng);

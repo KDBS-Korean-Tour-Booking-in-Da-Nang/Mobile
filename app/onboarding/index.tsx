@@ -73,14 +73,10 @@ export default function Onboarding() {
 
   const handleGetStarted = async () => {
     try {
-      // Mark that user has completed onboarding
       await markOnboardingCompleted();
 
-      // Navigate to login screen
       navigate("/auth/login/userLogin");
     } catch (error) {
-      console.error("Error saving onboarding status:", error);
-      // Still navigate even if saving fails
       navigate("/auth/login/userLogin");
     }
   };

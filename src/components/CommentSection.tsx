@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -54,6 +54,50 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   const [totalCommentCounts, setTotalCommentCounts] = useState<
     Record<number, number>
   >({});
+
+  const initLikedMap = async () => {
+    if (user?.email) {
+      try {
+        const stored = await AsyncStorage.getItem(
+          `likedComments_${user.email}`
+        );
+        if (stored) {
+          const likedComments = JSON.parse(stored);
+          setLikedMap(likedComments || {});
+        }
+      } catch {
+        // Silent fail
+      }
+    }
+  };
+
+  const saveLikedMap = async (newLikedMap: Record<number, boolean>) => {
+    if (user?.email) {
+      try {
+        await AsyncStorage.setItem(
+          `likedComments_${user.email}`,
+          JSON.stringify(newLikedMap)
+        );
+      } catch {
+        // Silent fail
+      }
+    }
+  };
+
+  const updateLikedMap = (commentId: number, isLiked: boolean) => {
+    setLikedMap((prev) => {
+      const newMap = {
+        ...prev,
+        [commentId]: isLiked,
+      };
+      saveLikedMap(newMap);
+      return newMap;
+    });
+  };
+
+  useEffect(() => {
+    initLikedMap();
+  }, [user?.email, initLikedMap]);
 
   const handleSubmitComment = async () => {
     if (!newComment.trim()) {
@@ -246,12 +290,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     return user?.username === comment.username;
   };
 
-  // Function to calculate total comment count including nested replies
   const calculateTotalCommentCount = (commentId: number): number => {
     const directReplies = repliesMap[commentId] || [];
     let totalCount = directReplies.length;
 
-    // Add nested replies count
     directReplies.forEach((reply) => {
       totalCount += calculateTotalCommentCount(reply.forumCommentId);
     });
@@ -259,14 +301,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     return totalCount;
   };
 
-  // Function to get total comment count for display
   const getTotalCommentCount = (commentId: number): number => {
     return (
       totalCommentCounts[commentId] || calculateTotalCommentCount(commentId)
     );
   };
 
-  // Load replies only when needed to avoid duplicate display
   const loadRepliesForComment = React.useCallback(
     async (commentId: number) => {
       if (!repliesMap[commentId]) {
@@ -284,7 +324,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     [repliesMap]
   );
 
-  // Load replies for all comments on mount to get accurate counts
   React.useEffect(() => {
     const loadAllReplies = async () => {
       for (const comment of comments) {
@@ -298,7 +337,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     }
   }, [comments, loadRepliesForComment, repliesMap]);
 
-  // Recursively preload replies for all depths so counts are correct without interaction
   React.useEffect(() => {
     const visited = new Set<number>();
 
@@ -329,28 +367,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     }
   }, [comments]);
 
-  // Debug: Check if comments array contains replies
-  React.useEffect(() => {
-    const topLevelComments = comments.filter(
-      (comment) => !comment.parentCommentId
-    );
-    const repliesInComments = comments.filter(
-      (comment) => comment.parentCommentId
-    );
-
-    console.log("Comments array analysis:", {
-      totalComments: comments.length,
-      topLevelComments: topLevelComments.length,
-      repliesInComments: repliesInComments.length,
-      repliesInCommentsIds: repliesInComments.map((r) => r.forumCommentId),
-    });
-
-    if (repliesInComments.length > 0) {
-      console.warn(
-        "Found replies in main comments array! This should not happen."
-      );
-    }
-  }, [comments]);
+  React.useEffect(() => {}, [comments]);
 
   return (
     <View style={styles.container}>
@@ -360,7 +377,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         })}
       </Text>
 
-      {/* Comments List - Full width, no scroll container */}
       <View style={styles.commentsList}>
         {comments
           .filter((comment) => !comment.parentCommentId) // Only show top-level comments
@@ -478,17 +494,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                           [comment.forumCommentId]: true,
                         }));
                       } else {
-                        // toggle off by calling same endpoint (backend toggles)
                         await addCommentReaction(
                           comment.forumCommentId,
                           "LIKE",
                           user.email
                         );
                         comment.react = Math.max(0, (comment.react || 0) - 1);
-                        setLikedMap((prev) => ({
-                          ...prev,
-                          [comment.forumCommentId]: false,
-                        }));
+                        updateLikedMap(comment.forumCommentId, false);
                       }
                     } catch {}
                   }}
@@ -509,7 +521,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                   </Text>
                 </TouchableOpacity>
 
-                {/* Comment count - tap to expand and show input */}
                 <TouchableOpacity
                   style={styles.commentAction}
                   onPress={async () => {
@@ -663,10 +674,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                   user.email
                                 );
                                 reply.react = (reply.react || 0) + 1;
-                                setLikedMap((prev) => ({
-                                  ...prev,
-                                  [reply.forumCommentId]: true,
-                                }));
+                                updateLikedMap(reply.forumCommentId, true);
                               } else {
                                 await addCommentReaction(
                                   reply.forumCommentId,
@@ -677,10 +685,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                   0,
                                   (reply.react || 0) - 1
                                 );
-                                setLikedMap((prev) => ({
-                                  ...prev,
-                                  [reply.forumCommentId]: false,
-                                }));
+                                updateLikedMap(reply.forumCommentId, false);
                               }
                             } catch {}
                           }}
@@ -705,7 +710,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                           </Text>
                         </TouchableOpacity>
 
-                        {/* Reply count - tap to expand nested replies and show input */}
                         <TouchableOpacity
                           style={styles.commentAction}
                           onPress={async () => {
@@ -732,7 +736,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                         </TouchableOpacity>
                       </View>
 
-                      {/* Nested replies for this reply */}
                       {replyOpen[reply.forumCommentId] && (
                         <View style={styles.nestedRepliesContainer}>
                           {(repliesMap[reply.forumCommentId] || []).map(
@@ -900,10 +903,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                           );
                                           nestedReply.react =
                                             (nestedReply.react || 0) + 1;
-                                          setLikedMap((prev) => ({
-                                            ...prev,
-                                            [nestedReply.forumCommentId]: true,
-                                          }));
+                                          updateLikedMap(
+                                            nestedReply.forumCommentId,
+                                            true
+                                          );
                                         } else {
                                           await addCommentReaction(
                                             nestedReply.forumCommentId,
@@ -914,10 +917,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                             0,
                                             (nestedReply.react || 0) - 1
                                           );
-                                          setLikedMap((prev) => ({
-                                            ...prev,
-                                            [nestedReply.forumCommentId]: false,
-                                          }));
+                                          updateLikedMap(
+                                            nestedReply.forumCommentId,
+                                            false
+                                          );
                                         }
                                       } catch {}
                                     }}
@@ -954,7 +957,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                         );
                                         return;
                                       }
-                                      // Toggle reply input for this specific nested reply
                                       const isOpen =
                                         !!replyOpen[nestedReply.forumCommentId];
                                       setReplyOpen((prev) => ({
@@ -981,7 +983,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                   </TouchableOpacity>
                                 </View>
 
-                                {/* Deep nested replies for this nested reply (Level 3+) */}
                                 {replyOpen[nestedReply.forumCommentId] && (
                                   <View
                                     style={styles.deepNestedRepliesContainer}
@@ -1175,11 +1176,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                   deepNestedReply.react =
                                                     (deepNestedReply.react ||
                                                       0) + 1;
-                                                  setLikedMap((prev) => ({
-                                                    ...prev,
-                                                    [deepNestedReply.forumCommentId]:
-                                                      true,
-                                                  }));
+                                                  updateLikedMap(
+                                                    deepNestedReply.forumCommentId,
+                                                    true
+                                                  );
                                                 } else {
                                                   await addCommentReaction(
                                                     deepNestedReply.forumCommentId,
@@ -1192,11 +1192,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                       (deepNestedReply.react ||
                                                         0) - 1
                                                     );
-                                                  setLikedMap((prev) => ({
-                                                    ...prev,
-                                                    [deepNestedReply.forumCommentId]:
-                                                      false,
-                                                  }));
+                                                  updateLikedMap(
+                                                    deepNestedReply.forumCommentId,
+                                                    false
+                                                  );
                                                 }
                                               } catch {}
                                             }}
@@ -1237,7 +1236,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                 );
                                                 return;
                                               }
-                                              // Toggle reply input for this specific deep nested reply
                                               const isOpen =
                                                 !!replyOpen[
                                                   deepNestedReply.forumCommentId
@@ -1267,7 +1265,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                           </TouchableOpacity>
                                         </View>
 
-                                        {/* Deep nested reply input (Level 4+) */}
                                         {replyOpen[
                                           deepNestedReply.forumCommentId
                                         ] && (
@@ -1331,19 +1328,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                           deepNestedReply.forumCommentId,
                                                       });
 
-                                                    // Debug: Check if deep nested reply has correct parentCommentId
-                                                    console.log(
-                                                      "New deep nested reply created:",
-                                                      {
-                                                        id: newDeepNestedReply.forumCommentId,
-                                                        parentId:
-                                                          newDeepNestedReply.parentCommentId,
-                                                        expectedParentId:
-                                                          deepNestedReply.forumCommentId,
-                                                      }
-                                                    );
-
-                                                    // Only add to repliesMap if it's actually a reply
                                                     if (
                                                       newDeepNestedReply.parentCommentId ===
                                                       deepNestedReply.forumCommentId
@@ -1364,7 +1348,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                         [deepNestedReply.forumCommentId]:
                                                           "",
                                                       }));
-                                                      // Update total comment count
                                                       setTotalCommentCounts(
                                                         (prev) => ({
                                                           ...prev,
@@ -1375,28 +1358,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                             ] || 0) + 1,
                                                         })
                                                       );
-
-                                                      // IMPORTANT: Don't call onCommentAdded for deep nested replies!
-                                                      console.log(
-                                                        "Deep nested reply added to repliesMap only, not to main comments array"
-                                                      );
                                                     } else {
-                                                      console.error(
-                                                        "Deep nested reply created with wrong parent ID:",
-                                                        newDeepNestedReply
-                                                      );
-
-                                                      // If backend returns deep nested reply as top-level comment, we need to handle it differently
                                                       if (
                                                         newDeepNestedReply.parentCommentId ===
                                                           null ||
                                                         newDeepNestedReply.parentCommentId ===
                                                           undefined
                                                       ) {
-                                                        console.log(
-                                                          "Backend returned deep nested reply as top-level comment, treating as reply anyway"
-                                                        );
-                                                        // Still add to repliesMap even if backend didn't set parentCommentId correctly
                                                         setRepliesMap(
                                                           (prev) => ({
                                                             ...prev,
@@ -1417,7 +1385,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                               "",
                                                           })
                                                         );
-                                                        // Update total comment count
                                                         setTotalCommentCounts(
                                                           (prev) => ({
                                                             ...prev,
@@ -1427,9 +1394,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                                   .forumCommentId
                                                               ] || 0) + 1,
                                                           })
-                                                        );
-                                                        console.log(
-                                                          "Deep nested reply added to repliesMap despite backend issue"
                                                         );
                                                       } else {
                                                         Alert.alert(
@@ -1510,16 +1474,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                 });
 
                                               // Debug: Check if nested reply has correct parentCommentId
-                                              console.log(
-                                                "New nested reply created:",
-                                                {
-                                                  id: newDeepNestedReply.forumCommentId,
-                                                  parentId:
-                                                    newDeepNestedReply.parentCommentId,
-                                                  expectedParentId:
-                                                    nestedReply.forumCommentId,
-                                                }
-                                              );
 
                                               // Only add to repliesMap if it's actually a reply
                                               if (
@@ -1555,15 +1509,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                 );
 
                                                 // IMPORTANT: Don't call onCommentAdded for nested replies!
-                                                console.log(
-                                                  "Nested reply added to repliesMap only, not to main comments array"
-                                                );
                                               } else {
-                                                console.error(
-                                                  "Nested reply created with wrong parent ID:",
-                                                  newDeepNestedReply
-                                                );
-
                                                 // If backend returns nested reply as top-level comment, we need to handle it differently
                                                 if (
                                                   newDeepNestedReply.parentCommentId ===
@@ -1571,9 +1517,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                   newDeepNestedReply.parentCommentId ===
                                                     undefined
                                                 ) {
-                                                  console.log(
-                                                    "Backend returned nested reply as top-level comment, treating as reply anyway"
-                                                  );
                                                   // Still add to repliesMap even if backend didn't set parentCommentId correctly
                                                   setRepliesMap((prev) => ({
                                                     ...prev,
@@ -1601,9 +1544,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                             .forumCommentId
                                                         ] || 0) + 1,
                                                     })
-                                                  );
-                                                  console.log(
-                                                    "Nested reply added to repliesMap despite backend issue"
                                                   );
                                                 } else {
                                                   Alert.alert(
@@ -1674,11 +1614,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                     );
 
                                     // Debug: Check if nested reply has correct parentCommentId
-                                    console.log("New nested reply created:", {
-                                      id: newNestedReply.forumCommentId,
-                                      parentId: newNestedReply.parentCommentId,
-                                      expectedParentId: reply.forumCommentId,
-                                    });
 
                                     // Only add to repliesMap if it's actually a reply
                                     if (
@@ -1698,15 +1633,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                       }));
 
                                       // IMPORTANT: Don't call onCommentAdded for nested replies!
-                                      console.log(
-                                        "Nested reply added to repliesMap only, not to main comments array"
-                                      );
                                     } else {
-                                      console.error(
-                                        "Nested reply created with wrong parent ID:",
-                                        newNestedReply
-                                      );
-
                                       // If backend returns nested reply as top-level comment, we need to handle it differently
                                       if (
                                         newNestedReply.parentCommentId ===
@@ -1714,9 +1641,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                         newNestedReply.parentCommentId ===
                                           undefined
                                       ) {
-                                        console.log(
-                                          "Backend returned nested reply as top-level comment, treating as reply anyway"
-                                        );
                                         // Still add to repliesMap even if backend didn't set parentCommentId correctly
                                         setRepliesMap((prev) => ({
                                           ...prev,
@@ -1730,9 +1654,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                           ...prev,
                                           [reply.forumCommentId]: "",
                                         }));
-                                        console.log(
-                                          "Nested reply added to repliesMap despite backend issue"
-                                        );
                                       } else {
                                         Alert.alert(
                                           "Lỗi",
@@ -1788,10 +1709,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                             return;
                           }
                           try {
-                            console.log(
-                              "Creating reply for comment:",
-                              comment.forumCommentId
-                            );
                             const newReply = await replyToComment({
                               forumPostId: Number(postId),
                               content: text,
@@ -1800,14 +1717,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                             });
 
                             // Debug: Check if reply has correct parentCommentId
-                            console.log("New reply created:", {
-                              id: newReply.forumCommentId,
-                              parentId: newReply.parentCommentId,
-                              expectedParentId: comment.forumCommentId,
-                              isReply:
-                                newReply.parentCommentId !== null &&
-                                newReply.parentCommentId !== undefined,
-                            });
 
                             // Only add to repliesMap if it's actually a reply
                             if (
@@ -1834,33 +1743,14 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
                               // IMPORTANT: Don't call onCommentAdded for replies!
                               // This prevents the reply from being added to the main comments array
-                              console.log(
-                                "Reply added to repliesMap only, not to main comments array"
-                              );
 
                               // Double check: Make sure onCommentAdded is NOT called
-                              console.log(
-                                "onCommentAdded callback:",
-                                typeof onCommentAdded
-                              );
-                              console.log(
-                                "NOT calling onCommentAdded for reply:",
-                                newReply.forumCommentId
-                              );
                             } else {
-                              console.error(
-                                "Reply created with wrong parent ID:",
-                                newReply
-                              );
-
                               // If backend returns reply as top-level comment, we need to handle it differently
                               if (
                                 newReply.parentCommentId === null ||
                                 newReply.parentCommentId === undefined
                               ) {
-                                console.log(
-                                  "Backend returned reply as top-level comment, treating as reply anyway"
-                                );
                                 // Still add to repliesMap even if backend didn't set parentCommentId correctly
                                 setRepliesMap((prev) => ({
                                   ...prev,
@@ -1879,9 +1769,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                   [comment.forumCommentId]:
                                     (prev[comment.forumCommentId] || 0) + 1,
                                 }));
-                                console.log(
-                                  "Reply added to repliesMap despite backend issue"
-                                );
                               } else {
                                 Alert.alert(
                                   "Lỗi",
@@ -2228,5 +2115,3 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
 });
-
-export default CommentSection;

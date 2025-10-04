@@ -20,10 +20,10 @@ import {
   PostResponse,
   getReactionSummary,
 } from "../../src/endpoints/forum";
-import { tourService } from "../../src/services/tourService";
+import tourEndpoints from "../../src/endpoints/tour";
 import { TourResponse } from "../../src/types/tour";
 import PremiumModal from "../../src/components/PremiumModal";
-import { premiumService } from "../../src/services/premiumService";
+import { usePremium } from "../../src/contexts/premiumContext";
 import { useFocusEffect } from "@react-navigation/native";
 import styles from "./styles";
 
@@ -128,6 +128,11 @@ export default function Home() {
   const { navigate } = useNavigation();
   const { t, i18n } = useTranslation();
   const { user } = useAuthContext();
+  const {
+    refreshStatus,
+    premiumType: contextPremiumType,
+    expiryDate: contextExpiry,
+  } = usePremium();
   const [hotPosts, setHotPosts] = useState<PostResponse[]>([]);
   const [featuredTours, setFeaturedTours] = useState<TourResponse[]>([]);
   const [toursLoading, setToursLoading] = useState(true);
@@ -140,17 +145,13 @@ export default function Home() {
   const [premiumExpiry, setPremiumExpiry] = useState<string | undefined>(
     undefined
   );
-  const isPremium = premiumType === "PREMIUM";
+  const isPremium = (contextPremiumType || premiumType) === "PREMIUM";
   useFocusEffect(
     React.useCallback(() => {
       let isActive = true;
       (async () => {
         try {
-          const status = await premiumService.refreshPremiumStatus();
-          if (isActive) {
-            setPremiumType(status.premiumType);
-            setPremiumExpiry(status.expiryDate);
-          }
+          await refreshStatus();
         } catch {}
       })();
       return () => {
@@ -168,7 +169,8 @@ export default function Home() {
     const loadTours = async () => {
       try {
         setToursLoading(true);
-        const tours = await tourService.getAllTours();
+        const toursRes = await tourEndpoints.getAll();
+        const tours = toursRes.data;
 
         if (
           typeof tours === "string" &&
@@ -181,7 +183,6 @@ export default function Home() {
         const validTours = Array.isArray(tours) ? tours : [];
         setFeaturedTours(validTours);
       } catch (error) {
-        console.error("Error loading tours:", error);
         setFeaturedTours([]);
       } finally {
         setToursLoading(false);
@@ -234,7 +235,7 @@ export default function Home() {
       <TouchableOpacity
         key={tour.id}
         style={styles.tourCard}
-        onPress={() => navigate(`/tour?id=${tour.id}`)}
+        onPress={() => navigate(`/tour/tourDetail?id=${tour.id}`)}
       >
         <View style={styles.imageContainer}>
           <Image
@@ -401,7 +402,6 @@ export default function Home() {
           </View>
         </View>
 
-        {/* Search box */}
         <View style={styles.searchBox}>
           <Ionicons name="search" size={18} color="#6c757d" />
           <Text style={styles.searchPlaceholder}>
@@ -409,9 +409,7 @@ export default function Home() {
           </Text>
         </View>
 
-        {/* Hero removed as requested */}
 
-        {/* Popular Tour */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text
@@ -453,7 +451,6 @@ export default function Home() {
           </ScrollView>
         </View>
 
-        {/* Hot Topic */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t("common.hotTopic")}</Text>
@@ -491,7 +488,6 @@ export default function Home() {
           ))}
         </View>
 
-        {/* Article */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t("common.article")}</Text>
@@ -523,7 +519,6 @@ export default function Home() {
         {Platform.OS === "android" && <View style={styles.bottomSpacing} />}
       </View>
 
-      {/* Premium Modal */}
       <PremiumModal
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}

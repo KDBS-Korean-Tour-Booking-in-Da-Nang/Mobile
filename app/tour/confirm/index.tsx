@@ -13,7 +13,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import { useTranslation } from "react-i18next";
-import { tourService } from "../../../src/services/tourService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { tourEndpoints } from "../../../src/endpoints/tour";
 import {
   TourResponse,
   BookingRequest,
@@ -27,24 +28,26 @@ export default function ConfirmTour() {
   const { t } = useTranslation();
   const params = useLocalSearchParams();
   const router = useRouter();
-
-  // Get booking data from params
   const bookingData = params.bookingData
     ? JSON.parse(params.bookingData as string)
     : null;
   const tourId = params.tourId ? Number(params.tourId) : null;
+  const userEmailKey = (
+    (user as any)?.email ||
+    (user as any)?.userEmail ||
+    ""
+  ).toLowerCase();
+  const tourKey = String(tourId ?? "na");
+  const pendingKey = `pendingBooking:${userEmailKey}:${tourKey}`;
 
-  // Tour data
   const [tour, setTour] = React.useState<TourResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [confirming, setConfirming] = React.useState(false);
 
-  // Navigation scroll effects
   const [isNavVisible, setIsNavVisible] = React.useState(true);
   const lastScrollY = React.useRef(0);
   const scrollThreshold = 50;
 
-  // Load tour data
   React.useEffect(() => {
     const loadTour = async () => {
       if (!tourId) {
@@ -55,10 +58,9 @@ export default function ConfirmTour() {
 
       try {
         setLoading(true);
-        const tourData = await tourService.getTourById(tourId);
+        const tourData = (await tourEndpoints.getById(tourId)).data;
         setTour(tourData);
       } catch (error) {
-        console.error("Error loading tour:", error);
         Alert.alert(t("common.error"), t("tour.errors.loadFailed"));
         goBack();
       } finally {
@@ -69,7 +71,6 @@ export default function ConfirmTour() {
     loadTour();
   }, [tourId, t, goBack]);
 
-  // Handle scroll for navigation effects
   const handleScroll = React.useCallback((event: any) => {
     const currentScrollY = event.nativeEvent.contentOffset.y;
     const scrollDifference = Math.abs(currentScrollY - lastScrollY.current);
@@ -84,7 +85,6 @@ export default function ConfirmTour() {
     }
   }, []);
 
-  // Handle confirm booking
   const handleConfirmBooking = async () => {
     if (!tour || !bookingData || !user) {
       Alert.alert(t("common.error"), t("tour.errors.missingData"));
@@ -94,10 +94,50 @@ export default function ConfirmTour() {
     try {
       setConfirming(true);
 
-      // Prepare guests data
+      try {
+        const raw = await AsyncStorage.getItem(pendingKey);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (saved?.bookingId) {
+            const paymentResponse = (
+              await tourEndpoints.createBookingPayment({
+                bookingId: saved.bookingId,
+                userEmail: userEmailKey, 
+              })
+            ).data;
+            if (paymentResponse?.success && paymentResponse?.payUrl) {
+              Alert.alert(
+                t("tour.confirm.paymentRedirect"),
+                `Redirecting to payment page...`,
+                [
+                  {
+                    text: t("common.ok"),
+                    onPress: () => {
+                      router.push({
+                        pathname: "/payment" as any,
+                        params: {
+                          bookingId: String(saved.bookingId),
+                          userEmail: userEmailKey, 
+                          amount: (
+                            bookingData.adultCount * (tour.adultPrice || 0) +
+                            bookingData.childrenCount *
+                              (tour.childrenPrice || 0) +
+                            bookingData.babyCount * (tour.babyPrice || 0)
+                          ).toString(),
+                          orderInfo: `Booking payment for tour: ${tour.tourName}`,
+                        },
+                      });
+                    },
+                  },
+                ]
+              );
+              return;
+            }
+          }
+        }
+      } catch {}
       const guests: BookingGuestRequest[] = [];
 
-      // Add adult guests
       if (bookingData.adultInfo) {
         bookingData.adultInfo.forEach((guest: any) => {
           guests.push({
@@ -123,7 +163,6 @@ export default function ConfirmTour() {
         });
       }
 
-      // Add children guests
       if (bookingData.childrenInfo) {
         bookingData.childrenInfo.forEach((guest: any) => {
           guests.push({
@@ -144,12 +183,11 @@ export default function ConfirmTour() {
             gender: (guest.gender || "OTHER").toUpperCase(),
             idNumber: guest.idNumber || "",
             nationality: guest.nationality || "Vietnamese",
-            bookingGuestType: "CHILD", // Fixed: CHILD not CHILDREN
+            bookingGuestType: "CHILD",
           });
         });
       }
 
-      // Add baby guests
       if (bookingData.babyInfo) {
         bookingData.babyInfo.forEach((guest: any) => {
           guests.push({
@@ -175,7 +213,6 @@ export default function ConfirmTour() {
         });
       }
 
-      // Create booking request
       const sanitizedPhone = (bookingData.customerPhone || "").replace(
         /\D/g,
         ""
@@ -238,38 +275,46 @@ export default function ConfirmTour() {
         bookingGuestRequests: guests,
       };
 
-      // Validate guests
       if (guests.length === 0) {
         Alert.alert(t("common.error"), "At least one guest is required");
         setConfirming(false);
         return;
       }
 
-     
-      const bookingResponse = await tourService.createBooking(bookingRequest);
+      const bookingResponse = (
+        await tourEndpoints.createBooking(bookingRequest)
+      ).data;
 
-      // Create payment for the booking
-      const paymentResponse = await tourService.createBookingPayment({
-        bookingId: bookingResponse.bookingId,
-        userEmail: bookingRequest.contactEmail || "user@example.com",
-      });
+      try {
+        await AsyncStorage.setItem(
+          pendingKey,
+          JSON.stringify({
+            bookingId: bookingResponse.bookingId,
+            ts: Date.now(),
+          })
+        );
+      } catch {}
+
+      const paymentResponse = (
+        await tourEndpoints.createBookingPayment({
+          bookingId: bookingResponse.bookingId,
+          userEmail: userEmailKey
+        })
+      ).data;
 
       if (paymentResponse.success && paymentResponse.payUrl) {
-        // Navigate to PaymentScreen with WebView
         Alert.alert(
           t("tour.confirm.paymentRedirect"),
-          `Booking created successfully!\nBooking ID: ${bookingResponse.bookingId}\n\nRedirecting to payment page...`,
+          `Booking created successfully!\nRedirecting to payment page...`,
           [
             {
               text: t("common.ok"),
               onPress: () => {
-                // Navigate to PaymentScreen with booking details
                 router.push({
                   pathname: "/payment" as any,
                   params: {
                     bookingId: bookingResponse.bookingId.toString(),
-                    userEmail:
-                      bookingRequest.contactEmail || "user@example.com",
+                    userEmail: userEmailKey, 
                     amount: (
                       bookingData.adultCount * (tour.adultPrice || 0) +
                       bookingData.childrenCount * (tour.childrenPrice || 0) +
@@ -293,17 +338,11 @@ export default function ConfirmTour() {
         ]);
       }
     } catch (error: any) {
-      console.error("Error confirming booking:", error);
 
-      // Log detailed error information
       if (error.response) {
-        console.error("Error response:", error.response.data);
-        console.error("Error status:", error.response.status);
-        console.error("Error headers:", error.response.headers);
+      
       } else if (error.request) {
-        console.error("Error request:", error.request);
       } else {
-        console.error("Error message:", error.message);
       }
 
       Alert.alert(
@@ -351,7 +390,6 @@ export default function ConfirmTour() {
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header with back button */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={goBack}>
             <View style={styles.backCircle}>
@@ -361,7 +399,6 @@ export default function ConfirmTour() {
         </View>
 
         <View style={styles.content}>
-          {/* Tour Information */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
               {t("tour.confirm.tourInfo")}
@@ -397,15 +434,12 @@ export default function ConfirmTour() {
                   <Text style={styles.detailLabel}>
                     {t("tour.detail.vehicle")}
                   </Text>
-                  <Text style={styles.detailValue}>
-                    {t(`tour.vehicles.${tour.tourVehicle}`)}
-                  </Text>
+                  <Text style={styles.detailValue}>{tour.tourVehicle}</Text>
                 </View>
               </View>
             </View>
           </View>
 
-          {/* Contact Information */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
               {t("tour.confirm.contactInfo")}
@@ -443,16 +477,13 @@ export default function ConfirmTour() {
             </View>
           </View>
 
-          {/* Booking Information */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
               {t("tour.confirm.bookingInfo")}
             </Text>
           </View>
 
-          {/* Guest Details */}
           <View style={styles.section}>
-            {/* Adult Guests */}
             {bookingData.adultInfo && bookingData.adultInfo.length > 0 && (
               <View style={styles.guestSection}>
                 <Text style={styles.guestSectionTitle}>
@@ -503,7 +534,6 @@ export default function ConfirmTour() {
               </View>
             )}
 
-            {/* Children Guests */}
             {bookingData.childrenInfo &&
               bookingData.childrenInfo.length > 0 && (
                 <View style={styles.guestSection}>
@@ -560,7 +590,6 @@ export default function ConfirmTour() {
                 </View>
               )}
 
-            {/* Baby Guests */}
             {bookingData.babyInfo && bookingData.babyInfo.length > 0 && (
               <View style={styles.guestSection}>
                 <Text style={styles.guestSectionTitle}>
@@ -616,7 +645,6 @@ export default function ConfirmTour() {
             )}
           </View>
 
-          {/* Price Summary */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
               {t("tour.confirm.priceSummary")}
@@ -697,12 +725,11 @@ export default function ConfirmTour() {
             </View>
           </View>
 
-          {/* Confirm Button */}
           <TouchableOpacity
             style={[
               styles.confirmButton,
               confirming && styles.confirmButtonDisabled,
-              { marginBottom: 40 }, // Thêm margin bottom để không bị che bởi thanh Android
+              { marginBottom: 40 }
             ]}
             onPress={handleConfirmBooking}
             disabled={confirming}

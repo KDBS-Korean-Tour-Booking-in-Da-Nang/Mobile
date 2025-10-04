@@ -65,7 +65,6 @@ const PostCard: React.FC<PostCardProps> = ({
   const [showFullContent, setShowFullContent] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
-  // Load full post details if missing images or hashtags (for saved posts)
   useEffect(() => {
     if (
       onLoadFullDetails &&
@@ -76,8 +75,6 @@ const PostCard: React.FC<PostCardProps> = ({
     }
   }, [post.id, post.imageUrls.length, post.hashtags.length, onLoadFullDetails]);
 
-  // Since we don't have userEmail from backend, we'll use username comparison
-  // This is not perfect but works for now without changing backend
   const isOwner =
     (user?.username || "").trim().toLowerCase() ===
     (post.username || "").trim().toLowerCase();
@@ -91,7 +88,6 @@ const PostCard: React.FC<PostCardProps> = ({
 
   useEffect(() => {
     checkIfSaved();
-    // Load fresh reaction summary from backend to persist across reloads
     (async () => {
       try {
         const summary = await getReactionSummary(post.id, "POST", user?.email);
@@ -103,7 +99,6 @@ const PostCard: React.FC<PostCardProps> = ({
         }
       } catch {}
     })();
-    // Load reported status from local cache to prevent duplicate reports
     (async () => {
       try {
         if (user?.email) {
@@ -117,7 +112,6 @@ const PostCard: React.FC<PostCardProps> = ({
     })();
   }, [checkIfSaved, post.id, user?.email]);
 
-  // Ensure comment count is populated after reload
   useEffect(() => {
     (async () => {
       try {
@@ -137,12 +131,10 @@ const PostCard: React.FC<PostCardProps> = ({
     try {
       if (reactionType === "LIKE") {
         if (isLiked) {
-          // Remove like
           await removeReaction(post.id, "POST");
           setIsLiked(false);
           setLikeCount((prev) => Math.max(0, prev - 1));
         } else {
-          // Add like
           await addReaction({
             targetId: post.id,
             targetType: "POST",
@@ -162,7 +154,6 @@ const PostCard: React.FC<PostCardProps> = ({
             }
           } catch {}
 
-          // If was disliked, remove dislike
           if (isDisliked) {
             setIsDisliked(false);
             setDislikeCount((prev) => Math.max(0, prev - 1));
@@ -170,12 +161,10 @@ const PostCard: React.FC<PostCardProps> = ({
         }
       } else {
         if (isDisliked) {
-          // Remove dislike
           await removeReaction(post.id, "POST");
           setIsDisliked(false);
           setDislikeCount((prev) => Math.max(0, prev - 1));
         } else {
-          // Add dislike
           await addReaction({
             targetId: post.id,
             targetType: "POST",
@@ -195,7 +184,6 @@ const PostCard: React.FC<PostCardProps> = ({
             }
           } catch {}
 
-          // If was liked, remove like
           if (isLiked) {
             setIsLiked(false);
             setLikeCount((prev) => Math.max(0, prev - 1));
@@ -259,7 +247,6 @@ const PostCard: React.FC<PostCardProps> = ({
         user!.email
       );
       setReportVisible(false);
-      // Mark as reported in local cache
       try {
         const key = `reported:post:${post.id}:${user!.email}`;
         await AsyncStorage.setItem(key, "1");
@@ -267,7 +254,6 @@ const PostCard: React.FC<PostCardProps> = ({
       } catch {}
       Alert.alert(t("forum.successTitle"), t("forum.reportSuccess"));
     } catch (error: any) {
-      // If backend returns 400 for duplicate report, show friendly message
       const status = error?.response?.status;
       if (status === 400) {
         try {
@@ -277,7 +263,6 @@ const PostCard: React.FC<PostCardProps> = ({
         } catch {}
         Alert.alert(t("forum.notificationTitle"), t("forum.reportDuplicate"));
       } else {
-        console.error("Error reporting post:", error);
         Alert.alert(t("forum.errorTitle"), t("forum.cannotSendReport"));
       }
     } finally {
@@ -338,11 +323,9 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const stripTourLinks = (text: string): string => {
     if (!text) return "";
-    // Remove metadata markers (HTML comment or [[META:...]] style)
     const withoutMeta = text
       .replace(/<!--META:\{[\s\S]*?\}-->/gi, "")
       .replace(/\[\[META:\{[\s\S]*?\}\]\]/gi, "");
-    // Remove any tour links
     const withoutLinks = withoutMeta.replace(
       new RegExp("(?:https?:\\/\\/[^\\s]+)?\\/?tour\\?id=\\d+", "gi"),
       ""
@@ -359,7 +342,7 @@ const PostCard: React.FC<PostCardProps> = ({
     const linkedTourId = extractTourIdFromContent(post.content || "");
     const handleImagePress = (index: number) => {
       if (linkedTourId) {
-        navigate(`/tour?id=${linkedTourId}`);
+        navigate(`/tour/tourDetail?id=${linkedTourId}`);
         return;
       }
       setPreviewIndex(index);
@@ -496,7 +479,6 @@ const PostCard: React.FC<PostCardProps> = ({
     );
   };
 
-  // Function to truncate content to 2 lines
   const getTruncatedContent = (content: string) => {
     const words = content.split(" ");
     const maxWords = 20; // Approximate 2 lines
@@ -507,7 +489,6 @@ const PostCard: React.FC<PostCardProps> = ({
   return (
     <TouchableWithoutFeedback onPress={() => setShowMenu(false)}>
       <View style={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
           <View style={styles.userInfo}>
             <Image
@@ -539,7 +520,6 @@ const PostCard: React.FC<PostCardProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* Content */}
         <View style={styles.content}>
           {(() => {
             const contentToShow = stripTourLinks(post.content || "");
@@ -554,17 +534,16 @@ const PostCard: React.FC<PostCardProps> = ({
           {stripTourLinks(post.content || "").length > 100 &&
             !showFullContent && (
               <TouchableOpacity onPress={() => setShowFullContent(true)}>
-                <Text style={styles.seeMoreText}>See More</Text>
+                <Text style={styles.seeMoreText}>{t("forum.seeMore")}</Text>
               </TouchableOpacity>
             )}
           {showFullContent &&
             stripTourLinks(post.content || "").length > 100 && (
               <TouchableOpacity onPress={() => setShowFullContent(false)}>
-                <Text style={styles.seeMoreText}>See Less</Text>
+                <Text style={styles.seeMoreText}>{t("forum.seeLess")}</Text>
               </TouchableOpacity>
             )}
 
-          {/* Hashtags */}
           {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
             <View style={styles.hashtagsContainer}>
               {post.hashtags.map((hashtag, index) => {
@@ -646,7 +625,7 @@ const PostCard: React.FC<PostCardProps> = ({
             return (
               <TouchableOpacity
                 activeOpacity={0.9}
-                onPress={() => navigate(`/tour?id=${tourId}`)}
+                onPress={() => navigate(`/tour/tourDetail?id=${tourId}`)}
                 style={{
                   backgroundColor: "#fff",
                   borderRadius: 12,
@@ -683,23 +662,21 @@ const PostCard: React.FC<PostCardProps> = ({
                   </Text>
                 ) : null}
                 <TouchableOpacity
-                  onPress={() => navigate(`/tour?id=${tourId}`)}
+                  onPress={() => navigate(`/tour/tourDetail?id=${tourId}`)}
                   style={{ marginTop: 6 }}
                 >
                   <Text
                     style={{ color: "#007AFF" }}
-                  >{`/tour?id=${tourId}`}</Text>
+                  >{`/tour/tourDetail?id=${tourId}`}</Text>
                 </TouchableOpacity>
               </TouchableOpacity>
             );
           })()}
         </View>
 
-        {/* Menu Dropdown */}
         {showMenu && (
           <View style={styles.menuDropdown}>
             {isOwner ? (
-              // Owner menu options
               <>
                 <TouchableOpacity
                   style={styles.menuItem}
@@ -709,7 +686,7 @@ const PostCard: React.FC<PostCardProps> = ({
                   }}
                 >
                   <Ionicons name="create-outline" size={18} color="#666" />
-                  <Text style={styles.menuItemText}>Edit</Text>
+                  <Text style={styles.menuItemText}>{t("common.edit")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.menuItem}
@@ -729,7 +706,7 @@ const PostCard: React.FC<PostCardProps> = ({
                       isSaved && styles.menuItemTextActive,
                     ]}
                   >
-                    {isSaved ? "Unsave" : "Save"}
+                    {isSaved ? t("forum.unsave") : t("forum.save")}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -740,11 +717,10 @@ const PostCard: React.FC<PostCardProps> = ({
                   }}
                 >
                   <Ionicons name="trash-outline" size={18} color="#ff4444" />
-                  <Text style={styles.menuItemTextDanger}>Delete</Text>
+                  <Text style={styles.menuItemTextDanger}>{t("common.delete")}</Text>
                 </TouchableOpacity>
               </>
             ) : (
-              // Non-owner menu options
               <>
                 <TouchableOpacity
                   style={styles.menuItem}
@@ -764,7 +740,7 @@ const PostCard: React.FC<PostCardProps> = ({
                       isSaved && styles.menuItemTextActive,
                     ]}
                   >
-                    {isSaved ? "Unsave" : "Save"}
+                    {isSaved ? t("forum.unsave") : t("forum.save")}
                   </Text>
                 </TouchableOpacity>
                 {!isOwner && (
@@ -776,7 +752,7 @@ const PostCard: React.FC<PostCardProps> = ({
                     }}
                   >
                     <Ionicons name="flag-outline" size={18} color="#ff4444" />
-                    <Text style={styles.menuItemTextDanger}>Report</Text>
+                    <Text style={styles.menuItemTextDanger}>{t("forum.report")}</Text>
                   </TouchableOpacity>
                 )}
               </>
@@ -784,7 +760,6 @@ const PostCard: React.FC<PostCardProps> = ({
           </View>
         )}
 
-        {/* Actions */}
         <View style={styles.actions}>
           <TouchableOpacity
             style={styles.actionButton}
@@ -827,7 +802,6 @@ const PostCard: React.FC<PostCardProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* Comments Section */}
         {showComments && (
           <CommentSection
             postId={post.id}
@@ -854,7 +828,6 @@ const PostCard: React.FC<PostCardProps> = ({
           />
         )}
 
-        {/* Report Modal */}
         <ReportModal
           visible={reportVisible}
           onSubmit={submitReport}

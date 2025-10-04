@@ -43,7 +43,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [images, setImages] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Popular hashtags for suggestions
   const popularHashtags = [
     "danang",
     "travel",
@@ -96,7 +95,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     });
 
     if (!result.canceled) {
-      // Normalize assets shape for upload API
       const normalized = result.assets.map((a) => ({
         uri: a.uri,
         type:
@@ -184,7 +182,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       onRequestClose={handleClose}
     >
       <View style={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleClose} style={styles.headerButton}>
             <Text style={styles.headerButtonText}>
@@ -216,7 +213,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Post Title Section */}
           <View style={styles.titleSection}>
             <Text style={styles.sectionTitle}>
               {t("forum.createPostModal.postTitle")}
@@ -236,7 +232,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             </View>
           </View>
 
-          {/* Description Section */}
           <View style={styles.descriptionSection}>
             <Text style={styles.sectionTitle}>
               {t("forum.createPostModal.description")}
@@ -252,7 +247,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             />
           </View>
 
-          {/* Photo/Video Upload Area */}
           <View style={styles.uploadSection}>
             <View style={styles.uploadContainer}>
               <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
@@ -264,7 +258,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 </Text>
               </TouchableOpacity>
 
-              {/* Selected Images */}
               {images.map((image, index) => (
                 <View key={index} style={styles.selectedImageItem}>
                   <Image
@@ -283,13 +276,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             </View>
           </View>
 
-          {/* Hashtags Section */}
           <View style={styles.hashtagSection}>
             <Text style={styles.sectionTitle}>
               {t("forum.createPostModal.chooseHashtags")}
             </Text>
 
-            {/* Hashtag Input */}
             <View style={styles.hashtagInputContainer}>
               <Text style={styles.hashtagLabel}>
                 {t("forum.createPostModal.hashtag")}
@@ -304,7 +295,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               />
             </View>
 
-            {/* Selected Hashtags */}
             {hashtags.length > 0 && (
               <View style={styles.selectedHashtags}>
                 {hashtags.map((hashtag, index) => (
@@ -319,7 +309,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               </View>
             )}
 
-            {/* Popular Hashtags */}
             <View style={styles.popularHashtags}>
               {popularHashtags.map((hashtag, index) => (
                 <TouchableOpacity

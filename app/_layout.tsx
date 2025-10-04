@@ -6,6 +6,7 @@ import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { NavigationProvider } from "../src/navigation";
 import { AuthProvider, useAuthContext } from "../src/contexts/authContext";
+import { PremiumProvider } from "../src/contexts/premiumContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -18,7 +19,6 @@ function RootLayoutNav() {
     const redirect = async () => {
       if (loading || hasRedirectedRef.current) return;
 
-      // Always show onboarding first on app launch
       router.replace("/onboarding" as any);
 
       hasRedirectedRef.current = true;
@@ -63,9 +63,11 @@ export default function RootLayout() {
   return (
     <NavigationProvider>
       <AuthProvider>
-        <View style={{ flex: 1 }}>
-          <RootLayoutNav />
-        </View>
+        <PremiumProvider>
+          <View style={{ flex: 1 }}>
+            <RootLayoutNav />
+          </View>
+        </PremiumProvider>
       </AuthProvider>
     </NavigationProvider>
   );

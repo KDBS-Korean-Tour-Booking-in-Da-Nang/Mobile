@@ -48,7 +48,6 @@ export default function ForgotPassword() {
         Alert.alert("Error", "Request failed. Please try again.");
       }
     } catch (error: any) {
-      console.error("Forgot password error:", error);
       Alert.alert(
         "Error",
         error.message || "Request failed. Please try again."

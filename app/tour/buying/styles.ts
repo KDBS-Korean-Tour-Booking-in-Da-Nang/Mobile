@@ -408,8 +408,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#dadada",
-    paddingHorizontal: 8,
+    paddingHorizontal: 16,
     flexShrink: 1,
+    justifyContent: "center",
   },
   dobText: {
     fontSize: 14,

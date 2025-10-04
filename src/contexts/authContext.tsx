@@ -92,6 +92,12 @@ interface AuthContextType {
   checkAuthStatus: () => Promise<void>;
   login: (email: string, password: string, role: string) => Promise<void>;
   logout: () => Promise<void>;
+  getAllUsers: () => Promise<
+    { id: number; username: string; email?: string }[]
+  >;
+  getUserLiteById: (
+    userId: number
+  ) => Promise<{ id: number; username: string; email?: string } | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -107,7 +113,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       const token = await AsyncStorage.getItem("authToken");
       const userDataRaw = await AsyncStorage.getItem("userData");
       let userData: User | null = userDataRaw ? JSON.parse(userDataRaw) : null;
-      // Ensure email is present for APIs that require it
       if (userData && !userData.email) {
         const anyUser: any = userData as any;
         const fallbackEmail =
@@ -132,10 +137,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const login = async (email: string, password: string, role: string) => {
     dispatch({ type: "INIT" });
     try {
-      // Backend accepts { email, password }; ignore role here
       const response = await api.post("/api/auth/login", { email, password });
-      // Backend returns AuthenticationResponse { token, authenticated, user }
-      // Some environments may wrap it in { result: AuthenticationResponse }
+
       const payload = (response?.data?.result ?? response?.data) as {
         token?: string;
         authenticated?: boolean;
@@ -143,7 +146,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       };
       const token = payload?.token as string;
       let user = payload?.user as any;
-      // Normalize email field to ensure presence
       if (user && !user.email) {
         const fallbackEmail = user.userEmail || user.emailAddress || user.mail;
         if (fallbackEmail && typeof fallbackEmail === "string") {
@@ -163,18 +165,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   const logout = async () => {
     try {
-      // Call backend logout endpoint if available
       await api.post("/api/auth/logout");
     } catch (e) {
-      // Continue with logout even if backend call fails
     } finally {
-      // Clear all stored authentication data
       await AsyncStorage.removeItem("authToken");
       await AsyncStorage.removeItem("userData");
       await AsyncStorage.removeItem("hasSeenOnboarding");
       await AsyncStorage.removeItem("lastRoute");
 
-      // Clear any other user-related data
       try {
         await AsyncStorage.multiRemove([
           "authToken",
@@ -186,8 +184,59 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         ]);
       } catch (error) {}
 
-      // Update auth state
       dispatch({ type: "LOGOUT" });
+    }
+  };
+
+  const getAllUsers = async (): Promise<
+    { id: number; username: string; email?: string }[]
+  > => {
+    const res = await api.get("/api/users");
+    const data = (res?.data?.result ?? res?.data) as any[];
+    if (Array.isArray(data)) {
+      return data
+        .map((u: any) => {
+          const normalizedId = u?.id ?? u?.userId ?? u?.user_id;
+          return {
+            id: normalizedId,
+            username:
+              u?.username ||
+              u?.fullName ||
+              u?.name ||
+              (u?.email ? String(u.email).split("@")[0] : undefined),
+            email: u?.email,
+          } as { id: number; username: string; email?: string };
+        })
+        .filter((u: any) => u?.id != null && u?.username);
+    }
+    return [];
+  };
+
+  const getUserLiteById = async (
+    userId: number
+  ): Promise<{ id: number; username: string; email?: string } | null> => {
+    try {
+      const res = await api.get("/api/users");
+      const data = (res?.data?.result ?? res?.data) as any[];
+      if (Array.isArray(data)) {
+        const u = data.find((x: any) => {
+          const xid = x?.id ?? x?.userId ?? x?.user_id;
+          return String(xid) === String(userId);
+        });
+        if (!u) return null;
+        return {
+          id: u?.id ?? u?.userId ?? u?.user_id,
+          username:
+            u?.username ||
+            u?.fullName ||
+            u?.name ||
+            (u?.email ? String(u.email).split("@")[0] : undefined),
+          email: u?.email,
+        };
+      }
+      return null;
+    } catch {
+      return null;
     }
   };
 
@@ -205,6 +254,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         checkAuthStatus,
         login,
         logout,
+        getAllUsers,
+        getUserLiteById,
       }}
     >
       {children}

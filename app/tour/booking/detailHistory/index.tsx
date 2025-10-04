@@ -10,14 +10,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import MainLayout from "../../../../src/components/MainLayout";
 import { useTranslation } from "react-i18next";
-import { tourService } from "../../../../src/services/tourService";
+import { tourEndpoints } from "../../../../src/endpoints/tour";
 import { BookingResponse, TourResponse } from "../../../../src/types/tour";
 
 export default function BookingDetail() {
   const { t } = useTranslation();
   const params = useLocalSearchParams();
   const router = useRouter();
-  // No user dependency needed for status
 
   const bookingId = params.bookingId
     ? Number(
@@ -28,18 +27,17 @@ export default function BookingDetail() {
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<BookingResponse | null>(null);
   const [totalAmount, setTotalAmount] = useState<number | null>(null);
-  // Purchased bookings imply SUCCESS status
 
   const loadBooking = useCallback(async () => {
     try {
       setLoading(true);
       if (!bookingId || Number.isNaN(bookingId)) return;
-      const data = await tourService.getBookingById(bookingId);
+      const data = (await tourEndpoints.getBookingById(bookingId)).data;
       setBooking(data);
 
-      // Compute total amount from tour prices and guest counts
       try {
-        const tour: TourResponse = await tourService.getTourById(data.tourId);
+        const tour: TourResponse = (await tourEndpoints.getById(data.tourId))
+          .data;
         const total =
           (tour.adultPrice || 0) * (data.adultsCount || 0) +
           (tour.childrenPrice || 0) * (data.childrenCount || 0) +
@@ -48,8 +46,6 @@ export default function BookingDetail() {
       } catch {
         setTotalAmount(null);
       }
-
-      // Always success for purchased detail view
     } catch {
       setBooking(null);
     } finally {

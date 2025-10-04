@@ -8,7 +8,6 @@ export const useRouteTracker = () => {
   useEffect(() => {
     const saveCurrentRoute = async () => {
       try {
-        // Only save routes that are not onboarding or auth pages
         if (
           pathname &&
           !pathname.includes("/onboarding") &&
@@ -17,7 +16,6 @@ export const useRouteTracker = () => {
           await AsyncStorage.setItem("lastRoute", pathname);
         }
       } catch (error) {
-        console.log("Error saving route:", error);
       }
     };
 

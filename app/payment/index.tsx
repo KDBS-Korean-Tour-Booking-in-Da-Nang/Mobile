@@ -11,7 +11,8 @@ import { WebView } from "react-native-webview";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import api from "../../src/services/api";
+import { premiumEndpoints } from "../../src/endpoints/premium";
+import { tourEndpoints } from "../../src/endpoints/tour";
 
 interface PaymentParams {
   bookingId?: string;
@@ -47,11 +48,7 @@ export default function PaymentScreen() {
       setLoading(true);
       setError(null);
 
-      // If we already have a direct payUrl from premium API, use it
       if (directPayUrl && type === "premium") {
-        console.log("=== USING DIRECT PAY URL ===");
-        console.log("Pay URL:", directPayUrl);
-        console.log("Order ID:", directOrderId);
         setPaymentUrl(directPayUrl);
         setLoading(false);
         return;
@@ -60,13 +57,12 @@ export default function PaymentScreen() {
       let response;
 
       if (type === "premium") {
-        console.log("Using premium payment API");
-        response = await api.post("/api/premium/payment", {
+        response = await premiumEndpoints.createPayment({
           durationInMonths: parseInt(durationInMonths) || 1,
           userEmail: userEmail,
         });
       } else {
-        response = await api.post("/api/booking/payment", {
+        response = await tourEndpoints.createBookingPayment({
           bookingId: parseInt(bookingId) || 0,
           userEmail: userEmail,
         });
@@ -78,7 +74,6 @@ export default function PaymentScreen() {
         setError(response.data.message || t("payment.createFailed"));
       }
     } catch (err: any) {
-      console.error("Error creating payment:", err);
       setError(err.response?.data?.message || t("payment.createFailed"));
     } finally {
       setLoading(false);
@@ -97,10 +92,9 @@ export default function PaymentScreen() {
     createPayment();
   }, [createPayment]);
 
-  const handleWebViewRequest = (request: any) => {
+  const handleWebViewRequest = (request: any): boolean => {
     const url = request.url;
 
-    // Intercept redirect URL từ VNPay
     if (
       url.includes("/transaction-result") ||
       url.includes("transaction-result")
@@ -111,13 +105,6 @@ export default function PaymentScreen() {
         const responseCode = urlObj.searchParams.get("responseCode");
         const paymentMethod = urlObj.searchParams.get("paymentMethod");
 
-        console.log("Payment result:", {
-          orderId,
-          responseCode,
-          paymentMethod,
-        });
-
-        // Navigate to TransactionResult screen
         router.replace({
           pathname: "/transactionResult",
           params: {
@@ -131,13 +118,13 @@ export default function PaymentScreen() {
           },
         });
 
-        return false; // Prevent WebView from loading the web page
+        return false;
       } catch (err) {
-        console.error("Error parsing redirect URL:", err);
+        return true;
       }
     }
 
-    return true; // Allow other URLs
+    return true;
   };
 
   const handleBack = () => {
@@ -233,7 +220,6 @@ export default function PaymentScreen() {
         )}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
-          console.error("WebView error:", nativeEvent);
           setError(t("payment.loadFailed"));
         }}
         onHttpError={(e) => {}}
