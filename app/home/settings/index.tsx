@@ -24,11 +24,8 @@ export default function Settings() {
         onPress: async () => {
           try {
             await logout();
-            // Navigate to login screen after logout
             navigate("/auth/login/userLogin");
           } catch (error) {
-            console.error("Logout error:", error);
-            // Still navigate to login even if logout fails
             navigate("/auth/login/userLogin");
           }
         },

@@ -6,7 +6,6 @@ const expoDev = (typeof process !== "undefined" &&
 const expoProd = (typeof process !== "undefined" &&
   (process.env as any)?.EXPO_PUBLIC_API_BASE_URL_PROD) as string | undefined;
 
-// Final base URLs with sensible defaults to avoid crashes
 const API_BASE_URL_DEV = (expoDev || "").replace(/\/$/, "");
 const API_BASE_URL_PROD = (expoProd ?? "").replace(/\/$/, "");
 
@@ -28,7 +27,6 @@ api.interceptors.request.use(
 
       const url = config.url || "";
 
-      // Do NOT attach Authorization for auth endpoints (e.g., login/logout)
       const isAuthEndpoint = url.startsWith("/api/auth/");
 
       if (token && !isAuthEndpoint) {
@@ -46,7 +44,6 @@ api.interceptors.request.use(
         }
       }
 
-      // Ensure comments endpoints also receive User-Email for compatibility
     } catch {}
     return config;
   },

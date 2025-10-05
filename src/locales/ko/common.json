@@ -189,7 +189,12 @@
     "searchResultsFor": "\"{{keyword}}\" 검색 결과",
     "viewingSavedBanner": "저장된 게시물",
     "viewingMyPostsBanner": "내 게시물",
-    "filterHashtagBanner": "#{{hashtag}} 으로 필터링"
+    "filterHashtagBanner": "#{{hashtag}} 으로 필터링",
+    "seeMore": "더 보기",
+    "seeLess": "접기",
+    "save": "저장",
+    "unsave": "저장 취소",
+    "report": "신고"
   },
   "nav": {
     "home": "홈",
@@ -374,7 +379,14 @@
         "fullNameRequired": "성명이 필요합니다",
         "phoneInvalid": "유효하지 않은 전화번호",
         "emailInvalid": "유효하지 않은 이메일 주소",
-        "pickUpPointRequired": "픽업 지점을 입력해주세요"
+        "phoneTenDigits": "전화번호는 정확히 10자리여야 합니다",
+        "pickUpPointRequired": "픽업 지점을 입력해주세요",
+        "adultDobInvalid": "성인 {{index}}: 유효한 생년월일을 선택해주세요",
+        "adultAgeMin": "성인 {{index}}: 나이는 18세 이상이어야 합니다",
+        "childDobInvalid": "어린이 {{index}}: 유효한 생년월일을 선택해주세요",
+        "childAgeRange": "어린이 {{index}}: 나이는 2세 이상 18세 미만이어야 합니다",
+        "babyDobInvalid": "유아 {{index}}: 유효한 생년월일을 선택해주세요",
+        "babyAgeMax": "유아 {{index}}: 나이는 2세 미만이어야 합니다"
       }
     },
     "errors": {
@@ -432,7 +444,8 @@
       "loginRequired": "투어를 평가하려면 로그인해주세요",
       "submitError": "평가 제출에 실패했습니다. 다시 시도해주세요",
       "deleteConfirm": "이 평가를 삭제하시겠습니까?",
-      "noReviews": "아직 평가가 없습니다. 이 투어의 첫 번째 평가자가 되어보세요!"
+      "noReviews": "아직 평가가 없습니다. 이 투어의 첫 번째 평가자가 되어보세요!",
+      "alreadyRated": "이 투어를 {{star}}점으로 평가했어요"
     }
   },
   "payment": {
@@ -444,6 +457,7 @@
     "loadFailed": "결제 페이지를 불러오지 못했습니다",
     "createFailed": "결제를 생성하지 못했습니다",
     "orderInfo": "예약 결제 - 예약 ID: {{bookingId}}",
+    "cancelConfirm": "결제를 취소하시겠습니까?",
     "result": {
       "loading": "거래를 불러오는 중...",
       "success": "결제 성공",
@@ -473,6 +487,8 @@
     "retry": "다시 시도",
     "goBack": "돌아가기",
     "cancel": "취소",
+    "confirm": "확인",
+    "save": "저장",
     "ok": "확인",
     "na": "없음",
     "hotTopic": "인기 주제",

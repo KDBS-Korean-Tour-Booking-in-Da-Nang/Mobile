@@ -16,41 +16,38 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import MainLayout from "../../src/components/MainLayout";
-import { useNavigation } from "../../src/navigation";
+import MainLayout from "../../../src/components/MainLayout";
+import { useNavigation } from "../../../src/navigation";
 import { useLocalSearchParams } from "expo-router";
-import BookingButton from "../../src/components/BookingButton";
-import RateTour from "../../src/components/RateTour";
+import BookingButton from "../../../src/components/BookingButton";
+import RateTour from "../../../src/components/RateTour";
 import { useTranslation } from "react-i18next";
-import { tourService } from "../../src/services/tourService";
-import { TourResponse } from "../../src/types/tour";
+import { tourEndpoints } from "../../../src/endpoints/tour";
+import { TourResponse } from "../../../src/types/tour";
 import styles from "./styles";
 
 export default function TourDetail() {
   const { goBack, navigate } = useNavigation();
   const { t } = useTranslation();
   const params = useLocalSearchParams();
-  const tourId = params.id ? Number(params.id) : 1; // Default to tour ID 1
+  const tourId = params.id ? Number(params.id) : 1;
 
   const [tour, setTour] = useState<TourResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Navigation scroll effects
   const [isNavVisible, setIsNavVisible] = useState(true);
   const lastScrollY = useRef(0);
   const scrollThreshold = 50;
 
-  // Load tour data
   useEffect(() => {
     const loadTour = async () => {
       try {
         setLoading(true);
-        const tourData = await tourService.getTourById(tourId);
-        setTour(tourData);
+        const res = await tourEndpoints.getById(tourId);
+        setTour(res.data);
         setCurrentImageIndex(0);
       } catch (error) {
-        console.error("Error loading tour:", error);
         Alert.alert(t("common.error"), t("tour.errors.loadFailed"));
       } finally {
         setLoading(false);
@@ -60,17 +57,14 @@ export default function TourDetail() {
     loadTour();
   }, [tourId, t]);
 
-  // Handle scroll for navigation effects - hide when scrolling down, show when scrolling up
   const handleScroll = useCallback((event: any) => {
     const currentScrollY = event.nativeEvent.contentOffset.y;
     const scrollDifference = Math.abs(currentScrollY - lastScrollY.current);
 
     if (scrollDifference > scrollThreshold) {
       if (currentScrollY > lastScrollY.current) {
-        // Scrolling down - hide navbar
         setIsNavVisible(false);
       } else {
-        // Scrolling up - show navbar
         setIsNavVisible(true);
       }
       lastScrollY.current = currentScrollY;
@@ -83,7 +77,6 @@ export default function TourDetail() {
     }
   };
 
-  // Build image list: cover image + content images (must be before any early return)
   const imageList = useMemo(() => {
     const contentImages = (tour?.contents || [])
       .flatMap((c: any) => (Array.isArray(c.images) ? c.images : []))
@@ -124,8 +117,6 @@ export default function TourDetail() {
       </MainLayout>
     );
   }
-
-  // (old block removed - now declared above early returns)
 
   const handleNextImage = () => {
     setCurrentImageIndex((prev) =>
@@ -176,7 +167,6 @@ export default function TourDetail() {
               {currentImageIndex + 1}/{imageList.length}
             </Text>
           </View>
-          {/* Title and location overlay inside image */}
           <View style={styles.imageOverlay}>
             <Text style={styles.overlayTitle}>{tour.tourName}</Text>
             <View style={styles.overlayRow}>
@@ -189,10 +179,8 @@ export default function TourDetail() {
         </View>
 
         <View style={styles.content}>
-          {/* Meta grid: RATING | TYPE | ESTIMATE | VEHICLE */}
           <View style={styles.metaBox}>
             <View style={styles.metaRowContent}>
-              {/* Rating (shift a bit to the left) */}
               <View style={styles.metaCol}>
                 <Text
                   style={[
@@ -427,7 +415,6 @@ export default function TourDetail() {
             </View>
           </View>
 
-          {/* Tour Content/Destinations */}
           {tour.contents && tour.contents.length > 0 && (
             <>
               {tour.contents.map((content, idx) => (
@@ -452,13 +439,10 @@ export default function TourDetail() {
             </>
           )}
 
-          {/* Booking button appears at the very end of content */}
           <BookingButton onPress={handleBooking} />
 
-          {/* Rate Tour Section */}
           <RateTour tourId={tour?.id || 0} onRateSubmitted={(rate) => {}} />
 
-          {/* Spacer after button so it's fully visible above system/nav bars when scrolled to end */}
           <View style={styles.bottomSpace} />
         </View>
       </ScrollView>

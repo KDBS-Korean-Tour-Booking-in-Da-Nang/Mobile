@@ -20,7 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import BookingButton from "../../../src/components/BookingButton";
 import { useTranslation } from "react-i18next";
-import { tourService } from "../../../src/services/tourService";
+import { tourEndpoints } from "../../../src/endpoints/tour";
 import { TourResponse } from "../../../src/types/tour";
 import styles from "./styles";
 
@@ -31,7 +31,6 @@ export default function BuyingTour() {
   const params = useLocalSearchParams();
   const tourId = params.id ? Number(params.id) : 1;
 
-  // Tour data
   const [tour, setTour] = React.useState<TourResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [booking] = React.useState(false);
@@ -42,7 +41,6 @@ export default function BuyingTour() {
   const lastScrollUpdateTs = React.useRef(0);
   const scrollThreshold = 50;
 
-  // Dropdown states
   const [showGenderPicker, setShowGenderPicker] = React.useState<string | null>(
     null
   );
@@ -59,15 +57,10 @@ export default function BuyingTour() {
     const loadTour = async () => {
       try {
         setLoading(true);
-        const tourData = await tourService.getTourById(tourId);
-        setTour(tourData);
+        const res = await tourEndpoints.getById(tourId);
+        setTour(res.data);
         setCurrentImageIndex(0);
       } catch (error) {
-        console.error("Error loading tour:", error);
-        console.error(
-          "Error details:",
-          (error as any).response?.data || (error as any).message
-        );
         Alert.alert(t("common.error"), t("tour.errors.loadFailed"));
       } finally {
         setLoading(false);
@@ -80,7 +73,7 @@ export default function BuyingTour() {
   const handleScroll = React.useCallback(
     (event: any) => {
       const now = Date.now();
-      if (now - lastScrollUpdateTs.current < 120) return; 
+      if (now - lastScrollUpdateTs.current < 120) return;
       lastScrollUpdateTs.current = now;
 
       const currentScrollY = event.nativeEvent.contentOffset.y;
@@ -148,6 +141,16 @@ export default function BuyingTour() {
     pickUpPoint: "",
     note: "",
   });
+  const [phoneError, setPhoneError] = React.useState<string | null>(null);
+  const [adultDobError, setAdultDobError] = React.useState<
+    Record<number, string | null>
+  >({});
+  const [childrenDobError, setChildrenDobError] = React.useState<
+    Record<number, string | null>
+  >({});
+  const [babyDobError, setBabyDobError] = React.useState<
+    Record<number, string | null>
+  >({});
 
   const increment = React.useCallback((type: "adult" | "children" | "baby") => {
     if (type === "adult") setAdultCount((c) => c + 1);
@@ -167,11 +170,11 @@ export default function BuyingTour() {
     if (newValue && user) {
       setFormData({
         fullName: user.username || "",
-        address: "", 
+        address: "",
         phoneNumber: user.phone || "",
         email: user.email || "",
-        pickUpPoint: formData.pickUpPoint, 
-        note: formData.note, 
+        pickUpPoint: formData.pickUpPoint,
+        note: formData.note,
       });
     }
   };
@@ -183,11 +186,11 @@ export default function BuyingTour() {
       case "fullName":
         return !user.username;
       case "address":
-        return true; 
+        return true;
       case "phoneNumber":
         return !user.phone;
       case "email":
-        return false; 
+        return false;
       default:
         return false;
     }
@@ -207,19 +210,45 @@ export default function BuyingTour() {
 
   const isValidEmail = (value: string) =>
     /[^\s@]+@[^\s@]+\.[^\s@]+/.test(value);
-  
+
+  const parseDob = (dob?: string): Date | null => {
+    if (!dob) return null;
+    const m = String(dob).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (m) {
+      const dd = Number(m[1]);
+      const mm = Number(m[2]);
+      const yyyy = Number(m[3]);
+      const d = new Date(yyyy, mm - 1, dd);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+      const [yyyy, mm, dd] = dob.split("-").map((v) => Number(v));
+      const d = new Date(yyyy, mm - 1, dd);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    const d = new Date(dob);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const calcAgeYears = (dobStr?: string): number | null => {
+    const d = parseDob(dobStr);
+    if (!d) return null;
+    const today = new Date();
+    let age = today.getFullYear() - d.getFullYear();
+    const m = today.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+    return age;
+  };
 
   const validateBeforeBooking = (): boolean => {
     if (adultCount < 1) {
       Alert.alert(t("common.error"), t("tour.booking.errors.adultMin"));
       return false;
     }
-    // Address required
     if (!formData.address || formData.address.trim().length < 2) {
       Alert.alert(t("common.error"), t("tour.booking.errors.fullNameRequired"));
       return false;
     }
-    // Require pick-up point
     if (!formData.pickUpPoint || formData.pickUpPoint.trim().length < 2) {
       Alert.alert(
         t("common.error"),
@@ -228,18 +257,22 @@ export default function BuyingTour() {
       return false;
     }
     const nameOk = formData.fullName && formData.fullName.trim().length >= 2;
+    const digitsOnlyPhone = (formData.phoneNumber || "").replace(/\D/g, "");
+    const phoneOk = digitsOnlyPhone.length === 10;
     const emailOk = isValidEmail(formData.email || "");
     if (!nameOk) {
       Alert.alert(t("common.error"), t("tour.booking.errors.fullNameRequired"));
       return false;
     }
-    // skip phone validation per request
+    if (!phoneOk) {
+      Alert.alert(t("common.error"), t("tour.booking.errors.phoneTenDigits"));
+      return false;
+    }
     if (!emailOk) {
       Alert.alert(t("common.error"), t("tour.booking.errors.emailInvalid"));
       return false;
     }
 
-    // Validate guest information
     for (let i = 0; i < adultCount; i++) {
       const guest = adultInfo[i];
       if (!guest?.fullName || guest.fullName.trim().length < 2) {
@@ -263,7 +296,22 @@ export default function BuyingTour() {
         );
         return false;
       }
-      // skip id/passport validation per request
+      const dob = adultDob[i];
+      const age = calcAgeYears(dob);
+      if (!dob || age === null) {
+        Alert.alert(
+          t("common.error"),
+          t("tour.booking.errors.adultDobInvalid", { index: i + 1 })
+        );
+        return false;
+      }
+      if (age < 18) {
+        Alert.alert(
+          t("common.error"),
+          t("tour.booking.errors.adultAgeMin", { index: i + 1 })
+        );
+        return false;
+      }
     }
 
     for (let i = 0; i < childrenCount; i++) {
@@ -289,7 +337,22 @@ export default function BuyingTour() {
         );
         return false;
       }
-      // skip id/passport validation per request
+      const dob = childrenDob[i];
+      const age = calcAgeYears(dob);
+      if (!dob || age === null) {
+        Alert.alert(
+          t("common.error"),
+          t("tour.booking.errors.childDobInvalid", { index: i + 1 })
+        );
+        return false;
+      }
+      if (age < 2 || age >= 18) {
+        Alert.alert(
+          t("common.error"),
+          t("tour.booking.errors.childAgeRange", { index: i + 1 })
+        );
+        return false;
+      }
     }
 
     for (let i = 0; i < babyCount; i++) {
@@ -315,7 +378,22 @@ export default function BuyingTour() {
         );
         return false;
       }
-      // skip id/passport validation per request
+      const dob = babyDob[i];
+      const age = calcAgeYears(dob);
+      if (!dob || age === null) {
+        Alert.alert(
+          t("common.error"),
+          t("tour.booking.errors.babyDobInvalid", { index: i + 1 })
+        );
+        return false;
+      }
+      if (age >= 2) {
+        Alert.alert(
+          t("common.error"),
+          t("tour.booking.errors.babyAgeMax", { index: i + 1 })
+        );
+        return false;
+      }
     }
 
     return true;
@@ -331,11 +409,10 @@ export default function BuyingTour() {
       return;
     }
 
-    // Prepare booking data for confirmation page
     const bookingData = {
       customerName: formData.fullName || "",
       customerPhone: formData.phoneNumber || "",
-      customerEmail: user.email,
+      customerEmail: formData.email || user.email,
       customerAddress: formData.address || "",
       adultCount,
       childrenCount,
@@ -356,7 +433,6 @@ export default function BuyingTour() {
       note: formData.note || "",
     };
 
-    // Navigate to confirmation page
     navigate(
       `/tour/confirm?tourId=${tour.id}&bookingData=${encodeURIComponent(
         JSON.stringify(bookingData)
@@ -364,7 +440,6 @@ export default function BuyingTour() {
     );
   };
 
-  // Build image list (cover + content images) before early returns
   const imageList = React.useMemo(() => {
     const contentImages = (tour?.contents || [])
       .flatMap((c: any) => (Array.isArray(c.images) ? c.images : []))
@@ -421,7 +496,6 @@ export default function BuyingTour() {
           scrollEventThrottle={32}
           removeClippedSubviews
         >
-          {/* Hero with overlay title/location */}
           <View style={styles.imageWrapper}>
             <Image
               source={{ uri: imageList[currentImageIndex] }}
@@ -456,7 +530,6 @@ export default function BuyingTour() {
           </View>
 
           <View style={styles.content}>
-            {/* Meta grid (same as Tour) */}
             <View style={styles.metaBox}>
               <View style={styles.metaRowContent}>
                 <View style={styles.metaCol}>
@@ -518,7 +591,6 @@ export default function BuyingTour() {
               </View>
             </View>
 
-            {/* Description */}
             <Text style={styles.sectionTitle}>
               {t("tour.detail.description")}
             </Text>
@@ -526,7 +598,6 @@ export default function BuyingTour() {
               {tour.tourDescription || t("tour.content.description")}
             </Text>
 
-            {/* Contact Information form */}
             <Text style={styles.formTitle}>
               {t("tour.booking.contactInfo")}
             </Text>
@@ -615,11 +686,24 @@ export default function BuyingTour() {
                 keyboardType="phone-pad"
                 placeholder=""
                 value={formData.phoneNumber}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, phoneNumber: text }))
-                }
+                onChangeText={(text) => {
+                  const digits = (text || "").replace(/\D/g, "");
+                  setFormData((prev) => ({ ...prev, phoneNumber: digits }));
+                  if (digits.length === 0) {
+                    setPhoneError(null);
+                  } else if (digits.length !== 10) {
+                    setPhoneError(t("tour.booking.errors.phoneTenDigits"));
+                  } else {
+                    setPhoneError(null);
+                  }
+                }}
                 editable={!usePersonalInfo || needsUpdate("phoneNumber")}
               />
+              {!!phoneError && (
+                <Text style={{ color: "#FF3B30", marginTop: 6, fontSize: 12 }}>
+                  {phoneError}
+                </Text>
+              )}
               {!(formData.phoneNumber || "").trim() && (
                 <Text style={styles.updateHint}>
                   {t("tour.booking.updateInfoHint")}
@@ -670,7 +754,6 @@ export default function BuyingTour() {
 
             <View style={{ height: 14 }} />
 
-            {/* Booking information */}
             <Text style={styles.formTitle}>
               {t("tour.booking.bookingInfo")}
             </Text>
@@ -778,7 +861,6 @@ export default function BuyingTour() {
               </View>
             </View>
 
-            {/* Dynamic guest forms */}
             {adultCount > 0 && (
               <View style={styles.guestCard}>
                 <Text style={[styles.guestCardTitle, { color: "#3B5BDB" }]}>
@@ -812,14 +894,48 @@ export default function BuyingTour() {
                         </Text>
                         <DobField
                           value={adultDob[idx]}
-                          onChange={(val) =>
-                            setAdultDob((prev) => ({ ...prev, [idx]: val }))
-                          }
+                          onChange={(val) => {
+                            setAdultDob((prev) => ({ ...prev, [idx]: val }));
+                            // live validate adult >= 18
+                            const d = parseDob(val);
+                            const age = calcAgeYears(val);
+                            if (!d || age == null) {
+                              setAdultDobError((prev) => ({
+                                ...prev,
+                                [idx]: t(
+                                  "tour.booking.errors.adultDobInvalid",
+                                  { index: idx + 1 }
+                                ),
+                              }));
+                            } else if (age < 18) {
+                              setAdultDobError((prev) => ({
+                                ...prev,
+                                [idx]: t("tour.booking.errors.adultAgeMin", {
+                                  index: idx + 1,
+                                }),
+                              }));
+                            } else {
+                              setAdultDobError((prev) => ({
+                                ...prev,
+                                [idx]: null,
+                              }));
+                            }
+                          }}
                         />
+                        {!!adultDobError[idx] && (
+                          <Text
+                            style={{
+                              color: "#FF3B30",
+                              fontSize: 12,
+                              marginTop: 4,
+                            }}
+                          >
+                            {adultDobError[idx]}
+                          </Text>
+                        )}
                       </View>
                     </View>
 
-                    {/* Gender & Nationality Row */}
                     <View style={styles.rowContainer}>
                       <View style={styles.halfFieldGroup}>
                         <Text style={styles.guestLabel}>
@@ -994,7 +1110,6 @@ export default function BuyingTour() {
                       </View>
                     </View>
 
-                    {/* ID Number */}
                     <View style={styles.guestFieldGroup}>
                       <Text style={styles.guestLabel}>
                         {t("tour.booking.idNumber")}
@@ -1025,7 +1140,6 @@ export default function BuyingTour() {
                   <View key={`child-${idx}`} style={styles.guestForm}>
                     <Text style={styles.guestIndex}>{idx + 1}</Text>
 
-                    {/* Full Name & Date of Birth Row */}
                     <View style={styles.rowContainer}>
                       <View style={styles.fullNameFieldGroup}>
                         <Text style={styles.guestLabel}>
@@ -1049,14 +1163,47 @@ export default function BuyingTour() {
                         </Text>
                         <DobField
                           value={childrenDob[idx]}
-                          onChange={(val) =>
-                            setChildrenDob((prev) => ({ ...prev, [idx]: val }))
-                          }
+                          onChange={(val) => {
+                            setChildrenDob((prev) => ({ ...prev, [idx]: val }));
+                            const d = parseDob(val);
+                            const age = calcAgeYears(val);
+                            if (!d || age == null) {
+                              setChildrenDobError((prev) => ({
+                                ...prev,
+                                [idx]: t(
+                                  "tour.booking.errors.childDobInvalid",
+                                  { index: idx + 1 }
+                                ),
+                              }));
+                            } else if (age < 2 || age >= 18) {
+                              setChildrenDobError((prev) => ({
+                                ...prev,
+                                [idx]: t("tour.booking.errors.childAgeRange", {
+                                  index: idx + 1,
+                                }),
+                              }));
+                            } else {
+                              setChildrenDobError((prev) => ({
+                                ...prev,
+                                [idx]: null,
+                              }));
+                            }
+                          }}
                         />
+                        {!!childrenDobError[idx] && (
+                          <Text
+                            style={{
+                              color: "#FF3B30",
+                              fontSize: 12,
+                              marginTop: 4,
+                            }}
+                          >
+                            {childrenDobError[idx]}
+                          </Text>
+                        )}
                       </View>
                     </View>
 
-                    {/* Gender & Nationality Row */}
                     <View style={styles.rowContainer}>
                       <View style={styles.halfFieldGroup}>
                         <Text style={styles.guestLabel}>
@@ -1288,10 +1435,43 @@ export default function BuyingTour() {
                         </Text>
                         <DobField
                           value={babyDob[idx]}
-                          onChange={(val) =>
-                            setBabyDob((prev) => ({ ...prev, [idx]: val }))
-                          }
+                          onChange={(val) => {
+                            setBabyDob((prev) => ({ ...prev, [idx]: val }));
+                            const d = parseDob(val);
+                            const age = calcAgeYears(val);
+                            if (!d || age == null) {
+                              setBabyDobError((prev) => ({
+                                ...prev,
+                                [idx]: t("tour.booking.errors.babyDobInvalid", {
+                                  index: idx + 1,
+                                }),
+                              }));
+                            } else if (age >= 2) {
+                              setBabyDobError((prev) => ({
+                                ...prev,
+                                [idx]: t("tour.booking.errors.babyAgeMax", {
+                                  index: idx + 1,
+                                }),
+                              }));
+                            } else {
+                              setBabyDobError((prev) => ({
+                                ...prev,
+                                [idx]: null,
+                              }));
+                            }
+                          }}
                         />
+                        {!!babyDobError[idx] && (
+                          <Text
+                            style={{
+                              color: "#FF3B30",
+                              fontSize: 12,
+                              marginTop: 4,
+                            }}
+                          >
+                            {babyDobError[idx]}
+                          </Text>
+                        )}
                       </View>
                     </View>
 
@@ -1470,7 +1650,6 @@ export default function BuyingTour() {
                       </View>
                     </View>
 
-                    {/* ID Number */}
                     <View style={styles.guestFieldGroup}>
                       <Text style={styles.guestLabel}>
                         {t("tour.booking.idNumber")}
@@ -1492,7 +1671,6 @@ export default function BuyingTour() {
               </View>
             )}
 
-            {/* Total Section */}
             <View style={styles.totalSection}>
               <Text style={styles.totalTitle}>{t("tour.booking.total")}</Text>
               <View style={styles.totalBreakdown}>
@@ -1526,10 +1704,8 @@ export default function BuyingTour() {
               </Text>
             </View>
 
-            {/* Booking Button */}
             <BookingButton onPress={handleBooking} disabled={booking} />
 
-            {/* Extra bottom space */}
             <View style={{ height: 100 }} />
           </View>
         </ScrollView>
@@ -1545,8 +1721,19 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
   const [showPicker, setShowPicker] = React.useState(false);
   const [selectedDate, setSelectedDate] = React.useState<Date>(() => {
     if (!value) return new Date();
-    const [dd, mm, yyyy] = value.split("/");
-    return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+    try {
+      const m = String(value).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (m) {
+        const dd = Number(m[1]);
+        const mm = Number(m[2]);
+        const yyyy = Number(m[3]);
+        const d = new Date(yyyy, mm - 1, dd);
+        if (!isNaN(d.getTime())) return d;
+      }
+      const d2 = new Date(value);
+      if (!isNaN(d2.getTime())) return d2;
+    } catch {}
+    return new Date();
   });
 
   const formatDate = (d: Date) => {
@@ -1558,10 +1745,12 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
 
   const handleDateChange = (event: any, selected?: Date) => {
     if (Platform.OS === "ios") {
-      if (selected) setSelectedDate(selected);
-      return; // apply on confirm for iOS
+      if (selected) {
+        setSelectedDate(selected);
+        onChange(formatDate(selected));
+      }
+      return;
     }
-    // Android: apply immediately and close
     if (selected) {
       setSelectedDate(selected);
       onChange(formatDate(selected));
@@ -1581,8 +1770,6 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
       >
         <Text
           style={[styles.dobText, !value && { color: "#9ca3af" }]}
-          numberOfLines={1}
-          ellipsizeMode="tail"
         >
           {value || t("tour.booking.dobShort")}
         </Text>

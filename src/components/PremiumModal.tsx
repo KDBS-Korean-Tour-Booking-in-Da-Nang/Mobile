@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { colors } from "../constants/theme";
-import { premiumService } from "../services/premiumService";
+import { usePremium } from "../contexts/premiumContext";
 
 interface PremiumModalProps {
   visible: boolean;
@@ -30,6 +30,7 @@ const PremiumModal: React.FC<PremiumModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
+  const { createPayment } = usePremium();
   const [selectedPlan, setSelectedPlan] = useState<"1month" | "3months">(
     "1month"
   );
@@ -40,13 +41,11 @@ const PremiumModal: React.FC<PremiumModalProps> = ({
     try {
       let input = String(value).trim();
 
-      // Epoch millis
       if (/^\d{11,}$/.test(input)) {
         const d = new Date(Number(input));
         if (!isNaN(d.getTime())) return toDDMMYYYY(d);
       }
 
-      // Manual parse for "YYYY-MM-DD HH:mm:ss(.fraction)"
       const re =
         /^(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?$/;
       const m = input.match(re);
@@ -65,7 +64,6 @@ const PremiumModal: React.FC<PremiumModalProps> = ({
         if (!isNaN(date.getTime())) return toDDMMYYYY(date);
       }
 
-      // ISO-like fallback
       let iso = input.replace(" ", "T");
       if (iso.includes(".")) iso = iso.replace(/\.(\d{3})\d+$/, ".$1");
       if (!/[zZ]|[+\-]\d{2}:?\d{2}$/.test(iso)) iso = iso + "Z";
@@ -105,25 +103,13 @@ const PremiumModal: React.FC<PremiumModalProps> = ({
       const planName = selectedPlan === "1month" ? "1 tháng" : "3 tháng";
       const amount = selectedPlan === "1month" ? "100000" : "250000";
 
-      console.log("=== STARTING PREMIUM PAYMENT ===");
-      console.log("Plan:", selectedPlan);
-      console.log("Duration:", durationInMonths, "months");
-      console.log("Amount:", amount);
+     
 
-      // Create premium payment using VNPay
-      const paymentResponse = await premiumService.createPremiumPayment(
-        durationInMonths
-      );
+      const paymentResponse = await createPayment(durationInMonths);
 
-      console.log("=== PAYMENT RESPONSE ===");
-      console.log("Response:", paymentResponse);
-
+     
       if (paymentResponse.success && paymentResponse.payUrl) {
-        console.log("=== NAVIGATING TO PAYMENT ===");
-        console.log("Pay URL:", paymentResponse.payUrl);
-        console.log("Order ID:", paymentResponse.orderId);
-
-        // Navigate to payment screen with VNPay URL
+      
         router.push({
           pathname: "/payment" as any,
           params: {
@@ -138,19 +124,15 @@ const PremiumModal: React.FC<PremiumModalProps> = ({
           },
         });
 
-        // Close modal
         onClose();
       } else {
-        console.log("=== PAYMENT FAILED ===");
-        console.log("Message:", paymentResponse.message);
-
+  
         Alert.alert(
           t("premium.errorTitle"),
           paymentResponse.message || t("premium.paymentFailed")
         );
       }
     } catch (error: any) {
-      console.error("=== PREMIUM PAYMENT ERROR ===", error);
 
       let errorMessage = t("premium.paymentFailed");
 

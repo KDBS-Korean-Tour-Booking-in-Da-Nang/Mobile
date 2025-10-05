@@ -1,7 +1,6 @@
 import api from "../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Raw API types from backend
 interface ApiPostImg {
   imgPath: string;
 }
@@ -20,7 +19,6 @@ interface ApiReactionSummary {
   userReaction: "LIKE" | "DISLIKE" | null;
 }
 
-// Mirror backend response for summary
 interface ReactionSummaryResponse {
   targetId: number;
   targetType: "POST" | "COMMENT";
@@ -42,7 +40,6 @@ interface ApiPost {
   userAvatar: string;
 }
 
-// Public types
 export interface PostResponse {
   id: number;
   title: string;
@@ -64,7 +61,7 @@ export interface CreatePostRequest {
   content: string;
   images?: any[];
   hashtags?: string[];
-  userEmail?: string; // some screens pass this along
+  userEmail?: string;
 }
 
 export interface UpdatePostRequest {
@@ -87,7 +84,6 @@ function toAbsoluteUrl(path: string): string {
   if (!path) return path;
   if (/^https?:\/\//i.test(path)) return path;
   const base = (api.defaults.baseURL || "").replace(/\/$/, "");
-  // If base ends with /api, strip it to get origin for static files
   const origin = base.endsWith("/api") ? base.slice(0, -4) : base;
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return `${origin}${normalizedPath}`;
@@ -120,7 +116,7 @@ function transformApiPost(apiPost: ApiPost): PostResponse {
     dislikeCount: apiPost.reactions?.dislikeCount || 0,
     totalReactions: apiPost.reactions?.totalReactions || 0,
     userReaction: apiPost.reactions?.userReaction || null,
-    commentCount: 0, // Will be updated separately
+    commentCount: 0,
   };
 }
 
@@ -213,7 +209,6 @@ export async function deletePost(
   }
 
   try {
-    // Test token validity first
     const token = await AsyncStorage.getItem("authToken");
     if (token) {
       try {
@@ -223,11 +218,9 @@ export async function deletePost(
       } catch (introspectError: any) {}
     }
 
-    // Use URLSearchParams to ensure proper encoding
     const params = new URLSearchParams();
     params.append("userEmail", userEmail);
 
-    // Try with explicit headers
     await api.delete(`/api/posts/${id}?${params.toString()}`, {
       headers: {
         Authorization: token,
@@ -246,7 +239,6 @@ export async function searchPosts(
   if (Array.isArray(requestParams.hashtags)) {
     requestParams.hashtags = requestParams.hashtags.join(",");
   }
-  // Provide optional hints for backend implementations (safe to ignore server-side)
   if (requestParams.keyword) {
     requestParams.searchIn = "title,content";
     requestParams.fullText = true;
@@ -261,7 +253,6 @@ export async function searchPosts(
     ? (response.data as ApiPost[])
     : (response.data as { content: ApiPost[] }).content;
   let posts = raw.map(transformApiPost);
-  // Client-side safeguard: ensure keyword matches title or content if backend doesn't filter fully
   if (
     params.keyword &&
     typeof params.keyword === "string" &&
@@ -277,7 +268,6 @@ export async function searchPosts(
   return posts;
 }
 
-// Reaction APIs
 export interface ReactionRequest {
   targetId: number;
   targetType: "POST" | "COMMENT";
@@ -295,7 +285,6 @@ export interface ReactionResponse {
 export async function addReaction(
   data: ReactionRequest
 ): Promise<ReactionResponse | null> {
-  // Include userEmail as query param when available to satisfy backends that require it
   let params: any = undefined;
   let userEmail: string | undefined = undefined;
   try {
@@ -324,7 +313,6 @@ export async function removeReaction(
   targetId: number,
   targetType: "POST" | "COMMENT"
 ): Promise<void> {
-  // Align with Website behavior: toggle-off via POST to /api/reactions/{type}/{id}
   let params: any = undefined;
   try {
     const stored = await AsyncStorage.getItem("userData");
@@ -350,7 +338,6 @@ export async function getReactionSummary(
       const data: any = response.data as any;
       return (data.result ?? data) as ApiReactionSummary;
     } catch {
-      // Fallback to uppercase path if backend expects it
       const response2 = await api.get<
         ReactionSummaryResponse | { result: ApiReactionSummary }
       >(`/api/reactions/POST/${targetId}/summary`, { params });
@@ -366,7 +353,6 @@ export async function getReactionSummary(
   return (data.result ?? data) as ApiReactionSummary;
 }
 
-// Comment APIs
 export interface CommentRequest {
   forumPostId: number;
   content: string;
@@ -385,12 +371,16 @@ export interface CommentResponse {
   userAvatar: string;
   forumPostId: number;
   parentCommentId?: number | null;
+  userReactions?: Array<{
+    userEmail: string;
+    reactionType: string;
+  }>;
+  replies?: CommentResponse[];
 }
 
 export async function createComment(
   data: CommentRequest
 ): Promise<CommentResponse> {
-  // Backend may rely on either Authorization or User-Email; pass both
   const response = await api.post<CommentResponse>("/api/comments", data, {
     params: { userEmail: data.userEmail },
   });
@@ -423,7 +413,6 @@ export async function deleteComment(
 export async function getCommentsByPost(
   postId: number
 ): Promise<CommentResponse[]> {
-  // Include userEmail if present to align with backend auth checks
   let params: any = undefined;
   try {
     const stored = await AsyncStorage.getItem("userData");
@@ -442,7 +431,6 @@ export async function getCommentsByPost(
   }));
 }
 
-// Replies API
 export async function getRepliesByComment(
   commentId: number
 ): Promise<CommentResponse[]> {
@@ -455,7 +443,6 @@ export async function getRepliesByComment(
   }));
 }
 
-// Comment reaction helpers (align with Website behavior)
 export interface CommentReactionSummary {
   likeCount: number;
   dislikeCount: number;
@@ -506,11 +493,9 @@ export async function addCommentReaction(
 }
 
 export async function removeCommentReaction(commentId: number): Promise<void> {
-  // Website uses POST to /api/reactions/COMMENT/{id} to toggle off
   await api.post(`/api/reactions/COMMENT/${commentId}`);
 }
 
-// Saved Post APIs
 export interface SavePostRequest {
   postId: number;
 }
@@ -567,12 +552,10 @@ export async function checkPostSaved(postId: number): Promise<boolean> {
   return response.data.result;
 }
 
-// Report APIs
-// Report APIs aligned with backend contract in prompt
 export interface ReportRequest {
   targetType: "POST" | "COMMENT";
   targetId: number;
-  reasons: string[]; // ["SPAM", "INAPPROPRIATE", ...]
+  reasons: string[];
   description?: string;
 }
 

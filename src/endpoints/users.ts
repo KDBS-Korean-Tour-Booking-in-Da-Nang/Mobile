@@ -1,14 +1,16 @@
 import api from "../services/api";
 
-export interface UserResponse {
-  userId: number;
-  username: string;
-  email: string;
-  avatar: string;
-  role: string;
-}
+export const userEndpoints = {
+  getAll: () => api.get("/api/users"),
+  
+  register: (payload: { username: string; email: string; password: string }) =>
+    api.post("/api/users/register", payload),
+  
+  regenerateOtp: (payload: { email: string }) =>
+    api.post("/api/users/regenerate-otp", payload),
+  
+  verifyEmail: (payload: { email: string; otpCode: string }) =>
+    api.post("/api/users/verify-email", payload),
+};
 
-export async function getAllUsers(): Promise<UserResponse[]> {
-  const response = await api.get<{ result: UserResponse[] }>("/api/users");
-  return response.data.result;
-}
+export default userEndpoints;

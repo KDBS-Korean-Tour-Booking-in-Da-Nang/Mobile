@@ -35,10 +35,8 @@ export default function UserLogin() {
     try {
       await login(email.trim(), password, "USER");
       await checkAuthStatus();
-      // Navigate to main app after successful login
       replace("/home");
     } catch (error: any) {
-      console.error("Login error:", error);
       Alert.alert(
         t("auth.login.error"),
         error.message || t("auth.login.error")

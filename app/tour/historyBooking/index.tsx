@@ -15,8 +15,8 @@ import MainLayout from "../../../src/components/MainLayout";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAuthContext } from "../../../src/contexts/authContext";
-import { tourService } from "../../../src/services/tourService";
-import { transactionService } from "../../../src/services/transactionService";
+import { tourEndpoints } from "../../../src/endpoints/tour";
+import { transactionEndpoints } from "../../../src/endpoints/transactions";
 import { BookingSummaryResponse, TourResponse } from "../../../src/types/tour";
 
 export default function HistoryBooking() {
@@ -53,39 +53,37 @@ export default function HistoryBooking() {
         return;
       }
       const [summaries, txs] = await Promise.all([
-        tourService.getBookingSummaryByEmail(user.email),
-        transactionService.getByUserEmail(user.email),
+        tourEndpoints.getBookingSummaryByEmail(user.email).then((r) => r.data),
+        transactionEndpoints.getByUserEmail(user.email).then((r) => r.data),
       ]);
 
       const successTxs = (txs || []).filter(
-        (t) => String(t.status).toUpperCase() === "SUCCESS"
+        (t: any) => String(t.status).toUpperCase() === "SUCCESS"
       );
       const successOrderInfos = new Set(
         successTxs
-          .map((t) => (t.orderInfo || "").toLowerCase())
-          .filter((s) => !!s)
+          .map((t: any) => (t.orderInfo || "").toLowerCase())
+          .filter((s: string) => !!s)
       );
 
-      // Match by tour name presence in orderInfo (backend format: "Booking Tour: {tourName} - {guests} guests on {date}")
-      const successItems = (summaries || []).filter((s) => {
+      const successItems = (summaries || []).filter((s: any) => {
         const name = (s.tourName || "").toLowerCase();
         if (!name) return false;
         for (const info of successOrderInfos) {
-          if (info.includes(name)) return true;
+          if ((info as string).includes(name)) return true;
         }
         return false;
       });
       setItems(successItems);
 
-      // fetch images for displayed tours
-      const ids = Array.from(
-        new Set(successItems.map((x) => Number(x.tourId)).filter(Boolean))
+      const ids: number[] = Array.from(
+        new Set(successItems.map((x: any) => Number(x.tourId)).filter(Boolean))
       );
       if (ids.length > 0) {
         const pairs = await Promise.all(
-          ids.map(async (id) => {
+          ids.map(async (id: number) => {
             try {
-              const tour = await tourService.getTourById(id);
+              const tour = (await tourEndpoints.getById(id)).data;
               return [id, resolveTourCardImage(tour)] as const;
             } catch {
               return [id, resolveTourCardImage()] as const;
@@ -93,13 +91,12 @@ export default function HistoryBooking() {
           })
         );
         const map: Record<number, string> = {};
-        pairs.forEach(([id, url]) => (map[id] = url));
+        pairs.forEach(([id, url]) => (map[id as number] = url));
         setTourImageById(map);
       } else {
         setTourImageById({});
       }
-    } catch (error) {
-      console.error("Load booking history error:", error);
+    } catch {
       Alert.alert(t("common.error"), t("payment.result.fetchError"));
     } finally {
       setLoading(false);

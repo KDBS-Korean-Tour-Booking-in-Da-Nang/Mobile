@@ -10,9 +10,11 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as MailComposer from "expo-mail-composer";
-import api from "../../src/services/api";
-import { premiumService } from "../../src/services/premiumService";
+import { transactionEndpoints } from "../../src/endpoints/transactions";
+import { tourEndpoints } from "../../src/endpoints/tour";
+import { usePremium } from "../../src/contexts/premiumContext";
 
 interface TransactionResultParams {
   orderId: string;
@@ -41,6 +43,7 @@ interface TransactionDetails {
 }
 
 export default function TransactionResult() {
+  const { completeUpgrade, refreshStatus } = usePremium();
   const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -70,10 +73,9 @@ export default function TransactionResult() {
   const fetchTransactionDetails = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/api/vnpay/transaction/${orderId}`);
+      const response = await transactionEndpoints.getVnpayTransaction(orderId);
       setTransaction(response.data);
     } catch (err: any) {
-      console.error("Error fetching transaction details:", err);
       setError(err.response?.data?.message || t("payment.result.fetchError"));
     } finally {
       setLoading(false);
@@ -88,20 +90,14 @@ export default function TransactionResult() {
     }
   }, [orderId, fetchTransactionDetails]);
 
-  // After success, handle premium upgrade or send confirmation email
   useEffect(() => {
     const handleSuccess = async () => {
       if (!isSuccess || emailAttemptedRef.current) return;
       emailAttemptedRef.current = true;
 
-      // Handle premium payment
       if (type === "premium" && orderId) {
-        console.log("=== HANDLING PREMIUM UPGRADE ===");
         try {
-          const upgradeResult = await premiumService.completePremiumUpgrade(
-            orderId
-          );
-          console.log("Premium upgrade result:", upgradeResult);
+          const upgradeResult = await completeUpgrade(orderId);
 
           if (upgradeResult.success) {
             setPremiumStatus({
@@ -110,34 +106,23 @@ export default function TransactionResult() {
             });
           }
         } catch (error) {
-          console.error("Premium upgrade error:", error);
-          // Try to refresh premium status as fallback
           try {
-            const refreshedStatus = await premiumService.refreshPremiumStatus();
-            setPremiumStatus(refreshedStatus);
-          } catch (refreshError) {
-            console.error("Failed to refresh premium status:", refreshError);
-          }
+            await refreshStatus();
+          } catch {}
         }
         return;
       }
 
-      // Handle booking confirmation email
       if (bookingId) {
-        // 1) Try backend endpoint if available
         try {
-          await api.post(`/api/bookings/${bookingId}/send-confirmation-email`);
-          console.log("Booking confirmation email sent via backend.");
-          return; // if succeeds, stop here
+          await tourEndpoints.sendBookingEmail(Number(bookingId));
+          return;
         } catch (e) {
-          console.warn("Backend email API failed or not available", e);
         }
 
-        // 2) Fallback: open mail composer for the user to send manually
         try {
           const available = await MailComposer.isAvailableAsync();
           if (!available) {
-            console.warn("MailComposer not available on this device");
             return;
           }
           const subject = `${t("payment.result.details")} - #${bookingId}`;
@@ -145,15 +130,25 @@ export default function TransactionResult() {
             "payment.result.orderId"
           )}: ${orderId || "-"}`;
           await MailComposer.composeAsync({ subject, body });
-          console.log("Opened MailComposer for manual send");
         } catch (e) {
-          console.warn("MailComposer compose failed", e);
         }
       }
+
+      try {
+        const userDataRaw = await AsyncStorage.getItem("userData");
+        const user = userDataRaw ? JSON.parse(userDataRaw) : null;
+        const email = (user?.email || user?.userEmail || "").toLowerCase();
+        if (email) {
+          const keys = await AsyncStorage.getAllKeys();
+          const prefix = `pendingBooking:${email}:`;
+          const toRemove = keys.filter((k) => k.startsWith(prefix));
+          if (toRemove.length) await AsyncStorage.multiRemove(toRemove);
+        }
+      } catch {}
     };
 
     handleSuccess();
-  }, [isSuccess, bookingId, orderId, type, t]);
+  }, [isSuccess, bookingId, orderId, type, t, completeUpgrade, refreshStatus]);
 
   const getStatusIcon = () => {
     if (isSuccess) {
@@ -184,12 +179,7 @@ export default function TransactionResult() {
   };
 
   const handleViewBooking = () => {
-    if (orderId) {
-      // Navigate to transaction details page
-      router.push(`/transaction/detail/${orderId}` as any);
-    } else {
-      router.push("/home");
-    }
+    router.push("/tour/historyBooking");
   };
 
   if (loading) {
@@ -206,7 +196,6 @@ export default function TransactionResult() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
-        {/* Status Icon and Text */}
         <View style={styles.statusContainer}>
           {getStatusIcon()}
           <Text style={[styles.statusText, { color: getStatusColor() }]}>
@@ -227,7 +216,6 @@ export default function TransactionResult() {
           </Text>
         </View>
 
-        {/* Transaction Details */}
         <View style={styles.detailsContainer}>
           <Text style={styles.detailsTitle}>{t("payment.result.details")}</Text>
 
@@ -308,7 +296,6 @@ export default function TransactionResult() {
           )}
         </View>
 
-        {/* Error Message */}
         {error && (
           <View style={styles.errorContainer}>
             <Ionicons name="alert-circle" size={24} color="#FF3B30" />
@@ -316,7 +303,6 @@ export default function TransactionResult() {
           </View>
         )}
 
-        {/* Action Buttons */}
         <View style={styles.buttonContainer}>
           {isSuccess &&
             type === "premium" &&

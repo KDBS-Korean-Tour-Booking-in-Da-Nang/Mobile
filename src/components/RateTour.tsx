@@ -9,15 +9,10 @@ import {
   Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuthContext } from "../contexts/authContext";
 import { useTranslation } from "react-i18next";
 import { colors } from "../constants/theme";
-import { tourService } from "../services/tourService";
-import {
-  getAllUsers,
-  getUserLiteById,
-  UserLite,
-} from "../services/userService";
+import { tourEndpoints } from "../endpoints/tour";
+import { useAuthContext } from "../contexts/authContext";
 
 interface RateTourProps {
   tourId: number;
@@ -49,8 +44,8 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
   const [hasUserRated, setHasUserRated] = useState(false);
   const [userRating, setUserRating] = useState<Rate | null>(null);
   const [userMap, setUserMap] = useState<Record<string, string>>({});
+  const { getAllUsers, getUserLiteById } = useAuthContext();
 
-  // Animation for stars
   const starAnimations = useRef(
     Array.from({ length: 5 }, () => new Animated.Value(0))
   ).current;
@@ -58,8 +53,7 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
   useEffect(() => {
     const loadRatings = async () => {
       try {
-        const ratings = await tourService.getTourRatings(tourId);
-        // Normalize backend fields to FE shape
+        const ratings = (await tourEndpoints.getTourRatings(tourId)).data;
         const normalized = ratings.map((r: any) => ({
           ...r,
           userId:
@@ -72,12 +66,12 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
           userEmail: r?.userEmail ?? r?.user_email ?? r?.user?.email,
         }));
         setRates(normalized);
-        // Build initial map from all users (best-effort)
         const map: Record<string, string> = {};
         try {
-          const allUsers: UserLite[] = await getAllUsers();
+          const allUsers = await getAllUsers();
           allUsers.forEach((u) => {
-            if (u?.id != null && u?.username) map[String(u.id)] = u.username;
+            if (u?.id != null && u?.username)
+              map[String(u.id)] = u.username as string;
           });
         } catch {}
         setUserMap(map);
@@ -106,14 +100,13 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
     loadRatings();
   }, [tourId, user]);
 
-  // Lazily hydrate missing usernames by userId
   useEffect(() => {
     const hydrateMissingNames = async () => {
       const missing = rates
         .filter(
           (r) => !r.username && r.userId != null && !userMap[String(r.userId)]
         )
-        .slice(0, 5); // cap to avoid spamming
+        .slice(0, 5);
       if (missing.length === 0) return;
       const updates: Record<string, string> = {};
       await Promise.all(
@@ -135,7 +128,6 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
     const newStars = starIndex + 1;
     setStars(newStars);
 
-    // Animate stars
     starAnimations.forEach((anim, index) => {
       Animated.timing(anim, {
         toValue: index < newStars ? 1 : 0,
@@ -163,12 +155,12 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
 
     setIsSubmitting(true);
     try {
-      // Create new rate
-      const newRate = await tourService.createTourRating({
-        tourId,
-        content: content.trim(),
-        stars,
-      });
+      const formData = new FormData();
+      formData.append("tourId", String(tourId));
+      formData.append("userEmail", user?.email || "");
+      formData.append("star", String(stars));
+      formData.append("comment", content.trim());
+      const newRate = (await tourEndpoints.createTourRating(formData)).data;
 
       const rateWithUser = {
         ...newRate,
@@ -182,8 +174,6 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
       setUserRating(rateWithUser);
       setContent("");
       setStars(0);
-
-      // No local flags; rely on backend
 
       starAnimations.forEach((anim) => {
         Animated.timing(anim, {
@@ -244,7 +234,6 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
   };
 
   const renderRateItem = (rate: Rate) => {
-    // Show owner name from the rate itself (no cross-item inference)
     const displayName =
       rate.username || userMap[String(rate.userId ?? "")] || "Người dùng";
 
@@ -327,16 +316,17 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
       {hasUserRated && userRating && (
         <View style={styles.alreadyRatedContainer}>
           <Text style={styles.alreadyRatedText}>
-            Bạn đã đánh giá tour này với {userRating.star} sao
+            {t("tour.rate.alreadyRated", {
+              star: userRating.star,
+            })}
           </Text>
         </View>
       )}
 
-      {/* Display Rates */}
       <View style={styles.ratesContainer}>
         <Text style={styles.ratesTitle}>{t("tour.rate.reviews")}</Text>
         {rates.length > 0 ? (
-          rates.map((rate) => (
+          rates.map((rate: any) => (
             <View
               key={String(
                 rate.id ??

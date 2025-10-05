@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import MainLayout from "../../../src/components/MainLayout";
 import { useNavigation } from "../../../src/navigation";
-import { tourService } from "../../../src/services/tourService";
+import { tourEndpoints } from "../../../src/endpoints/tour";
 import { BookingResponse } from "../../../src/types/tour";
 
 export default function BookingView() {
@@ -39,8 +39,8 @@ export default function BookingView() {
       try {
         setLoading(true);
         setError(null);
-        const data = await tourService.getBookingById(bookingId);
-        setBooking(data);
+        const res = await tourEndpoints.getBookingById(bookingId);
+        setBooking(res.data);
       } catch (err: any) {
         setError(
           err?.response?.data?.message || t("tour.errors.bookingFailed")

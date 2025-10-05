@@ -30,7 +30,6 @@ export default function ResetPassword() {
   const otp = (params.otpCode as string) || "";
 
   const handleResetPassword = async () => {
-    // Validation
     if (!newPassword.trim() || !confirmPassword.trim()) {
       Alert.alert("Error", "Please fill in all fields");
       return;
@@ -65,7 +64,6 @@ export default function ResetPassword() {
         Alert.alert("Error", resp?.data?.message || "Cannot reset password");
       }
     } catch (error) {
-      console.error("Reset password error:", error);
       Alert.alert("Error", "Network error. Please try again.");
     } finally {
       setLoading(false);

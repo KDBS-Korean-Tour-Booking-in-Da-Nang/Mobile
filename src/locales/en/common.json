@@ -188,7 +188,12 @@
     "searchResultsFor": "Search results for \"{{keyword}}\"",
     "viewingSavedBanner": "Saved posts",
     "viewingMyPostsBanner": "Your posts",
-    "filterHashtagBanner": "Filtered by #{{hashtag}}"
+    "filterHashtagBanner": "Filtered by #{{hashtag}}",
+    "seeMore": "See More",
+    "seeLess": "See Less",
+    "save": "Save",
+    "unsave": "Unsave",
+    "report": "Report"
   },
   "nav": {
     "home": "Home",
@@ -379,7 +384,14 @@
         "fullNameRequired": "Full name is required",
         "phoneInvalid": "Invalid phone number",
         "emailInvalid": "Invalid email address",
+        "phoneTenDigits": "Phone number must be exactly 10 digits",
         "pickUpPointRequired": "Pick-up point is required",
+        "adultDobInvalid": "Adult {{index}}: Please select a valid date of birth",
+        "adultAgeMin": "Adult {{index}}: Age must be 18 or older",
+        "childDobInvalid": "Child {{index}}: Please select a valid date of birth",
+        "childAgeRange": "Child {{index}}: Age must be between 2 and under 18",
+        "babyDobInvalid": "Baby {{index}}: Please select a valid date of birth",
+        "babyAgeMax": "Baby {{index}}: Age must be under 2",
         "loginRequired": "Please login to book a tour",
         "bookingFailed": "Failed to book tour. Please try again",
         "paymentFailed": "Failed to create payment. Please try again"
@@ -441,7 +453,8 @@
       "loginRequired": "Please login to rate this tour",
       "submitError": "Failed to submit review. Please try again",
       "deleteConfirm": "Are you sure you want to delete this review?",
-      "noReviews": "No reviews yet. Be the first to rate this tour!"
+      "noReviews": "No reviews yet. Be the first to rate this tour!",
+      "alreadyRated": "You have rated this tour {{star}} stars"
     }
   },
   "payment": {
@@ -453,6 +466,7 @@
     "loadFailed": "Failed to load payment page",
     "createFailed": "Failed to create payment",
     "orderInfo": "Booking payment for booking ID: {{bookingId}}",
+    "cancelConfirm": "Are you sure you want to cancel the payment?",
     "result": {
       "loading": "Loading transaction...",
       "success": "Payment Successful",
@@ -482,6 +496,8 @@
     "retry": "Retry",
     "goBack": "Go Back",
     "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
     "ok": "OK",
     "na": "N/A",
     "hotTopic": "Hot Topics",

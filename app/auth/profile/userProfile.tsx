@@ -15,9 +15,10 @@ import { colors } from "../../../src/constants/theme";
 import MainLayout from "../../../src/components/MainLayout";
 import { useTranslation } from "react-i18next";
 import { useFocusEffect } from "@react-navigation/native";
-import { premiumService } from "../../../src/services/premiumService";
+import { usePremium } from "../../../src/contexts/premiumContext";
 
 export default function UserProfile() {
+  const { refreshStatus, premiumType: contextPremiumType } = usePremium();
   const { goBack, navigate } = useNavigation();
   const { user } = useAuthContext();
   const { t } = useTranslation();
@@ -29,8 +30,8 @@ export default function UserProfile() {
       let active = true;
       (async () => {
         try {
-          const status = await premiumService.refreshPremiumStatus();
-          if (active) setPremiumType(status.premiumType);
+          await refreshStatus();
+          if (active) setPremiumType(contextPremiumType);
         } catch {}
       })();
       return () => {
@@ -42,7 +43,6 @@ export default function UserProfile() {
   return (
     <MainLayout>
       <View style={styles.container}>
-        {/* Header with Back Button */}
         <View style={styles.header}>
           <TouchableOpacity onPress={goBack} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color="#6c757d" />
@@ -51,7 +51,6 @@ export default function UserProfile() {
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Profile Header with Blue Background */}
           <View style={styles.profileHeader}>
             <View style={styles.profileCard}>
               <View style={styles.avatarContainer}>
@@ -95,9 +94,7 @@ export default function UserProfile() {
             </View>
           </View>
 
-          {/* Option Cards */}
           <View style={styles.optionsContainer}>
-            {/* Your Order Card */}
             <TouchableOpacity style={styles.optionCard}>
               <View style={styles.optionContent}>
                 <Text style={styles.optionTitle}>
@@ -110,7 +107,6 @@ export default function UserProfile() {
               <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
             </TouchableOpacity>
 
-            {/* Payment Method Card */}
             <TouchableOpacity style={styles.optionCard}>
               <View style={styles.optionContent}>
                 <Text style={styles.optionTitle}>
@@ -123,7 +119,6 @@ export default function UserProfile() {
               <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
             </TouchableOpacity>
 
-            {/* Coupon & Voucher Card */}
             <TouchableOpacity style={styles.optionCard}>
               <View style={styles.optionContent}>
                 <Text style={styles.optionTitle}>
@@ -136,7 +131,6 @@ export default function UserProfile() {
               <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
             </TouchableOpacity>
 
-            {/* Support Center Card */}
             <TouchableOpacity style={styles.optionCard}>
               <View style={styles.optionContent}>
                 <Text style={styles.optionTitle}>
@@ -149,7 +143,6 @@ export default function UserProfile() {
               <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
             </TouchableOpacity>
 
-            {/* Settings Card */}
             <TouchableOpacity
               style={styles.optionCard}
               onPress={() => navigate("/home/settings")}
@@ -163,7 +156,6 @@ export default function UserProfile() {
               <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
             </TouchableOpacity>
 
-            {/* Extra spacing at bottom */}
             <View style={styles.bottomSpacing} />
           </View>
         </ScrollView>

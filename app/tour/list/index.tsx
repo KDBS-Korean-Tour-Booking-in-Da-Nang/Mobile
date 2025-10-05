@@ -23,7 +23,7 @@ import { Ionicons } from "@expo/vector-icons";
 import MainLayout from "../../../src/components/MainLayout";
 import { useNavigation } from "../../../src/navigation";
 import { useTranslation } from "react-i18next";
-import { tourService } from "../../../src/services/tourService";
+import { tourEndpoints } from "../../../src/endpoints/tour";
 import { TourResponse } from "../../../src/types/tour";
 import styles from "./styles";
 import { createPost } from "../../../src/endpoints/forum";
@@ -40,7 +40,6 @@ export default function TourList() {
   const [refreshing, setRefreshing] = useState(false);
   const [keyword, setKeyword] = useState("");
 
-  // Share modal state
   const [shareOpen, setShareOpen] = useState(false);
   const [shareTour, setShareTour] = useState<TourResponse | null>(null);
   const [shareTitle, setShareTitle] = useState("");
@@ -49,38 +48,32 @@ export default function TourList() {
   const [shareHashtags, setShareHashtags] = useState<string[]>([]);
   const [shareSubmitting, setShareSubmitting] = useState(false);
 
-  // Navigation scroll effects
   const [isNavVisible, setIsNavVisible] = useState(true);
   const lastScrollY = useRef(0);
   const scrollThreshold = 50;
 
-  // Load tours
   const loadTours = useCallback(async () => {
     try {
       setLoading(true);
-      const toursData = await tourService.getAllTours();
-      setTours(toursData);
+      const toursData = (await tourEndpoints.getAll()).data;
+      setTours(Array.isArray(toursData) ? toursData : []);
     } catch (error) {
-      console.error("Error loading tours:", error);
       Alert.alert(t("common.error"), t("tour.errors.loadFailed"));
     } finally {
       setLoading(false);
     }
   }, [t]);
 
-  // Handle refresh
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadTours();
     setRefreshing(false);
   }, [loadTours]);
 
-  // Load tours on mount
   useEffect(() => {
     loadTours();
   }, [loadTours]);
 
-  // Handle scroll for navigation effects
   const handleScroll = useCallback((event: any) => {
     const currentScrollY = event.nativeEvent.contentOffset.y;
     const scrollDifference = Math.abs(currentScrollY - lastScrollY.current);
@@ -98,12 +91,11 @@ export default function TourList() {
   }, []);
 
   const handleTourPress = (tourId: number) => {
-    navigate(`/tour?id=${tourId}`);
+    navigate(`/tour/tourDetail?id=${tourId}`);
   };
 
   const openShareModal = (tour: TourResponse) => {
     setShareTour(tour);
-    // Do not prefill; user will input title and content manually
     setShareTitle("");
     setShareContent("");
     setShareHashtagInput("");
@@ -137,8 +129,6 @@ export default function TourList() {
   const submitShare = async () => {
     try {
       if (!shareTour) return;
-      // Title/content optional when sharing a tour; card provides context
-      // Ensure user is logged in
       const token = await AsyncStorage.getItem("authToken");
       const email = user?.email;
       if (!token || !email) {
@@ -151,7 +141,6 @@ export default function TourList() {
       setShareSubmitting(true);
       const cover = resolveTourCardImage(shareTour);
       const images: any[] = cover ? [{ uri: cover }] : [];
-      // Inject hidden metadata marker for forum tour card (no visible link)
       const meta = {
         shareType: "TOUR",
         tourId: shareTour.id,
@@ -159,7 +148,6 @@ export default function TourList() {
         tourName: shareTour.tourName,
         tourDescription: shareTour.tourDescription,
       } as any;
-      // Use a plain-text marker unlikely to be stripped by backend; UI will hide it
       const marker = `[[META:${JSON.stringify(meta)}]]`;
       const contentToSend = `${shareContent.trim()}\n\n${marker}`;
       await createPost({
@@ -170,7 +158,6 @@ export default function TourList() {
         userEmail: email,
       });
       setShareOpen(false);
-      // Go to forum feed and rely on feed refresh to show the new post
       navigate("/forum");
     } catch {
       Alert.alert(t("forum.errorTitle"), t("tour.share.errors.shareFailed"));
@@ -226,7 +213,6 @@ export default function TourList() {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={goBack}>
             <Ionicons name="chevron-back" size={24} color="#000" />
@@ -243,7 +229,6 @@ export default function TourList() {
           </TouchableOpacity>
         </View>
 
-        {/* Search */}
         <View style={styles.searchContainer}>
           <Ionicons name="search-outline" size={18} color="#6c757d" />
           <TextInput
@@ -261,7 +246,6 @@ export default function TourList() {
           ) : null}
         </View>
 
-        {/* Tours Grid */}
         <View style={styles.toursGrid}>
           {filteredTours.length > 0 ? (
             filteredTours.map((tour) => (
@@ -350,11 +334,9 @@ export default function TourList() {
           )}
         </View>
 
-        {/* Bottom spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
-      {/* Share Modal */}
       <Modal
         visible={shareOpen}
         animationType="slide"
@@ -470,7 +452,6 @@ export default function TourList() {
                 />
               </View>
 
-              {/* Tour Card Preview */}
               {shareTour && (
                 <View
                   style={{
@@ -503,17 +484,18 @@ export default function TourList() {
                     {shareTour.tourDescription}
                   </Text>
                   <TouchableOpacity
-                    onPress={() => navigate(`/tour?id=${shareTour.id}`)}
+                    onPress={() =>
+                      navigate(`/tour/tourDetail?id=${shareTour.id}`)
+                    }
                     style={{ marginTop: 8 }}
                   >
                     <Text
                       style={{ color: "#007AFF" }}
-                    >{`/tour?id=${shareTour.id}`}</Text>
+                    >{`/tour/tourDetail?id=${shareTour.id}`}</Text>
                   </TouchableOpacity>
                 </View>
               )}
 
-              {/* Hashtags */}
               <View style={{ marginTop: 8 }}>
                 <Text
                   style={{
