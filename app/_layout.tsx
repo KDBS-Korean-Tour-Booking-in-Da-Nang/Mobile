@@ -34,6 +34,7 @@ function RootLayoutNav() {
       <Stack.Screen name="auth" />
       <Stack.Screen name="forum" />
       <Stack.Screen name="tour" />
+      <Stack.Screen name="article" />
       <Stack.Screen name="payment" />
       <Stack.Screen name="transactionResult" />
       <Stack.Screen name="(tabs)" />

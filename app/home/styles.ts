@@ -7,18 +7,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8f9fa",
+    paddingTop: 8,
+  },
+  containerIos: {
     paddingTop: 16,
   },
   containerSm: {
     paddingTop: 24,
   },
   bottomSpacing: {
-    height: Platform.select({ ios: 0, android: 100 }) as number,
+    height: Platform.select({ ios: 24, android: 80 }) as number,
   },
   topHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 30,
-    paddingBottom: 12,
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 8,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -137,8 +140,8 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   searchBox: {
-    marginHorizontal: 20,
-    marginTop: 16,
+    marginHorizontal: 16,
+    marginTop: 12,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#ffffff",
@@ -215,16 +218,16 @@ const styles = StyleSheet.create({
   },
 
   section: {
-    padding: spacing.lg,
+    padding: spacing.md,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
     color: colors.text.primary,
   },
@@ -240,7 +243,7 @@ const styles = StyleSheet.create({
     marginBottom: -12,
   },
   tourCard: {
-    width: width * 0.6,
+    width: width * 0.56,
     backgroundColor: colors.surface.primary,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
@@ -256,11 +259,11 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: "relative",
     width: "100%",
-    height: 180,
+    height: 168,
   },
   tourImage: {
     width: "100%",
-    height: 180,
+    height: 168,
     borderTopLeftRadius: borderRadius.lg,
     borderTopRightRadius: borderRadius.lg,
   },
@@ -421,15 +424,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   articlesContainer: {
-    marginBottom: -12,
+    marginBottom: -20,
   },
   articleCard: {
-    width: width * 0.5,
+    width: width * 0.56,
     backgroundColor: colors.surface.primary,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: colors.border.medium,
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -439,23 +442,24 @@ const styles = StyleSheet.create({
   },
   articleImage: {
     width: "100%",
-    height: 150,
+    height: 140,
     borderTopLeftRadius: borderRadius.lg,
     borderTopRightRadius: borderRadius.lg,
   },
   articleContent: {
-    padding: spacing.md,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
   },
   articleTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
     color: colors.text.primary,
-    marginBottom: spacing.xs,
+    marginBottom: 6,
   },
   articleSummary: {
     fontSize: 12,
     color: colors.text.secondary,
-    marginBottom: spacing.sm,
+    marginBottom: 6,
     lineHeight: 16,
   },
   articleMeta: {
