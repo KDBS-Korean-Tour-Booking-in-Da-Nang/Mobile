@@ -517,6 +517,21 @@
     "delete": "Xóa",
     "close": "Đóng"
   },
+  "article": {
+    "title": "Bài viết",
+    "detail": "Chi tiết bài viết",
+    "loading": "Đang tải bài viết...",
+    "noArticles": "Không có bài viết nào",
+    "noArticlesDescription": "Hiện tại chưa có bài viết nào được phê duyệt. Vui lòng quay lại sau!",
+    "notFound": "Không tìm thấy bài viết",
+    "notFoundDescription": "Bài viết bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.",
+    "backToArticles": "Quay lại danh sách bài viết",
+    "summary": "Tóm tắt",
+    "readOriginal": "Đọc bài gốc",
+    "justNow": "Vừa xong",
+    "hoursAgo": "{{hours}} giờ trước",
+    "daysAgo": "{{days}} ngày trước"
+  },
   "premium": {
     "title": "Premium",
     "activeStatus": "Tài khoản Premium đang hoạt động",

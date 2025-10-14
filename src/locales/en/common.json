@@ -507,6 +507,21 @@
     "delete": "Delete",
     "close": "Close"
   },
+  "article": {
+    "title": "Article",
+    "detail": "Article Detail",
+    "loading": "Loading articles...",
+    "noArticles": "No articles available",
+    "noArticlesDescription": "There are currently no approved articles. Please check back later!",
+    "notFound": "Article not found",
+    "notFoundDescription": "The article you're looking for doesn't exist or has been removed.",
+    "backToArticles": "Back to Articles",
+    "summary": "Summary",
+    "readOriginal": "Read Original",
+    "justNow": "Just now",
+    "hoursAgo": "{{hours}} hours ago",
+    "daysAgo": "{{days}} days ago"
+  },
   "premium": {
     "title": "Premium",
     "activeStatus": "Premium Account Active",

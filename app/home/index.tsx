@@ -22,6 +22,7 @@ import {
 } from "../../src/endpoints/forum";
 import tourEndpoints from "../../src/endpoints/tour";
 import { TourResponse } from "../../src/types/tour";
+import { getApprovedArticles, Article } from "../../src/endpoints/articles";
 import PremiumModal from "../../src/components/PremiumModal";
 import { usePremium } from "../../src/contexts/premiumContext";
 import { useFocusEffect } from "@react-navigation/native";
@@ -136,6 +137,8 @@ export default function Home() {
   const [hotPosts, setHotPosts] = useState<PostResponse[]>([]);
   const [featuredTours, setFeaturedTours] = useState<TourResponse[]>([]);
   const [toursLoading, setToursLoading] = useState(true);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [articlesLoading, setArticlesLoading] = useState(true);
 
   const [currentLanguage, setCurrentLanguage] = useState<"en" | "ko" | "vi">(
     i18n.language as "en" | "ko" | "vi"
@@ -189,7 +192,20 @@ export default function Home() {
       }
     };
 
+    const loadArticles = async () => {
+      try {
+        setArticlesLoading(true);
+        const articlesData = await getApprovedArticles();
+        setArticles(articlesData.slice(0, 5));
+      } catch (error) {
+        setArticles([]);
+      } finally {
+        setArticlesLoading(false);
+      }
+    };
+
     loadTours();
+    loadArticles();
   }, []);
 
   const tourImageUrls = useMemo(() => {
@@ -275,26 +291,29 @@ export default function Home() {
     ));
   };
 
-  const newsItems = [
-    {
-      id: 1,
-      title: "Khám phá vẻ đẹp mới của Đà Nẵng",
-      summary: "Những điểm đến mới được khám phá và phát triển...",
-      date: "2 giờ trước",
-      image:
-        "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=100&h=100&fit=crop",
-    },
-    {
-      id: 2,
-      title: "Văn hóa Hàn Quốc - Những điều thú vị",
-      summary: "Tìm hiểu về văn hóa truyền thống và hiện đại của Hàn Quốc...",
-      date: "5 giờ trước",
-      image:
-        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=100&h=100&fit=crop",
-    },
-  ];
+  const formatArticleDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    );
 
-  // Sync currentLanguage with i18n language changes
+    if (diffInHours < 1) {
+      return t("article.justNow");
+    } else if (diffInHours < 24) {
+      return t("article.hoursAgo", { hours: diffInHours });
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24);
+      return t("article.daysAgo", { days: diffInDays });
+    }
+  };
+
+  const extractFirstImageSrc = (html: string): string | null => {
+    if (!html) return null;
+    const match = html.match(/<img[^>]*src=["']([^"']+)["'][^>]*>/i);
+    return match && match[1] ? match[1] : null;
+  };
+
   useEffect(() => {
     const handleLanguageChange = (lng: string) => {
       setCurrentLanguage(lng as "en" | "ko" | "vi");
@@ -368,7 +387,13 @@ export default function Home() {
 
   return (
     <ScrollableLayout>
-      <View style={[styles.container, isSmall && styles.containerSm]}>
+      <View
+        style={[
+          styles.container,
+          Platform.OS === "ios" && styles.containerIos,
+          isSmall && styles.containerSm,
+        ]}
+      >
         <View style={[styles.topHeader, isSmall && styles.topHeaderSm]}>
           <View>
             <Text style={styles.welcomeLabel}>{t("home.welcome.heading")}</Text>
@@ -408,7 +433,6 @@ export default function Home() {
             {t("forum.searchPlaceholder")}
           </Text>
         </View>
-
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -491,32 +515,60 @@ export default function Home() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t("common.article")}</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigate("/article")}>
               <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.articlesContainer}
-          >
-            {newsItems.map((news) => (
-              <TouchableOpacity key={news.id} style={styles.articleCard}>
-                <Image
-                  source={{ uri: news.image }}
-                  style={styles.articleImage}
-                />
-                <View style={styles.articleContent}>
-                  <Text style={styles.articleTitle}>{news.title}</Text>
-                  <Text style={styles.articleSummary}>{news.summary}</Text>
-                  <Text style={styles.articleMeta}>{news.date}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          {articlesLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#007AFF" />
+              <Text style={styles.loadingText}>{t("article.loading")}</Text>
+            </View>
+          ) : articles.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.articlesContainer}
+            >
+              {articles.map((article) => (
+                <TouchableOpacity
+                  key={article.articleId}
+                  style={styles.articleCard}
+                  onPress={() => {
+                    navigate(`/article/detailArticle?id=${article.articleId}`);
+                  }}
+                >
+                  <Image
+                    source={{
+                      uri: extractFirstImageSrc(article.articleContent) || "",
+                    }}
+                    style={styles.articleImage}
+                    contentFit="cover"
+                    transition={0}
+                    cachePolicy="disk"
+                  />
+                  <View style={styles.articleContent}>
+                    <Text style={styles.articleTitle} numberOfLines={2}>
+                      {article.articleTitle}
+                    </Text>
+                    <Text style={styles.articleSummary} numberOfLines={2}>
+                      {article.articleDescription}
+                    </Text>
+                    <Text style={styles.articleMeta}>
+                      {formatArticleDate(article.articleCreatedDate)}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>{t("article.noArticles")}</Text>
+            </View>
+          )}
         </View>
-        {Platform.OS === "android" && <View style={styles.bottomSpacing} />}
+        <View style={styles.bottomSpacing} />
       </View>
 
       <PremiumModal
