@@ -4,7 +4,7 @@ import {
   spacing,
   borderRadius,
   typography,
-} from "../../../src/constants/theme";
+} from "../../../constants/theme";
 
 const styles = StyleSheet.create({
   container: {

@@ -1,4 +1,4 @@
-import api from "../services/api";
+import api from "../../services/api";
 
 export const premiumEndpoints = {
   createPayment: (payload: { durationInMonths: number; userEmail: string }) =>

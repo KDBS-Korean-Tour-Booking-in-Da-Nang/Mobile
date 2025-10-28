@@ -11,12 +11,12 @@ import {
 } from "react-native";
 import styles from "./styles";
 import { Ionicons } from "@expo/vector-icons";
-import MainLayout from "../../../src/components/MainLayout";
+import MainLayout from "../../../components/MainLayout";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAuthContext } from "../../../src/contexts/authContext";
-import { tourEndpoints } from "../../../src/endpoints/tour";
-import { transactionEndpoints } from "../../../src/endpoints/transactions";
+import { tourEndpoints } from "../../../services/endpoints/tour";
+import { transactionEndpoints } from "../../../services/endpoints/transactions";
 import { BookingSummaryResponse, TourResponse } from "../../../src/types/tour";
 
 export default function HistoryBooking() {

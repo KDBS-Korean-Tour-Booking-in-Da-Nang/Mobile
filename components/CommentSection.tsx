@@ -18,8 +18,8 @@ import {
   updateComment,
   deleteComment,
   createReport,
-} from "../endpoints/forum";
-import { useAuthContext } from "../contexts/authContext";
+} from "../services/endpoints/forum";
+import { useAuthContext } from "../src/contexts/authContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
 
@@ -2115,3 +2115,5 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
 });
+
+export default CommentSection;

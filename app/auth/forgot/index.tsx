@@ -10,9 +10,8 @@ import {
   Platform,
   Image,
 } from "react-native";
-import { useNavigation } from "../../../src/navigation";
-import { useForgotPassword } from "../../../src/hooks/useAuth";
-// Hardcode English strings for auth flows (no i18n)
+import { useNavigation } from "../../../navigation/navigation";
+import { useForgotPassword } from "../../../hooks/useAuth";
 import styles from "./styles";
 
 export default function ForgotPassword() {

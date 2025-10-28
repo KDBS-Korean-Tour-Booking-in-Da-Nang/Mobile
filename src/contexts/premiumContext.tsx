@@ -6,7 +6,7 @@ import React, {
   useReducer,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { premiumEndpoints } from "../endpoints/premium";
+import { premiumEndpoints } from "../../services/endpoints/premium";
 
 type PremiumType = "PREMIUM" | "FREE" | undefined;
 

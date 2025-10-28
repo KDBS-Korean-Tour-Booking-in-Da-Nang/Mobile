@@ -12,8 +12,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as MailComposer from "expo-mail-composer";
-import { transactionEndpoints } from "../../src/endpoints/transactions";
-import { tourEndpoints } from "../../src/endpoints/tour";
+import { transactionEndpoints } from "../../services/endpoints/transactions";
+import { tourEndpoints } from "../../services/endpoints/tour";
 import { usePremium } from "../../src/contexts/premiumContext";
 
 interface TransactionResultParams {

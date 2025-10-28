@@ -1,4 +1,4 @@
-import api from "../services/api";
+import api from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface ApiPostImg {

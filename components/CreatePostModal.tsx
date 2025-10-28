@@ -17,8 +17,8 @@ import {
   CreatePostRequest,
   createPost,
   updatePost,
-} from "../endpoints/forum";
-import { useAuthContext } from "../contexts/authContext";
+} from "../services/endpoints/forum";
+import { useAuthContext } from "../src/contexts/authContext";
 import { useTranslation } from "react-i18next";
 
 interface CreatePostModalProps {

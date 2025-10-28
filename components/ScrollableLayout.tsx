@@ -17,10 +17,8 @@ const ScrollableLayout: React.FC<ScrollableLayoutProps> = ({ children }) => {
 
     if (scrollDifference > scrollThreshold) {
       if (currentScrollY > lastScrollY.current) {
-        // Scrolling down - hide navbar
         setIsNavVisible(false);
       } else {
-        // Scrolling up - show navbar
         setIsNavVisible(true);
       }
       lastScrollY.current = currentScrollY;

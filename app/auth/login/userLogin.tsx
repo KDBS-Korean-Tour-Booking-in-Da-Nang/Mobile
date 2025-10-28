@@ -11,7 +11,7 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "../../../src/navigation";
+import { useNavigation } from "../../../navigation/navigation";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import { useTranslation } from "react-i18next";
 import styles from "./styles";

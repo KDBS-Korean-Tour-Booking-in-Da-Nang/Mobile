@@ -10,7 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "../navigation";
+import { useNavigation } from "../navigation/navigation";
 import { useTranslation } from "react-i18next";
 
 const { width: screenWidth } = Dimensions.get("window");

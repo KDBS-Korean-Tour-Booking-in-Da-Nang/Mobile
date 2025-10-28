@@ -25,11 +25,11 @@ import {
   SavedPostResponse,
   getPostById,
   getMyPosts,
-} from "../../src/endpoints/forum";
-import PostCard from "../../src/components/PostCard";
-import CreatePostModal from "../../src/components/CreatePostModal";
+} from "../../services/endpoints/forum";
+import PostCard from "../../components/PostCard";
+import CreatePostModal from "../../components/CreatePostModal";
 import styles from "./styles";
-import MainLayout from "../../src/components/MainLayout";
+import MainLayout from "../../components/MainLayout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Forum() {

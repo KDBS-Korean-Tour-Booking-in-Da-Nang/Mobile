@@ -13,14 +13,14 @@ import {
   Modal,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import MainLayout from "../../../src/components/MainLayout";
-import { useNavigation } from "../../../src/navigation";
+import MainLayout from "../../../components/MainLayout";
+import { useNavigation } from "../../../navigation/navigation";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthContext } from "../../../src/contexts/authContext";
-import BookingButton from "../../../src/components/BookingButton";
+import BookingButton from "../../../components/BookingButton";
 import { useTranslation } from "react-i18next";
-import { tourEndpoints } from "../../../src/endpoints/tour";
+import { tourEndpoints } from "../../../services/endpoints/tour";
 import { TourResponse } from "../../../src/types/tour";
 import styles from "./styles";
 

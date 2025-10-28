@@ -17,10 +17,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   useTranslation();
   const pathname = usePathname();
 
-  // Track route changes to save last route
   useRouteTracker();
 
-  // Determine current route for bottom navigation
   const getCurrentRoute = () => {
     if (pathname === "/home" || pathname.startsWith("/home/")) return "home";
     if (pathname === "/forum" || pathname.startsWith("/forum/")) return "forum";

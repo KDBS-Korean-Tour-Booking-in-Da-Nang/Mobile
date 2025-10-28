@@ -9,13 +9,12 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { useNavigation } from "../../../src/navigation";
+import { useNavigation } from "../../../navigation/navigation";
 import { useLocalSearchParams } from "expo-router";
-import api from "../../../src/services/api";
-import { colors } from "../../../src/constants/theme";
+import api from "../../../services/api";
+import { colors } from "../../../constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import styles from "./styles";
-// Hardcode English for auth flows
 
 export default function ResetPassword() {
   const { navigate } = useNavigation();

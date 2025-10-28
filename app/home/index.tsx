@@ -7,23 +7,27 @@ import {
   Platform,
   ActivityIndicator,
   Dimensions,
+  Linking,
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "../../src/navigation";
+import { useNavigation } from "../../navigation/navigation";
 import { useTranslation } from "react-i18next";
-import { colors } from "../../src/constants/theme";
-import ScrollableLayout from "../../src/components/ScrollableLayout";
+import { colors } from "../../constants/theme";
+import ScrollableLayout from "../../components/ScrollableLayout";
 import { useAuthContext } from "../../src/contexts/authContext";
 import {
   getAllPosts,
   PostResponse,
   getReactionSummary,
-} from "../../src/endpoints/forum";
-import tourEndpoints from "../../src/endpoints/tour";
+} from "../../services/endpoints/forum";
+import tourEndpoints from "../../services/endpoints/tour";
 import { TourResponse } from "../../src/types/tour";
-import { getApprovedArticles, Article } from "../../src/endpoints/articles";
-import PremiumModal from "../../src/components/PremiumModal";
+import {
+  getApprovedArticles,
+  Article,
+} from "../../services/endpoints/articles";
+import PremiumModal from "../../components/PremiumModal";
 import { usePremium } from "../../src/contexts/premiumContext";
 import { useFocusEffect } from "@react-navigation/native";
 import styles from "./styles";
@@ -473,6 +477,23 @@ export default function Home() {
               </View>
             )}
           </ScrollView>
+        </View>
+
+        {/* Temporary test link to open Google Maps */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Test Google Maps</Text>
+          </View>
+          <Text
+            style={styles.seeAllText}
+            onPress={() =>
+              Linking.openURL(
+                "https://www.google.com/maps/place/73+P.+Ho%C3%A0ng+Ng%C3%A2n,+Nh%C3%A2n+Ch%C3%ADnh,+H%C3%A0+N%E1%BB%99i,+Vietnam/@21.0060223,105.8062234,860m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3135ac9ed6a5c055:0x16efd639ba2c9694!8m2!3d21.0060223!4d105.8088037!16s%2Fg%2F11wb21gkwt?entry=ttu&g_ep=EgoyMDI1MTAxMi4wIKXMDSoASAFQAw%3D%3D"
+              )
+            }
+          >
+            Open Google Maps
+          </Text>
         </View>
 
         <View style={styles.section}>

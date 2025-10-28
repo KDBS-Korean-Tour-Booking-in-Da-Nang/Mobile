@@ -23,12 +23,12 @@ import {
   checkPostSaved,
   getCommentsByPost,
   createReport,
-} from "../endpoints/forum";
+} from "../services/endpoints/forum";
 import ReportModal from "./ReportModal";
-import { useAuthContext } from "../contexts/authContext";
+import { useAuthContext } from "../src/contexts/authContext";
 import CommentSection from "./CommentSection";
 import { useTranslation } from "react-i18next";
-import { useNavigation } from "../navigation";
+import { useNavigation } from "../navigation/navigation";
 
 interface PostCardProps {
   post: PostResponse;

@@ -10,9 +10,9 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "../../../../src/navigation";
+import { useNavigation } from "../../../../navigation/navigation";
 import { useAuthContext } from "../../../../src/contexts/authContext";
-import MainLayout from "../../../../src/components/MainLayout";
+import MainLayout from "../../../../components/MainLayout";
 import { useTranslation } from "react-i18next";
 
 export default function EditProfile() {

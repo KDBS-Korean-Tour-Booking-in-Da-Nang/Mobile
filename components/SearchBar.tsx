@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { searchPosts } from "../endpoints/forum";
+import { searchPosts } from "../services/endpoints/forum";
 
 interface SearchBarProps {
   onSearch: (keyword: string) => void;

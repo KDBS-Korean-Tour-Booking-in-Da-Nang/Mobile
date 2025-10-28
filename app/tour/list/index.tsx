@@ -20,13 +20,13 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import MainLayout from "../../../src/components/MainLayout";
-import { useNavigation } from "../../../src/navigation";
+import MainLayout from "../../../components/MainLayout";
+import { useNavigation } from "../../../navigation/navigation";
 import { useTranslation } from "react-i18next";
-import { tourEndpoints } from "../../../src/endpoints/tour";
+import { tourEndpoints } from "../../../services/endpoints/tour";
 import { TourResponse } from "../../../src/types/tour";
 import styles from "./styles";
-import { createPost } from "../../../src/endpoints/forum";
+import { createPost } from "../../../services/endpoints/forum";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 

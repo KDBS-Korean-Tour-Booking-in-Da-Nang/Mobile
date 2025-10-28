@@ -9,10 +9,10 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "../../../src/navigation";
+import { useNavigation } from "../../../navigation/navigation";
 import { useAuthContext } from "../../../src/contexts/authContext";
-import { colors } from "../../../src/constants/theme";
-import MainLayout from "../../../src/components/MainLayout";
+import { colors } from "../../../constants/theme";
+import MainLayout from "../../../components/MainLayout";
 import { useTranslation } from "react-i18next";
 import { useFocusEffect } from "@react-navigation/native";
 import { usePremium } from "../../../src/contexts/premiumContext";

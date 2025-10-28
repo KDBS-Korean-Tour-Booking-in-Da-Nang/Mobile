@@ -11,8 +11,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { colors } from "../constants/theme";
-import { tourEndpoints } from "../endpoints/tour";
-import { useAuthContext } from "../contexts/authContext";
+import { tourEndpoints } from "../services/endpoints/tour";
+import { useAuthContext } from "../src/contexts/authContext";
 
 interface RateTourProps {
   tourId: number;
@@ -77,7 +77,7 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
         setUserMap(map);
         if (user) {
           const userRate = normalized.find(
-            (rate) =>
+            (rate: Rate) =>
               (rate.userId != null &&
                 (user as any)?.userId != null &&
                 String(rate.userId) === String((user as any).userId)) ||

@@ -8,9 +8,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import MainLayout from "../../../../src/components/MainLayout";
+import MainLayout from "../../../../components/MainLayout";
 import { useTranslation } from "react-i18next";
-import { tourEndpoints } from "../../../../src/endpoints/tour";
+import { tourEndpoints } from "../../../../services/endpoints/tour";
 import { BookingResponse, TourResponse } from "../../../../src/types/tour";
 
 export default function BookingDetail() {

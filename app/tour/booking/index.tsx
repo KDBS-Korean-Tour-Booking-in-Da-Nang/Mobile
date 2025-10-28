@@ -10,9 +10,9 @@ import {
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import MainLayout from "../../../src/components/MainLayout";
-import { useNavigation } from "../../../src/navigation";
-import { tourEndpoints } from "../../../src/endpoints/tour";
+import MainLayout from "../../../components/MainLayout";
+import { useNavigation } from "../../../navigation/navigation";
+import { tourEndpoints } from "../../../services/endpoints/tour";
 import { BookingResponse } from "../../../src/types/tour";
 
 export default function BookingView() {

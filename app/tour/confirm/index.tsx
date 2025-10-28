@@ -7,14 +7,14 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import MainLayout from "../../../src/components/MainLayout";
-import { useNavigation } from "../../../src/navigation";
+import MainLayout from "../../../components/MainLayout";
+import { useNavigation } from "../../../navigation/navigation";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { tourEndpoints } from "../../../src/endpoints/tour";
+import { tourEndpoints } from "../../../services/endpoints/tour";
 import {
   TourResponse,
   BookingRequest,

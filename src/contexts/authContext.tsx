@@ -6,7 +6,7 @@ import React, {
   useReducer,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import api from "../services/api";
+import api from "../../services/api";
 
 type User = {
   userId: number;

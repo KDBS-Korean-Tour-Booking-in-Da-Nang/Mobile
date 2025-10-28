@@ -62,7 +62,6 @@ export interface GuestInfo {
   idNumber: string;
 }
 
-// Booking Types
 export interface BookingRequest {
   tourId: number;
   contactName: string;
@@ -132,7 +131,6 @@ export interface BookingSummaryResponse {
   createdAt: string;
 }
 
-// VNPay Payment Types
 export interface VNPayPaymentResponse {
   orderId: string;
   success: boolean;

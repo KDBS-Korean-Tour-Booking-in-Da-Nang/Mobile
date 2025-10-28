@@ -12,10 +12,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import * as ImagePicker from "expo-image-picker";
-import { useNavigation } from "../../../src/navigation";
+import { useNavigation } from "../../../navigation/navigation";
 import { useAuthContext } from "../../../src/contexts/authContext";
-import { createPost } from "../../../src/endpoints/forum";
-import { colors, spacing } from "../../../src/constants/theme";
+import { createPost } from "../../../services/endpoints/forum";
+import { colors, spacing } from "../../../constants/theme";
 import styles from "./styles";
 
 export default function CreatePost() {

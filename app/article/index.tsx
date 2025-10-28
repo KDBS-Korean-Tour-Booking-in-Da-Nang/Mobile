@@ -10,11 +10,11 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "../../src/navigation";
+import { useNavigation } from "../../navigation/navigation";
 import { useTranslation } from "react-i18next";
-import { colors } from "../../src/constants/theme";
-import ScrollableLayout from "../../src/components/ScrollableLayout";
-import { getApprovedArticles, Article } from "../../src/endpoints/articles";
+import { colors } from "../../constants/theme";
+import ScrollableLayout from "../../components/ScrollableLayout";
+import { getApprovedArticles, Article } from "../../services/endpoints/articles";
 import styles from "./styles";
 
 export default function ArticleList() {

@@ -11,8 +11,8 @@ import { WebView } from "react-native-webview";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { premiumEndpoints } from "../../src/endpoints/premium";
-import { tourEndpoints } from "../../src/endpoints/tour";
+import { premiumEndpoints } from "../../services/endpoints/premium";
+import { tourEndpoints } from "../../services/endpoints/tour";
 
 interface PaymentParams {
   bookingId?: string;

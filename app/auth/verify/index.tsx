@@ -10,9 +10,9 @@ import {
   Platform,
   Image,
 } from "react-native";
-import { useNavigation } from "../../../src/navigation";
+import { useNavigation } from "../../../navigation/navigation";
 import { useLocalSearchParams } from "expo-router";
-import api from "../../../src/services/api";
+import api from "../../../services/api";
 import styles from "./styles";
 
 export default function VerifyEmail() {

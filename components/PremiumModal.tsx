@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { colors } from "../constants/theme";
-import { usePremium } from "../contexts/premiumContext";
+import { usePremium } from "../src/contexts/premiumContext";
 
 interface PremiumModalProps {
   visible: boolean;

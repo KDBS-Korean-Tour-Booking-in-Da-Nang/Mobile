@@ -1,4 +1,4 @@
-import api from "../services/api";
+import api from "../../services/api";
 
 export const authEndpoints = {
   login: (payload: { email: string; password: string }) =>
