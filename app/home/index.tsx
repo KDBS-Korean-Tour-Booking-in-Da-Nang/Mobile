@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Dimensions,
   Linking,
+  TextInput,
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -28,6 +29,7 @@ import {
   Article,
 } from "../../services/endpoints/articles";
 import PremiumModal from "../../components/PremiumModal";
+import ChatBubble from "../../components/ChatBubble";
 import { usePremium } from "../../src/contexts/premiumContext";
 import { useFocusEffect } from "@react-navigation/native";
 import styles from "./styles";
@@ -144,6 +146,11 @@ export default function Home() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [articlesLoading, setArticlesLoading] = useState(true);
 
+  // Search UI state (similar to forum)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
+
   const [currentLanguage, setCurrentLanguage] = useState<"en" | "ko" | "vi">(
     i18n.language as "en" | "ko" | "vi"
   );
@@ -170,6 +177,44 @@ export default function Home() {
   const handleLanguageSelect = (language: "en" | "ko" | "vi") => {
     setCurrentLanguage(language);
     i18n.changeLanguage(language);
+  };
+
+  const generateSearchSuggestions = (query: string) => {
+    if (!query.trim()) {
+      setSearchSuggestions([]);
+      return;
+    }
+    const isValidToken = (s: string) => {
+      if (!s) return false;
+      const trimmed = s.trim();
+      if (trimmed.length > 40) return false;
+      if (/[\{\}\[\]"']|:\s?/.test(trimmed)) return false;
+      if (/^\[\[meta/i.test(trimmed)) return false;
+      if (/https?:\/\//i.test(trimmed)) return false;
+      return true;
+    };
+    const q = query.toLowerCase();
+    const words = new Set<string>();
+    const tags = new Set<string>();
+    (hotPosts || []).forEach((p) => {
+      p?.hashtags?.forEach((t) => {
+        if (typeof t === "string" && t.toLowerCase().includes(q)) {
+          tags.add(`#${t}`);
+        }
+      });
+      const titleWords = p?.title?.toLowerCase().split(/\s+/) || [];
+      const contentWords = p?.content?.toLowerCase().split(/\s+/) || [];
+      [...titleWords, ...contentWords].forEach((w) => {
+        if (w && w.length > 2 && w.includes(q) && isValidToken(w)) words.add(w);
+      });
+    });
+    const list = [
+      ...Array.from(tags).slice(0, 3),
+      ...Array.from(words).slice(0, 5),
+    ]
+      .filter(isValidToken)
+      .slice(0, 8);
+    setSearchSuggestions(list);
   };
 
   useEffect(() => {
@@ -390,214 +435,252 @@ export default function Home() {
       : null;
 
   return (
-    <ScrollableLayout>
-      <View
-        style={[
-          styles.container,
-          Platform.OS === "ios" && styles.containerIos,
-          isSmall && styles.containerSm,
-        ]}
-      >
-        <View style={[styles.topHeader, isSmall && styles.topHeaderSm]}>
-          <View>
-            <Text style={styles.welcomeLabel}>{t("home.welcome.heading")}</Text>
-            <View style={styles.usernameContainer}>
-              <Text style={[styles.usernameText, langAdjust]}>
-                {user?.username || "Guest"}
+    <View style={{ flex: 1 }}>
+      <ScrollableLayout>
+        <View
+          style={[
+            styles.container,
+            Platform.OS === "ios" && styles.containerIos,
+            isSmall && styles.containerSm,
+          ]}
+        >
+          <View style={[styles.topHeader, isSmall && styles.topHeaderSm]}>
+            <View>
+              <Text style={styles.welcomeLabel}>
+                {t("home.welcome.heading")}
               </Text>
+              <View style={styles.usernameContainer}>
+                <Text style={[styles.usernameText, langAdjust]}>
+                  {user?.username || "Guest"}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setShowPremiumModal(true)}
+                  style={styles.premiumIconContainer}
+                >
+                  <Ionicons
+                    name="diamond"
+                    size={20}
+                    color={isPremium ? "#FFD700" : "#C0C0C0"}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+            <View style={styles.rightActions}>
+              <LanguageDropdown
+                currentLanguage={currentLanguage}
+                onLanguageSelect={handleLanguageSelect}
+              />
               <TouchableOpacity
-                onPress={() => setShowPremiumModal(true)}
-                style={styles.premiumIconContainer}
+                style={styles.settingBtn}
+                onPress={() => navigate("/home/settings")}
               >
-                <Ionicons
-                  name="diamond"
-                  size={20}
-                  color={isPremium ? "#FFD700" : "#C0C0C0"}
-                />
+                <Ionicons name="settings-outline" size={20} color="#212529" />
               </TouchableOpacity>
             </View>
           </View>
-          <View style={styles.rightActions}>
-            <LanguageDropdown
-              currentLanguage={currentLanguage}
-              onLanguageSelect={handleLanguageSelect}
-            />
-            <TouchableOpacity
-              style={styles.settingBtn}
-              onPress={() => navigate("/home/settings")}
-            >
-              <Ionicons name="settings-outline" size={20} color="#212529" />
-            </TouchableOpacity>
-          </View>
-        </View>
 
-        <View style={styles.searchBox}>
-          <Ionicons name="search" size={18} color="#6c757d" />
-          <Text style={styles.searchPlaceholder}>
-            {t("forum.searchPlaceholder")}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text
-              style={[styles.sectionTitle, isSmall && styles.sectionTitleSm]}
-            >
-              {t("home.dashboard.welcome")}
-            </Text>
-            <TouchableOpacity onPress={() => navigate("/tour/list")}>
-              <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.toursContainer}
-            removeClippedSubviews={false}
-            decelerationRate="fast"
-            snapToInterval={Dimensions.get("window").width * 0.5 + 16}
-            snapToAlignment="start"
-            pagingEnabled={false}
-            bounces={false}
-            scrollEventThrottle={16}
-          >
-            {toursLoading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#007AFF" />
-                <Text style={styles.loadingText}>{t("tour.loading")}</Text>
-              </View>
-            ) : featuredTours && featuredTours.length > 0 ? (
-              renderTourCards()
-            ) : (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>
-                  {t("tour.errors.notFound")}
-                </Text>
+          <View style={{ position: "relative" }}>
+            <View style={styles.searchBox}>
+              <Ionicons name="search" size={18} color="#6c757d" />
+              <TextInput
+                style={{ marginLeft: 8, flex: 1, color: "#212529" }}
+                placeholder={t("forum.searchPlaceholder")}
+                placeholderTextColor="#6c757d"
+                value={searchQuery}
+                onChangeText={(text) => {
+                  setSearchQuery(text);
+                  if (text.trim()) {
+                    generateSearchSuggestions(text);
+                    setShowSearchDropdown(true);
+                  } else {
+                    setShowSearchDropdown(false);
+                    setSearchSuggestions([]);
+                  }
+                }}
+                onFocus={() => {
+                  if (searchQuery.trim()) setShowSearchDropdown(true);
+                }}
+                onSubmitEditing={() => {
+                  setShowSearchDropdown(false);
+                  navigate("/forum");
+                }}
+              />
+            </View>
+            {showSearchDropdown && searchSuggestions.length > 0 && (
+              <View style={styles.searchDropdown}>
+                {searchSuggestions.map((sug, idx) => (
+                  <TouchableOpacity
+                    key={`${sug}-${idx}`}
+                    style={styles.suggestionItem}
+                    onPress={() => {
+                      setShowSearchDropdown(false);
+                      setSearchQuery(sug.replace("#", ""));
+                      navigate("/forum");
+                    }}
+                  >
+                    <Ionicons
+                      name={sug.startsWith("#") ? "pricetag" : "search"}
+                      size={16}
+                      color="#6c757d"
+                    />
+                    <Text style={styles.suggestionText}>{sug}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             )}
-          </ScrollView>
-        </View>
-
-        {/* Temporary test link to open Google Maps */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Test Google Maps</Text>
-          </View>
-          <Text
-            style={styles.seeAllText}
-            onPress={() =>
-              Linking.openURL(
-                "https://www.google.com/maps/place/73+P.+Ho%C3%A0ng+Ng%C3%A2n,+Nh%C3%A2n+Ch%C3%ADnh,+H%C3%A0+N%E1%BB%99i,+Vietnam/@21.0060223,105.8062234,860m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3135ac9ed6a5c055:0x16efd639ba2c9694!8m2!3d21.0060223!4d105.8088037!16s%2Fg%2F11wb21gkwt?entry=ttu&g_ep=EgoyMDI1MTAxMi4wIKXMDSoASAFQAw%3D%3D"
-              )
-            }
-          >
-            Open Google Maps
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t("common.hotTopic")}</Text>
-            <TouchableOpacity onPress={() => navigate("/forum")}>
-              <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
-            </TouchableOpacity>
           </View>
 
-          {hotPosts.map((post) => (
-            <TouchableOpacity
-              key={post.id}
-              style={styles.newsCard}
-              onPress={() => navigate(`/forum?postId=${post.id}`)}
-            >
-              <View style={styles.avatarCircle}>
-                <Ionicons name="person" size={20} color={colors.text.primary} />
-              </View>
-              <View style={styles.newsContent}>
-                <Text style={styles.newsTitle}>{post.title}</Text>
-                <View style={styles.hashtagsContainer}>
-                  {post.hashtags.slice(0, 3).map((tag, index) => (
-                    <Text key={index} style={styles.tag}>
-                      #{tag}
-                    </Text>
-                  ))}
-                </View>
-              </View>
-              <Ionicons
-                name="happy-outline"
-                size={16}
-                color={colors.text.secondary}
-              />
-              <Text style={styles.newsDate}>{post.totalReactions}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t("common.article")}</Text>
-            <TouchableOpacity onPress={() => navigate("/article")}>
-              <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {articlesLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#007AFF" />
-              <Text style={styles.loadingText}>{t("article.loading")}</Text>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text
+                style={[styles.sectionTitle, isSmall && styles.sectionTitleSm]}
+              >
+                {t("home.dashboard.welcome")}
+              </Text>
+              <TouchableOpacity onPress={() => navigate("/tour/list")}>
+                <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
+              </TouchableOpacity>
             </View>
-          ) : articles.length > 0 ? (
+
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              style={styles.articlesContainer}
+              style={styles.toursContainer}
+              removeClippedSubviews={false}
+              decelerationRate="fast"
+              snapToInterval={Dimensions.get("window").width * 0.5 + 16}
+              snapToAlignment="start"
+              pagingEnabled={false}
+              bounces={false}
+              scrollEventThrottle={16}
             >
-              {articles.map((article) => (
-                <TouchableOpacity
-                  key={article.articleId}
-                  style={styles.articleCard}
-                  onPress={() => {
-                    navigate(`/article/detailArticle?id=${article.articleId}`);
-                  }}
-                >
-                  <Image
-                    source={{
-                      uri: extractFirstImageSrc(article.articleContent) || "",
-                    }}
-                    style={styles.articleImage}
-                    contentFit="cover"
-                    transition={0}
-                    cachePolicy="disk"
-                  />
-                  <View style={styles.articleContent}>
-                    <Text style={styles.articleTitle} numberOfLines={2}>
-                      {article.articleTitle}
-                    </Text>
-                    <Text style={styles.articleSummary} numberOfLines={2}>
-                      {article.articleDescription}
-                    </Text>
-                    <Text style={styles.articleMeta}>
-                      {formatArticleDate(article.articleCreatedDate)}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
+              {toursLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#007AFF" />
+                  <Text style={styles.loadingText}>{t("tour.loading")}</Text>
+                </View>
+              ) : featuredTours && featuredTours.length > 0 ? (
+                renderTourCards()
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>
+                    {t("tour.errors.notFound")}
+                  </Text>
+                </View>
+              )}
             </ScrollView>
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>{t("article.noArticles")}</Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.bottomSpacing} />
-      </View>
+          </View>
 
-      <PremiumModal
-        visible={showPremiumModal}
-        onClose={() => setShowPremiumModal(false)}
-        isPremium={isPremium}
-        premiumExpiry={premiumExpiry}
-      />
-    </ScrollableLayout>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t("common.hotTopic")}</Text>
+              <TouchableOpacity onPress={() => navigate("/forum")}>
+                <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {hotPosts.map((post) => (
+              <TouchableOpacity
+                key={post.id}
+                style={styles.newsCard}
+                onPress={() => navigate(`/forum?postId=${post.id}`)}
+              >
+                <View style={styles.avatarCircle}>
+                  <Ionicons
+                    name="person"
+                    size={20}
+                    color={colors.text.primary}
+                  />
+                </View>
+                <View style={styles.newsContent}>
+                  <Text style={styles.newsTitle}>{post.title}</Text>
+                  <View style={styles.hashtagsContainer}>
+                    {post.hashtags.slice(0, 3).map((tag, index) => (
+                      <Text key={index} style={styles.tag}>
+                        #{tag}
+                      </Text>
+                    ))}
+                  </View>
+                </View>
+                <Ionicons
+                  name="happy-outline"
+                  size={16}
+                  color={colors.text.secondary}
+                />
+                <Text style={styles.newsDate}>{post.totalReactions}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t("common.article")}</Text>
+              <TouchableOpacity onPress={() => navigate("/article")}>
+                <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {articlesLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#007AFF" />
+                <Text style={styles.loadingText}>{t("article.loading")}</Text>
+              </View>
+            ) : articles.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.articlesContainer}
+              >
+                {articles.map((article) => (
+                  <TouchableOpacity
+                    key={article.articleId}
+                    style={styles.articleCard}
+                    onPress={() => {
+                      navigate(
+                        `/article/detailArticle?id=${article.articleId}`
+                      );
+                    }}
+                  >
+                    <Image
+                      source={{
+                        uri: extractFirstImageSrc(article.articleContent) || "",
+                      }}
+                      style={styles.articleImage}
+                      contentFit="cover"
+                      transition={0}
+                      cachePolicy="disk"
+                    />
+                    <View style={styles.articleContent}>
+                      <Text style={styles.articleTitle} numberOfLines={2}>
+                        {article.articleTitle}
+                      </Text>
+                      <Text style={styles.articleSummary} numberOfLines={2}>
+                        {article.articleDescription}
+                      </Text>
+                      <Text style={styles.articleMeta}>
+                        {formatArticleDate(article.articleCreatedDate)}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>{t("article.noArticles")}</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.bottomSpacing} />
+        </View>
+
+        <PremiumModal
+          visible={showPremiumModal}
+          onClose={() => setShowPremiumModal(false)}
+          isPremium={isPremium}
+          premiumExpiry={premiumExpiry}
+        />
+      </ScrollableLayout>
+      <ChatBubble />
+    </View>
   );
 }

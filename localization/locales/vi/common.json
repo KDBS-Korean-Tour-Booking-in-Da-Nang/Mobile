@@ -586,5 +586,8 @@
       "title": "Trung tâm hỗ trợ",
       "subtitle": "Tìm câu trả lời phù hợp cho câu hỏi của bạn"
     }
+  },
+  "chat": {
+    "selectUser": "Chọn người chat"
   }
 }

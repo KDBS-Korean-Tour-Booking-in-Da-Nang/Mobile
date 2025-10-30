@@ -43,7 +43,6 @@ api.interceptors.request.use(
           (config.headers as any)["User-Email"] = email;
         }
       }
-
     } catch {}
     return config;
   },
@@ -63,4 +62,5 @@ api.interceptors.response.use(
   }
 );
 
+export const API_BASE = API_BASE_URL;
 export default api;

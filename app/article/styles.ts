@@ -7,7 +7,7 @@ export default StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   containerIos: {
-    paddingTop: 8,
+    paddingTop: 40,
   },
   header: {
     flexDirection: "row",

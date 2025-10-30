@@ -576,5 +576,8 @@
       "title": "Support Center",
       "subtitle": "Find the best answer to your question"
     }
+  },
+  "chat": {
+    "selectUser": "Select user to chat"
   }
 }

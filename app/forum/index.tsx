@@ -358,6 +358,17 @@ export default function Forum() {
       const suggestions: string[] = [];
       const queryLower = query.toLowerCase();
 
+      const isValidToken = (s: string) => {
+        if (!s) return false;
+        const trimmed = s.trim();
+        // hide metadata/urls/long junk
+        if (trimmed.length > 40) return false;
+        if (/\{|\}|\[|\]|"|':/.test(trimmed)) return false;
+        if (/^\[\[meta/i.test(trimmed)) return false;
+        if (/https?:\/\//i.test(trimmed)) return false;
+        return true;
+      };
+
       const hashtags = new Set<string>();
       posts.forEach((post) => {
         post.hashtags?.forEach((tag) => {
@@ -373,7 +384,7 @@ export default function Forum() {
         const contentWords = post.content?.toLowerCase().split(/\s+/) || [];
 
         [...titleWords, ...contentWords].forEach((word) => {
-          if (word.length > 2 && word.includes(queryLower)) {
+          if (word.length > 2 && word.includes(queryLower) && isValidToken(word)) {
             words.add(word);
           }
         });
@@ -382,7 +393,8 @@ export default function Forum() {
       suggestions.push(...Array.from(hashtags).slice(0, 3));
       suggestions.push(...Array.from(words).slice(0, 5));
 
-      setSearchSuggestions(suggestions.slice(0, 8));
+      const cleaned = suggestions.filter(isValidToken);
+      setSearchSuggestions(cleaned.slice(0, 8));
     },
     [posts]
   );

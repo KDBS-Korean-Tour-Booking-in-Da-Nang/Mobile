@@ -14,7 +14,10 @@ import { useNavigation } from "../../navigation/navigation";
 import { useTranslation } from "react-i18next";
 import { colors } from "../../constants/theme";
 import ScrollableLayout from "../../components/ScrollableLayout";
-import { getApprovedArticles, Article } from "../../services/endpoints/articles";
+import {
+  getApprovedArticles,
+  Article,
+} from "../../services/endpoints/articles";
 import styles from "./styles";
 
 export default function ArticleList() {
@@ -117,7 +120,9 @@ export default function ArticleList() {
 
   return (
     <ScrollableLayout>
-      <View style={styles.container}>
+      <View
+        style={[styles.container, Platform.OS === "ios" && styles.containerIos]}
+      >
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
