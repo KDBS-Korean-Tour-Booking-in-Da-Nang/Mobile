@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -28,16 +28,7 @@ export default function VerifyEmail() {
   const role = (params.role as string) || "USER";
   const isSignUp = params.isSignUp === "true";
 
-  useEffect(() => {
-    sendOTP();
-  }, []);
-
-  useEffect(() => {
-    let timer: any;
-    if (countdown > 0)
-      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [countdown]);
+  
 
   const sendOTP = async () => {
     if (!email) return;
@@ -104,7 +95,7 @@ export default function VerifyEmail() {
         else navigate("/auth/login/userLogin");
       } else {
         navigate(
-          `/resetPassword?${new URLSearchParams({
+          `/auth/reset?${new URLSearchParams({
             email,
             otpCode: otp,
           }).toString()}`

@@ -35,6 +35,8 @@ export default function TourDetail() {
   const [tour, setTour] = useState<TourResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const heroWidth = useMemo(() => Dimensions.get("window").width - 20, []);
+  const imageScrollRef = useRef<ScrollView | null>(null);
 
   const [isNavVisible, setIsNavVisible] = useState(true);
   const lastScrollY = useRef(0);
@@ -47,7 +49,7 @@ export default function TourDetail() {
         const res = await tourEndpoints.getById(tourId);
         setTour(res.data);
         setCurrentImageIndex(0);
-      } catch (error) {
+      } catch {
         Alert.alert(t("common.error"), t("tour.errors.loadFailed"));
       } finally {
         setLoading(false);
@@ -118,12 +120,6 @@ export default function TourDetail() {
     );
   }
 
-  const handleNextImage = () => {
-    setCurrentImageIndex((prev) =>
-      imageList.length ? (prev + 1) % imageList.length : 0
-    );
-  };
-
   return (
     <MainLayout isNavVisible={isNavVisible}>
       <ScrollView
@@ -133,23 +129,79 @@ export default function TourDetail() {
         scrollEventThrottle={16}
       >
         <View style={styles.imageWrapper}>
-          <Image
-            source={{ uri: imageList[currentImageIndex] }}
-            style={styles.heroImage}
-            contentFit="cover"
-            cachePolicy="disk"
-          />
+          {(() => {
+            const loopData =
+              imageList.length > 1
+                ? [imageList[imageList.length - 1], ...imageList, imageList[0]]
+                : imageList;
+            return (
+              <ScrollView
+                ref={imageScrollRef}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                style={{ width: "100%" }}
+                nestedScrollEnabled
+                decelerationRate="fast"
+                snapToInterval={heroWidth}
+                snapToAlignment="start"
+                bounces={false}
+                contentOffset={{
+                  x: imageList.length > 1 ? heroWidth : 0,
+                  y: 0,
+                }}
+                onLayout={() => {
+                  if (imageList.length > 1) {
+                    imageScrollRef.current?.scrollTo({
+                      x: heroWidth,
+                      animated: false,
+                    });
+                  }
+                }}
+                onMomentumScrollEnd={(e) => {
+                  try {
+                    const x = e.nativeEvent.contentOffset.x || 0;
+                    const idx = Math.max(0, Math.round(x / heroWidth));
+                    if (imageList.length > 1) {
+                      const lastIndex = loopData.length - 1;
+                      if (idx === 0) {
+                        imageScrollRef.current?.scrollTo({
+                          x: heroWidth * (lastIndex - 1),
+                          animated: false,
+                        });
+                        setCurrentImageIndex(loopData.length - 3);
+                        return;
+                      }
+                      if (idx === lastIndex) {
+                        imageScrollRef.current?.scrollTo({
+                          x: heroWidth,
+                          animated: false,
+                        });
+                        setCurrentImageIndex(0);
+                        return;
+                      }
+                      setCurrentImageIndex(idx - 1);
+                    } else {
+                      setCurrentImageIndex(0);
+                    }
+                  } catch {}
+                }}
+              >
+                {loopData.map((uri, idx) => (
+                  <Image
+                    key={`${uri}-${idx}`}
+                    source={{ uri }}
+                    style={[styles.heroImage, { width: heroWidth }]}
+                    contentFit="cover"
+                    cachePolicy="disk"
+                  />
+                ))}
+              </ScrollView>
+            );
+          })()}
           <TouchableOpacity style={styles.backBtn} onPress={goBack}>
             <View style={styles.backCircle}>
               <Ionicons name="chevron-back" size={18} color="#000" />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.backBtn, { left: undefined, right: 12 }]}
-            onPress={handleNextImage}
-          >
-            <View style={styles.backCircle}>
-              <Ionicons name="chevron-forward" size={18} color="#000" />
             </View>
           </TouchableOpacity>
           <View
@@ -417,25 +469,128 @@ export default function TourDetail() {
 
           {tour.contents && tour.contents.length > 0 && (
             <>
-              {tour.contents.map((content, idx) => (
-                <View key={idx} style={[styles.sectionBlock, styles.outerCard]}>
-                  <View style={styles.blockHeader}>
-                    <Text style={styles.blockHeaderText}>
-                      {t("tour.detail.destinationAndItinerary")}
-                    </Text>
-                  </View>
-                  <View style={styles.blockBox}>
-                    <View style={styles.contentCard}>
-                      <Text style={styles.contentTitle}>
-                        {content.tourContentTitle}
-                      </Text>
-                      <Text style={styles.contentDescription}>
-                        {content.tourContentDescription}
+              {tour.contents.map((content, idx) => {
+                const renderHtmlDescription = (html?: string) => {
+                  if (!html || typeof html !== "string") return null;
+
+                  try {
+                    const items: Array<{
+                      label?: string;
+                      text?: string;
+                      img?: string;
+                    }> = [];
+                    const liRegex = /<li[^>]*>([\s\S]*?)<\/li>/gi;
+                    let liMatch: RegExpExecArray | null;
+                    while ((liMatch = liRegex.exec(html))) {
+                      const liInner = liMatch[1] || "";
+                      const labelMatch =
+                        /<strong[^>]*>([\s\S]*?)<\/strong>/i.exec(liInner);
+                      const imgMatch =
+                        /<img[^>]*src=["']([^"']+)["'][^>]*>/i.exec(liInner);
+                      // Remove tags and strong label from text, keep readable content
+                      const liTextRaw = liInner
+                        .replace(/<strong[^>]*>[\s\S]*?<\/strong>/i, "")
+                        .replace(/<[^>]+>/g, " ")
+                        .replace(/\s+/g, " ")
+                        .trim();
+                      items.push({
+                        label: labelMatch
+                          ? String(labelMatch[1]).trim()
+                          : undefined,
+                        text: liTextRaw,
+                        img: imgMatch ? imgMatch[1] : undefined,
+                      });
+                    }
+
+                    if (items.length === 0) {
+                      const fallback = html
+                        .replace(/<[^>]+>/g, " ")
+                        .replace(/\s+/g, " ")
+                        .trim();
+                      return (
+                        <Text style={styles.contentDescription}>
+                          {fallback}
+                        </Text>
+                      );
+                    }
+
+                    return (
+                      <View style={{ gap: 10 }}>
+                        {items.map((it, i) => (
+                          <View
+                            key={i}
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "flex-start",
+                              gap: 8,
+                            }}
+                          >
+                            <Text style={{ marginTop: 2 }}>•</Text>
+                            <View style={{ flex: 1 }}>
+                              {!!it.label && (
+                                <Text style={{ fontWeight: "700" }}>
+                                  {it.label}
+                                </Text>
+                              )}
+                              {!!it.text && (
+                                <Text
+                                  style={[
+                                    styles.contentDescription,
+                                    { marginTop: 2 },
+                                  ]}
+                                >
+                                  {it.text}
+                                </Text>
+                              )}
+                              {!!it.img && (
+                                <Image
+                                  source={{ uri: it.img }}
+                                  style={{
+                                    width: "100%",
+                                    height: 180,
+                                    borderRadius: 8,
+                                    marginTop: 8,
+                                  }}
+                                  resizeMode="cover"
+                                />
+                              )}
+                            </View>
+                          </View>
+                        ))}
+                      </View>
+                    );
+                  } catch {
+                    const fallback = html
+                      .replace(/<[^>]+>/g, " ")
+                      .replace(/\s+/g, " ")
+                      .trim();
+                    return (
+                      <Text style={styles.contentDescription}>{fallback}</Text>
+                    );
+                  }
+                };
+
+                return (
+                  <View
+                    key={idx}
+                    style={[styles.sectionBlock, styles.outerCard]}
+                  >
+                    <View style={styles.blockHeader}>
+                      <Text style={styles.blockHeaderText}>
+                        {t("tour.detail.destinationAndItinerary")}
                       </Text>
                     </View>
+                    <View style={styles.blockBox}>
+                      <View style={styles.contentCard}>
+                        <Text style={styles.contentTitle}>
+                          {content.tourContentTitle}
+                        </Text>
+                        {renderHtmlDescription(content.tourContentDescription)}
+                      </View>
+                    </View>
                   </View>
-                </View>
-              ))}
+                );
+              })}
             </>
           )}
 

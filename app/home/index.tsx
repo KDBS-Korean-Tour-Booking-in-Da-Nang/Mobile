@@ -28,9 +28,7 @@ import {
   getApprovedArticles,
   Article,
 } from "../../services/endpoints/articles";
-import PremiumModal from "../../components/PremiumModal";
 import ChatBubble from "../../components/ChatBubble";
-import { usePremium } from "../../src/contexts/premiumContext";
 import { useFocusEffect } from "@react-navigation/native";
 import styles from "./styles";
 
@@ -135,11 +133,6 @@ export default function Home() {
   const { navigate } = useNavigation();
   const { t, i18n } = useTranslation();
   const { user } = useAuthContext();
-  const {
-    refreshStatus,
-    premiumType: contextPremiumType,
-    expiryDate: contextExpiry,
-  } = usePremium();
   const [hotPosts, setHotPosts] = useState<PostResponse[]>([]);
   const [featuredTours, setFeaturedTours] = useState<TourResponse[]>([]);
   const [toursLoading, setToursLoading] = useState(true);
@@ -153,25 +146,6 @@ export default function Home() {
 
   const [currentLanguage, setCurrentLanguage] = useState<"en" | "ko" | "vi">(
     i18n.language as "en" | "ko" | "vi"
-  );
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [premiumType, setPremiumType] = useState<string | undefined>(undefined);
-  const [premiumExpiry, setPremiumExpiry] = useState<string | undefined>(
-    undefined
-  );
-  const isPremium = (contextPremiumType || premiumType) === "PREMIUM";
-  useFocusEffect(
-    React.useCallback(() => {
-      let isActive = true;
-      (async () => {
-        try {
-          await refreshStatus();
-        } catch {}
-      })();
-      return () => {
-        isActive = false;
-      };
-    }, [])
   );
 
   const handleLanguageSelect = (language: "en" | "ko" | "vi") => {
@@ -245,7 +219,7 @@ export default function Home() {
       try {
         setArticlesLoading(true);
         const articlesData = await getApprovedArticles();
-        setArticles(articlesData.slice(0, 5));
+        setArticles(articlesData); 
       } catch (error) {
         setArticles([]);
       } finally {
@@ -453,16 +427,6 @@ export default function Home() {
                 <Text style={[styles.usernameText, langAdjust]}>
                   {user?.username || "Guest"}
                 </Text>
-                <TouchableOpacity
-                  onPress={() => setShowPremiumModal(true)}
-                  style={styles.premiumIconContainer}
-                >
-                  <Ionicons
-                    name="diamond"
-                    size={20}
-                    color={isPremium ? "#FFD700" : "#C0C0C0"}
-                  />
-                </TouchableOpacity>
               </View>
             </View>
             <View style={styles.rightActions}>
@@ -673,12 +637,6 @@ export default function Home() {
           <View style={styles.bottomSpacing} />
         </View>
 
-        <PremiumModal
-          visible={showPremiumModal}
-          onClose={() => setShowPremiumModal(false)}
-          isPremium={isPremium}
-          premiumExpiry={premiumExpiry}
-        />
       </ScrollableLayout>
       <ChatBubble />
     </View>

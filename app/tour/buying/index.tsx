@@ -11,6 +11,7 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  Dimensions,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import MainLayout from "../../../components/MainLayout";
@@ -35,6 +36,11 @@ export default function BuyingTour() {
   const [loading, setLoading] = React.useState(true);
   const [booking] = React.useState(false);
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
+  const heroWidth = React.useMemo(
+    () => Dimensions.get("window").width - 24,
+    []
+  );
+  const imageScrollRef = React.useRef<ScrollView | null>(null);
 
   const [isNavVisible, setIsNavVisible] = React.useState(true);
   const lastScrollY = React.useRef(0);
@@ -60,7 +66,7 @@ export default function BuyingTour() {
         const res = await tourEndpoints.getById(tourId);
         setTour(res.data);
         setCurrentImageIndex(0);
-      } catch (error) {
+      } catch {
         Alert.alert(t("common.error"), t("tour.errors.loadFailed"));
       } finally {
         setLoading(false);
@@ -139,6 +145,7 @@ export default function BuyingTour() {
     phoneNumber: "",
     email: "",
     pickUpPoint: "",
+    departureDate: "",
     note: "",
   });
   const [phoneError, setPhoneError] = React.useState<string | null>(null);
@@ -174,6 +181,7 @@ export default function BuyingTour() {
         phoneNumber: user.phone || "",
         email: user.email || "",
         pickUpPoint: formData.pickUpPoint,
+        departureDate: formData.departureDate,
         note: formData.note,
       });
     }
@@ -253,6 +261,13 @@ export default function BuyingTour() {
       Alert.alert(
         t("common.error"),
         t("tour.booking.errors.pickUpPointRequired")
+      );
+      return false;
+    }
+    if (!formData.departureDate || formData.departureDate.trim().length < 2) {
+      Alert.alert(
+        t("common.error"),
+        t("tour.booking.errors.departureDateRequired")
       );
       return false;
     }
@@ -430,6 +445,7 @@ export default function BuyingTour() {
         birthDate: babyDob[index] || new Date().toISOString().split("T")[0],
       })),
       pickUpPoint: formData.pickUpPoint || "",
+      departureDate: formData.departureDate || "",
       note: formData.note || "",
     };
 
@@ -484,38 +500,92 @@ export default function BuyingTour() {
 
   return (
     <MainLayout isNavVisible={isNavVisible}>
-      <TouchableOpacity
-        style={{ flex: 1 }}
-        activeOpacity={1}
-        onPress={closeDropdowns}
-      >
+      <View style={{ flex: 1 }}>
         <ScrollView
           style={styles.container}
           showsVerticalScrollIndicator={false}
           onScroll={handleScroll}
           scrollEventThrottle={32}
           removeClippedSubviews
+          directionalLockEnabled
         >
           <View style={styles.imageWrapper}>
-            <Image
-              source={{ uri: imageList[currentImageIndex] }}
-              style={styles.heroImage}
-            />
+            {(() => {
+              const loopData =
+                imageList.length > 1
+                  ? [
+                      imageList[imageList.length - 1],
+                      ...imageList,
+                      imageList[0],
+                    ]
+                  : imageList;
+              return (
+                <ScrollView
+                  ref={imageScrollRef}
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  style={{ width: "100%" }}
+                  nestedScrollEnabled
+                  decelerationRate="fast"
+                  snapToInterval={heroWidth}
+                  snapToAlignment="start"
+                  bounces={false}
+                  contentOffset={{
+                    x: imageList.length > 1 ? heroWidth : 0,
+                    y: 0,
+                  }}
+                  onLayout={() => {
+                    if (imageList.length > 1) {
+                      imageScrollRef.current?.scrollTo({
+                        x: heroWidth,
+                        animated: false,
+                      });
+                    }
+                  }}
+                  onMomentumScrollEnd={(e) => {
+                    try {
+                      const x = e.nativeEvent.contentOffset.x || 0;
+                      const idx = Math.max(0, Math.round(x / heroWidth));
+                      if (imageList.length > 1) {
+                        const lastIndex = loopData.length - 1;
+                        if (idx === 0) {
+                          imageScrollRef.current?.scrollTo({
+                            x: heroWidth * (lastIndex - 1),
+                            animated: false,
+                          });
+                          setCurrentImageIndex(loopData.length - 3);
+                          return;
+                        }
+                        if (idx === lastIndex) {
+                          imageScrollRef.current?.scrollTo({
+                            x: heroWidth,
+                            animated: false,
+                          });
+                          setCurrentImageIndex(0);
+                          return;
+                        }
+                        setCurrentImageIndex(idx - 1);
+                      } else {
+                        setCurrentImageIndex(0);
+                      }
+                    } catch {}
+                  }}
+                >
+                  {loopData.map((uri, idx) => (
+                    <Image
+                      key={`${uri}-${idx}`}
+                      source={{ uri }}
+                      style={[styles.heroImage, { width: heroWidth }]}
+                      resizeMode="cover"
+                    />
+                  ))}
+                </ScrollView>
+              );
+            })()}
             <TouchableOpacity style={styles.backBtn} onPress={goBack}>
               <View style={styles.backCircle}>
                 <Ionicons name="chevron-back" size={18} color="#000" />
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.backBtn, { left: undefined, right: 12 }]}
-              onPress={() =>
-                setCurrentImageIndex((prev) =>
-                  imageList.length ? (prev + 1) % imageList.length : 0
-                )
-              }
-            >
-              <View style={styles.backCircle}>
-                <Ionicons name="chevron-forward" size={18} color="#000" />
               </View>
             </TouchableOpacity>
             <View style={styles.imageOverlay}>
@@ -740,6 +810,21 @@ export default function BuyingTour() {
               />
             </View>
             <View style={styles.fieldGroup}>
+              <Text style={styles.label}>
+                {t("tour.booking.departureDate")}{" "}
+                {!formData.departureDate?.trim() && (
+                  <Text style={{ color: "#FF3B30" }}> *</Text>
+                )}
+              </Text>
+              <DateField
+                value={formData.departureDate}
+                onChange={(val) =>
+                  setFormData((prev) => ({ ...prev, departureDate: val }))
+                }
+                minimumDate={new Date()}
+              />
+            </View>
+            <View style={styles.fieldGroup}>
               <Text style={styles.label}>{t("tour.booking.note")}</Text>
               <TextInput
                 style={[styles.input, styles.noteInput]}
@@ -757,10 +842,10 @@ export default function BuyingTour() {
             <Text style={styles.formTitle}>
               {t("tour.booking.bookingInfo")}
             </Text>
-            <Text style={styles.sectionSubLabel}>
+            {/* <Text style={styles.sectionSubLabel}>
               {t("tour.booking.departureDate")}
-            </Text>
-            <View style={styles.dateRow}>
+            </Text> */}
+            {/* <View style={styles.dateRow}>
               <View style={styles.dateCol}>
                 <View style={styles.datePill}>
                   <View style={[styles.caretCircle, styles.caretCircleRight]}>
@@ -782,7 +867,7 @@ export default function BuyingTour() {
                   </View>
                 </View>
               </View>
-            </View>
+            </View> */}
 
             <Text style={[styles.sectionSubLabel, { marginTop: 10 }]}>
               {t("tour.booking.totalGuests")}
@@ -1085,9 +1170,7 @@ export default function BuyingTour() {
                                   setShowNationalityPicker(null);
                                 }}
                               >
-                                <Text style={styles.dropdownText}>
-                                  South Korea
-                                </Text>
+                                <Text style={styles.dropdownText}>Korea</Text>
                               </TouchableOpacity>
                               <TouchableOpacity
                                 style={styles.dropdownItem}
@@ -1349,15 +1432,13 @@ export default function BuyingTour() {
                                     ...prev,
                                     [idx]: {
                                       ...prev[idx],
-                                      nationality: "South Korea",
+                                      nationality: "Korea",
                                     },
                                   }));
                                   setShowNationalityPicker(null);
                                 }}
                               >
-                                <Text style={styles.dropdownText}>
-                                  South Korea
-                                </Text>
+                                <Text style={styles.dropdownText}>Korea</Text>
                               </TouchableOpacity>
                               <TouchableOpacity
                                 style={styles.dropdownItem}
@@ -1625,9 +1706,7 @@ export default function BuyingTour() {
                                   setShowNationalityPicker(null);
                                 }}
                               >
-                                <Text style={styles.dropdownText}>
-                                  South Korea
-                                </Text>
+                                <Text style={styles.dropdownText}>Korea</Text>
                               </TouchableOpacity>
                               <TouchableOpacity
                                 style={styles.dropdownItem}
@@ -1709,12 +1788,144 @@ export default function BuyingTour() {
             <View style={{ height: 100 }} />
           </View>
         </ScrollView>
-      </TouchableOpacity>
+      </View>
     </MainLayout>
   );
 }
 
 type DobFieldProps = { value?: string; onChange: (value: string) => void };
+
+type DateFieldProps = {
+  value?: string;
+  onChange: (value: string) => void;
+  minimumDate?: Date;
+};
+
+const DateField: React.FC<DateFieldProps> = ({
+  value,
+  onChange,
+  minimumDate,
+}) => {
+  const { t } = useTranslation();
+  const [showPicker, setShowPicker] = React.useState(false);
+  const [selectedDate, setSelectedDate] = React.useState<Date>(() => {
+    if (!value) return minimumDate || new Date();
+    try {
+      const m = String(value).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (m) {
+        const dd = Number(m[1]);
+        const mm = Number(m[2]);
+        const yyyy = Number(m[3]);
+        const d = new Date(yyyy, mm - 1, dd);
+        if (!isNaN(d.getTime())) return d;
+      }
+      const d2 = new Date(value);
+      if (!isNaN(d2.getTime())) return d2;
+    } catch {}
+    return minimumDate || new Date();
+  });
+
+  const formatDate = (d: Date) => {
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
+  const handleDateChange = (event: any, selected?: Date) => {
+    try {
+      if (Platform.OS === "ios") {
+        // Với calendar mode, event.type có thể là "set" hoặc "dismissed"
+        if (event?.type === "dismissed") {
+          setShowPicker(false);
+          return;
+        }
+        if (selected) {
+          setSelectedDate(selected);
+          onChange(formatDate(selected));
+          // Tự động đóng modal sau khi chọn ngày
+          setTimeout(() => {
+            setShowPicker(false);
+          }, 300);
+        }
+        return;
+      }
+      if (selected) {
+        setSelectedDate(selected);
+        onChange(formatDate(selected));
+      }
+      setShowPicker(false);
+    } catch (error) {
+      console.error("Date picker error:", error);
+      setShowPicker(false);
+    }
+  };
+
+  const showDatePicker = () => {
+    setShowPicker(true);
+  };
+
+  return (
+    <>
+      <Pressable
+        style={[styles.input, styles.dobInput]}
+        onPress={showDatePicker}
+      >
+        <Text style={[styles.dobText, !value && { color: "#9ca3af" }]}>
+          {value || t("tour.booking.selectDate")}
+        </Text>
+      </Pressable>
+
+      {showPicker && Platform.OS !== "ios" && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+          minimumDate={minimumDate || new Date()}
+        />
+      )}
+
+      {Platform.OS === "ios" && (
+        <Modal
+          transparent
+          animationType="fade"
+          visible={showPicker}
+          onRequestClose={() => setShowPicker(false)}
+        >
+          <Pressable
+            style={styles.iosDateOverlay}
+            onPress={() => setShowPicker(false)}
+          >
+            <Pressable
+              style={styles.iosDateCard}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <Text style={styles.iosDateTitle}>
+                {t("tour.booking.departureDate")}
+              </Text>
+              {value && (
+                <Text style={styles.iosDateSelected}>
+                  {formatDate(selectedDate)}
+                </Text>
+              )}
+              <View style={styles.iosDatePickerContainer}>
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display="compact"
+                  onChange={handleDateChange}
+                  minimumDate={minimumDate || new Date()}
+                  style={styles.iosDatePicker}
+                />
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      )}
+    </>
+  );
+};
 
 const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
   const { t } = useTranslation();
@@ -1744,18 +1955,32 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
   };
 
   const handleDateChange = (event: any, selected?: Date) => {
-    if (Platform.OS === "ios") {
+    try {
+      if (Platform.OS === "ios") {
+        // Với calendar mode, event.type có thể là "set" hoặc "dismissed"
+        if (event?.type === "dismissed") {
+          setShowPicker(false);
+          return;
+        }
+        if (selected) {
+          setSelectedDate(selected);
+          onChange(formatDate(selected));
+          // Tự động đóng modal sau khi chọn ngày
+          setTimeout(() => {
+            setShowPicker(false);
+          }, 300);
+        }
+        return;
+      }
       if (selected) {
         setSelectedDate(selected);
         onChange(formatDate(selected));
       }
-      return;
+      setShowPicker(false);
+    } catch (error) {
+      console.error("Date picker error:", error);
+      setShowPicker(false);
     }
-    if (selected) {
-      setSelectedDate(selected);
-      onChange(formatDate(selected));
-    }
-    setShowPicker(false);
   };
 
   const showDatePicker = () => {
@@ -1768,9 +1993,7 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
         style={[styles.input, styles.dobInput]}
         onPress={showDatePicker}
       >
-        <Text
-          style={[styles.dobText, !value && { color: "#9ca3af" }]}
-        >
+        <Text style={[styles.dobText, !value && { color: "#9ca3af" }]}>
           {value || t("tour.booking.dobShort")}
         </Text>
       </Pressable>
@@ -1792,34 +2015,34 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
           visible={showPicker}
           onRequestClose={() => setShowPicker(false)}
         >
-          <View style={styles.iosDateOverlay}>
-            <View style={styles.iosDateCard}>
+          <Pressable
+            style={styles.iosDateOverlay}
+            onPress={() => setShowPicker(false)}
+          >
+            <Pressable
+              style={styles.iosDateCard}
+              onPress={(e) => e.stopPropagation()}
+            >
               <Text style={styles.iosDateTitle}>
                 {t("tour.booking.dateOfBirth")}
               </Text>
-              <DateTimePicker
-                value={selectedDate}
-                mode="date"
-                display="spinner"
-                onChange={handleDateChange}
-                maximumDate={new Date()}
-                style={{ alignSelf: "stretch" }}
-              />
-              <View style={styles.iosDateActions}>
-                <TouchableOpacity onPress={() => setShowPicker(false)}>
-                  <Text>{t("common.cancel")}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => {
-                    onChange(formatDate(selectedDate));
-                    setShowPicker(false);
-                  }}
-                >
-                  <Text style={{ fontWeight: "700" }}>{t("common.ok")}</Text>
-                </TouchableOpacity>
+              {value && (
+                <Text style={styles.iosDateSelected}>
+                  {formatDate(selectedDate)}
+                </Text>
+              )}
+              <View style={styles.iosDatePickerContainer}>
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display="compact"
+                  onChange={handleDateChange}
+                  maximumDate={new Date()}
+                  style={styles.iosDatePicker}
+                />
               </View>
-            </View>
-          </View>
+            </Pressable>
+          </Pressable>
         </Modal>
       )}
     </>

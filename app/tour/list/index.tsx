@@ -52,6 +52,11 @@ export default function TourList() {
   const lastScrollY = useRef(0);
   const scrollThreshold = 50;
 
+  const [showGiftModal, setShowGiftModal] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [closeModalDontShow, setCloseModalDontShow] = useState(false);
+
   const loadTours = useCallback(async () => {
     try {
       setLoading(true);
@@ -72,7 +77,49 @@ export default function TourList() {
 
   useEffect(() => {
     loadTours();
+    checkGiftModalPreference();
   }, [loadTours]);
+
+  const checkGiftModalPreference = async () => {
+    // Luôn hiển thị icon mỗi lần vào trang (không check AsyncStorage nữa)
+    setShowGiftModal(true);
+    setDontShowAgain(false);
+  };
+
+  const handleGiftModalClose = async () => {
+    if (dontShowAgain) {
+      setShowGiftModal(false);
+      return;
+    }
+
+    // Hiển thị modal hỏi
+    setShowCloseModal(true);
+  };
+
+  const handleCloseModalConfirm = async () => {
+    try {
+      if (closeModalDontShow) {
+        // Chỉ lưu trong session hiện tại, không lưu vào AsyncStorage
+        setDontShowAgain(true);
+      }
+      setShowGiftModal(false);
+      setShowCloseModal(false);
+      setCloseModalDontShow(false);
+    } catch {
+      setShowGiftModal(false);
+      setShowCloseModal(false);
+      setCloseModalDontShow(false);
+    }
+  };
+
+  const handleCloseModalCancel = () => {
+    setShowCloseModal(false);
+    setCloseModalDontShow(false);
+  };
+
+  const handleGiftModalPress = () => {
+    navigate("/tour/voucher-list" as any);
+  };
 
   const handleScroll = useCallback((event: any) => {
     const currentScrollY = event.nativeEvent.contentOffset.y;
@@ -80,10 +127,8 @@ export default function TourList() {
 
     if (scrollDifference > scrollThreshold) {
       if (currentScrollY > lastScrollY.current) {
-        // Scrolling down - hide navbar
         setIsNavVisible(false);
       } else {
-        // Scrolling up - show navbar
         setIsNavVisible(true);
       }
       lastScrollY.current = currentScrollY;
@@ -204,6 +249,36 @@ export default function TourList() {
 
   return (
     <MainLayout isNavVisible={isNavVisible}>
+      {/* Gift Modal */}
+      {showGiftModal && (
+        <View style={styles.giftModalContainer}>
+          <TouchableOpacity
+            style={styles.giftModalButton}
+            onPress={handleGiftModalPress}
+            activeOpacity={0.8}
+          >
+            <View style={styles.giftModalContent}>
+              <Ionicons name="gift" size={24} color="#fff" />
+              <View style={styles.giftModalTextContainer}>
+                <Text style={styles.giftModalTextTop}>
+                  {t("tour.giftModal.clickNow") || "Nhấp ngay"}
+                </Text>
+                <Text style={styles.giftModalTextBottom}>
+                  {t("tour.giftModal.hasReward") || "* có thưởng"}
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.giftModalCloseButton}
+            onPress={handleGiftModalClose}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="close" size={16} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      )}
+
       <ScrollView
         style={styles.container}
         showsVerticalScrollIndicator={false}
@@ -251,12 +326,40 @@ export default function TourList() {
             filteredTours.map((tour) => (
               <View key={tour.id} style={styles.tourCard}>
                 <TouchableOpacity onPress={() => handleTourPress(tour.id)}>
-                  <Image
-                    source={{ uri: resolveTourCardImage(tour) }}
-                    style={styles.tourImage}
-                    contentFit="cover"
-                    cachePolicy="disk"
-                  />
+                  <View style={{ position: "relative" }}>
+                    <Image
+                      source={{ uri: resolveTourCardImage(tour) }}
+                      style={styles.tourImage}
+                      contentFit="cover"
+                      cachePolicy="disk"
+                    />
+                    <TouchableOpacity
+                      onPress={() => openShareModal(tour)}
+                      activeOpacity={0.9}
+                      style={{
+                        position: "absolute",
+                        right: 8,
+                        top: 8,
+                        backgroundColor: "rgba(255,255,255,0.95)",
+                        borderRadius: 16,
+                        width: 32,
+                        height: 32,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        shadowColor: "#000",
+                        shadowOpacity: 0.15,
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowRadius: 4,
+                        elevation: 3,
+                      }}
+                    >
+                      <Ionicons
+                        name="share-social-outline"
+                        size={16}
+                        color="#111"
+                      />
+                    </TouchableOpacity>
+                  </View>
                   <View style={styles.tourContent}>
                     <Text style={styles.tourTitle} numberOfLines={2}>
                       {tour.tourName}
@@ -298,28 +401,6 @@ export default function TourList() {
                       </View>
                     </View>
                   </View>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => openShareModal(tour)}
-                  style={{
-                    marginTop: 8,
-                    backgroundColor: "#34C759",
-                    borderRadius: 10,
-                    paddingVertical: 8,
-                    alignItems: "center",
-                    flexDirection: "row",
-                    justifyContent: "center",
-                    gap: 6,
-                  }}
-                >
-                  <Ionicons
-                    name="share-social-outline"
-                    size={16}
-                    color="#fff"
-                  />
-                  <Text style={{ color: "#fff", fontWeight: "600" }}>
-                    {t("tour.share.shareButton")}
-                  </Text>
                 </TouchableOpacity>
               </View>
             ))
@@ -593,6 +674,64 @@ export default function TourList() {
               </View>
             </ScrollView>
           </KeyboardAvoidingView>
+        </View>
+      </Modal>
+
+      {/* Close Confirmation Modal */}
+      <Modal
+        visible={showCloseModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCloseModalCancel}
+      >
+        <View style={styles.closeModalOverlay}>
+          <View style={styles.closeModalContent}>
+            <TouchableOpacity
+              style={styles.closeModalXButton}
+              onPress={handleCloseModalCancel}
+            >
+              <Ionicons name="close" size={24} color="#333" />
+            </TouchableOpacity>
+
+            <View style={styles.closeModalHeader}>
+              <Ionicons name="help-circle" size={40} color="#007AFF" />
+              <Text style={styles.closeModalTitle}>
+                {t("tour.giftModal.dontShowTitle") || "Không hiển thị lại?"}
+              </Text>
+              <Text style={styles.closeModalMessage}>
+                {t("tour.giftModal.dontShowMessage") ||
+                  "Bạn có muốn ẩn thông báo này trong các lần sau không?"}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.closeModalCheckbox}
+              onPress={() => setCloseModalDontShow(!closeModalDontShow)}
+            >
+              <View
+                style={[
+                  styles.checkbox,
+                  closeModalDontShow && styles.checkboxChecked,
+                ]}
+              >
+                {closeModalDontShow && (
+                  <Ionicons name="checkmark" size={16} color="#fff" />
+                )}
+              </View>
+              <Text style={styles.checkboxLabel}>
+                {t("tour.giftModal.dontShowAgain") || "Không hiển thị lại"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.closeModalSubmitButton}
+              onPress={handleCloseModalConfirm}
+            >
+              <Text style={styles.closeModalSubmitText}>
+                {t("common.confirm") || "Xác nhận"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
     </MainLayout>

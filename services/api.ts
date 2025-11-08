@@ -18,6 +18,11 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 });
+export const apiForm = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 20000,
+
+});
 
 api.interceptors.request.use(
   async (config) => {
@@ -49,6 +54,29 @@ api.interceptors.request.use(
   (error) => {
     return Promise.reject(error);
   }
+);
+
+// Reuse same auth/user-email interceptor for form instance
+apiForm.interceptors.request.use(
+  async (config) => {
+    try {
+      const token = await AsyncStorage.getItem("authToken");
+      const userData = await AsyncStorage.getItem("userData");
+      const url = config.url || "";
+      const isAuthEndpoint = url.startsWith("/api/auth/");
+      if (token && !isAuthEndpoint) {
+        (config.headers as any).Authorization = `Bearer ${token}`;
+      }
+      if (userData) {
+        const user = JSON.parse(userData);
+        let email: string | undefined = user?.email;
+        if (!email) email = user?.userEmail || user?.emailAddress || user?.mail;
+        if (email) (config.headers as any)["User-Email"] = email;
+      }
+    } catch {}
+    return config;
+  },
+  (error) => Promise.reject(error)
 );
 
 api.interceptors.response.use(

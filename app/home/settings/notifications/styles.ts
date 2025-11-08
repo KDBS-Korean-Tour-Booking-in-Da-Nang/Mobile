@@ -1,0 +1,228 @@
+import { StyleSheet, Platform } from "react-native";
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  header: {
+    paddingTop: Platform.select({ ios: 50, android: 40 }),
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5EA",
+  },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#000",
+    flex: 1,
+    textAlign: "center",
+  },
+  menuButton: {
+    padding: 8,
+  },
+  tabsContainer: {
+    flexDirection: "row",
+    backgroundColor: "#F2F2F7",
+    borderRadius: 8,
+    padding: 4,
+    marginBottom: 12,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    alignItems: "center",
+  },
+  tabActive: {
+    backgroundColor: "#007AFF",
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#8E8E93",
+  },
+  tabTextActive: {
+    color: "#000",
+    fontWeight: "600",
+  },
+  markAllButton: {
+    backgroundColor: "#007AFF",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  markAllButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  content: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    paddingHorizontal: 32,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#8E8E93",
+    marginTop: 16,
+    textAlign: "center",
+  },
+  notificationsList: {
+    paddingVertical: 8,
+  },
+  notificationItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5EA",
+  },
+  notificationLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: 12,
+  },
+  avatarContainer: {
+    position: "relative",
+    marginRight: 12,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#F2F2F7",
+  },
+  avatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#F2F2F7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconOverlay: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
+  notificationContent: {
+    flex: 1,
+  },
+  notificationText: {
+    fontSize: 14,
+    color: "#000",
+    marginBottom: 4,
+    lineHeight: 20,
+  },
+  notificationTime: {
+    fontSize: 12,
+    color: "#8E8E93",
+  },
+  notificationRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#007AFF",
+  },
+  notificationMenu: {
+    padding: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  menuContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingVertical: 8,
+    minWidth: 200,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  headerMenuContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingVertical: 8,
+    minWidth: 250,
+    position: "absolute",
+    top: Platform.select({ ios: 100, android: 80 }),
+    right: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  menuItemDelete: {
+    borderTopWidth: 1,
+    borderTopColor: "#E5E5EA",
+  },
+  menuItemText: {
+    fontSize: 16,
+    color: "#000",
+    flex: 1,
+  },
+  menuItemTextDelete: {
+    color: "#FF3B30",
+  },
+  loadingMoreContainer: {
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+});
+
+export default styles;

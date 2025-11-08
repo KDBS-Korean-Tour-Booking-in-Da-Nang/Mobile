@@ -112,7 +112,7 @@
       "textField": "Text Field",
       "description": "Description",
       "tapToAdd": "Tap to Add",
-      "photoVideo": "Photo/ Video",
+      "photoVideo": "Photo",
       "chooseHashtags": "Choose your hashtags:",
       "hashtag": "hashtag"
     },
@@ -263,12 +263,9 @@
       "cccd": "ID number",
       "id": "ID",
       "role": "Role",
-      "premium": "Premium",
       "joinedAt": "Joined at"
     },
     "notUpdated": "Not updated",
-    "premiumYes": "Upgraded",
-    "premiumNo": "Not upgraded",
     "editModalTitle": "Edit information",
     "genderOptions": {
       "unknown": "Not set",
@@ -358,6 +355,7 @@
       "note": "Note",
       "bookingInfo": "Booking Information",
       "departureDate": "Departure date",
+      "selectDate": "Select date",
       "totalGuests": "Total guests",
       "adult": "Adult",
       "children": "Children",
@@ -386,6 +384,7 @@
         "emailInvalid": "Invalid email address",
         "phoneTenDigits": "Phone number must be exactly 10 digits",
         "pickUpPointRequired": "Pick-up point is required",
+        "departureDateRequired": "Please select a departure date",
         "adultDobInvalid": "Adult {{index}}: Please select a valid date of birth",
         "adultAgeMin": "Adult {{index}}: Age must be 18 or older",
         "childDobInvalid": "Child {{index}}: Please select a valid date of birth",
@@ -418,7 +417,44 @@
       "guestDetails": "Guest Details",
       "paymentRedirect": "Payment Redirect",
       "paymentSuccess": "Payment Successful",
-      "paymentFailed": "Payment Failed"
+      "paymentFailed": "Payment Failed",
+      "voucher": "Voucher",
+      "selectVoucher": "Select Voucher",
+      "noVoucher": "No voucher selected",
+      "discount": "Discount",
+      "remaining": "Remaining",
+      "select": "Select",
+      "close": "Close",
+      "availableVouchers": "Available Vouchers"
+    },
+    "giftModal": {
+      "clickNow": "Click now",
+      "hasReward": "* has rewards",
+      "dontShowTitle": "Don't show again?",
+      "dontShowMessage": "Do you want to hide this notification in the future?",
+      "dontShowAgain": "Don't show again"
+    },
+    "voucher": {
+      "list": {
+        "title": "Voucher List",
+        "searchPlaceholder": "Search vouchers...",
+        "empty": "No vouchers found",
+        "emptySubtitle": "Try adjusting your search or filters."
+      },
+      "filter": {
+        "all": "All",
+        "active": "Active",
+        "inactive": "Inactive",
+        "expired": "Expired"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "expired": "Expired"
+      },
+      "minOrder": "Min Order",
+      "validUntil": "Valid Until",
+      "outOfStock": "Out of Stock"
     },
     "share": {
       "title": "Share Tour",
@@ -487,7 +523,6 @@
       "viewBooking": "View Booking",
       "goHome": "Go Home",
       "fetchError": "Failed to fetch transaction details",
-      "premiumSuccessMessage": "Congratulations! You have successfully upgraded to Premium!"
     }
   },
   "common": {
@@ -522,28 +557,6 @@
     "hoursAgo": "{{hours}} hours ago",
     "daysAgo": "{{days}} days ago"
   },
-  "premium": {
-    "title": "Premium",
-    "activeStatus": "Premium Account Active",
-    "validUntil": "Valid until",
-    "yourBenefits": "Your Benefits",
-    "benefitsTitle": "Premium Benefits",
-    "choosePlan": "Choose Plan",
-    "plan1Month": "1 month",
-    "plan3Months": "3 months",
-    "purchase": "Purchase",
-    "successTitle": "Success",
-    "purchaseSuccess": "You have successfully upgraded to Premium!",
-    "developmentTitle": "Under Development",
-    "developmentMessage": "Premium purchase feature is under development. Please come back later!",
-    "benefits": {
-      "unlimitedTours": "Unlimited access to all tours",
-      "prioritySupport": "24/7 priority support",
-      "exclusiveContent": "Exclusive content and new tours",
-      "noAds": "Ad-free experience",
-      "advancedFeatures": "Advanced features and personalization"
-    }
-  },
   "settings": {
     "title": "Settings",
     "subtitle": "View and set your account preferences",
@@ -557,9 +570,27 @@
       "transactions": "Transactions"
     }
   },
+  "notifications": {
+    "title": "Notifications",
+    "all": "All",
+    "unread": "Unread",
+    "empty": "No notifications",
+    "markAllAsRead": "Mark all as read",
+    "markAsRead": "Mark as read",
+    "delete": "Delete notification",
+    "deleteConfirm": "Delete Notification",
+    "deleteMessage": "Are you sure you want to delete this notification?",
+    "justNow": "Just now",
+    "minutes": "minutes",
+    "hours": "hours",
+    "days": "days",
+    "error": "Error",
+    "loadError": "Failed to load notifications",
+    "networkError": "Network error. Please check your connection.",
+    "serverError": "Server error. Please try again later."
+  },
   "profile": {
     "editProfile": "Edit Profile",
-    "upgradePremium": "Upgrade to Premium",
     "order": {
       "title": "Your Order",
       "subtitle": "View your order and transaction history here"
@@ -575,9 +606,34 @@
     "supportCenter": {
       "title": "Support Center",
       "subtitle": "Find the best answer to your question"
-    }
+    },
+    "updateSuccess": "Updated successfully!"
+  },
+  "profileEdit": {
+    "title": "Account Info",
+    "photo": {
+      "title": "Your Photo",
+      "description": "Adding a profile picture makes your profile more personalized."
+    },
+    "gender": "Gender",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "genderOther": "Other",
+    "info": "Profile Information",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Your full name",
+    "phone": "Phone",
+    "phonePlaceholder": "10-digit phone number",
+    "birthDate": "Date of Birth",
+    "birthDatePlaceholder": "YYYY-MM-DD",
+    "address": "Address",
+    "addressPlaceholder": "Your address"
   },
   "chat": {
-    "selectUser": "Select user to chat"
+    "title": "Chat",
+    "selectUser": "Select user to chat",
+    "noUsers": "No users",
+    "noMessages": "No messages",
+    "typeMessage": "Type a message"
   }
 }

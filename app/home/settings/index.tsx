@@ -47,7 +47,7 @@ export default function Settings() {
       title: t("settings.options.notifications"),
       icon: "notifications-outline",
       onPress: () => {
-        // TODO: Navigate to notification settings
+        navigate("/home/settings/notifications");
       },
     },
     {

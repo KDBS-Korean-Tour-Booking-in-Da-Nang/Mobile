@@ -200,25 +200,17 @@ export default function Forum() {
     [loadPosts]
   );
 
-  const handlePostCreated = useCallback((newPost: PostResponse) => {
-    setPosts((prev) => {
-      const exists = prev.some((p) => p.id === newPost.id);
-      if (exists) return prev;
-      return [newPost, ...prev];
-    });
+  const handlePostCreated = useCallback(async (newPost: PostResponse) => {
+    await loadPosts(0, searchQuery); // reload toàn bộ danh sách mới nhất sau khi post
     setShowCreateModal(false);
     setEditingPost(null);
-  }, []);
+  }, [loadPosts, searchQuery]);
 
-  const handlePostUpdated = useCallback((updatedPost: PostResponse) => {
-    setPosts((prev) => {
-      const filteredPosts = prev.filter((post) => post.id !== updatedPost.id);
-      const newPosts = [updatedPost, ...filteredPosts];
-      return newPosts;
-    });
+  const handlePostUpdated = useCallback(async (updatedPost: PostResponse) => {
+    await loadPosts(0, searchQuery); // reload list mới nhất từ server
     setEditingPost(null);
     setShowCreateModal(false);
-  }, []);
+  }, [loadPosts, searchQuery]);
 
   const handlePostDeleted = useCallback(
     async (postId: number) => {
@@ -249,10 +241,7 @@ export default function Forum() {
 
       try {
         await deletePost(postId, user.email);
-        setPosts((prev) => {
-          const filtered = prev.filter((post) => post.id !== postId);
-          return filtered;
-        });
+        await loadPosts(0, searchQuery); // reload list mới
         Alert.alert(t("forum.successTitle"), t("forum.postDeleted"));
       } catch {
         if (false as any) {
@@ -271,7 +260,7 @@ export default function Forum() {
         }
       }
     },
-    [user?.email, t]
+    [user?.email, t, loadPosts, searchQuery]
   );
 
   const handleEditPost = useCallback((post: PostResponse) => {

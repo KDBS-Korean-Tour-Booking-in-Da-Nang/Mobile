@@ -136,7 +136,6 @@ export default function ChatBubble() {
   }, []);
 
   useEffect(() => {
-    // Auto-refresh conversation history every 5s for the selected peer
     if (!peerUsername) {
       if (polling) {
         clearInterval(polling);
@@ -149,7 +148,7 @@ export default function ChatBubble() {
 
     const intervalId = setInterval(() => {
       loadHistory(peerUsername);
-    }, 1000);
+    }, 3000);
     setPolling(intervalId);
 
     return () => {
@@ -239,10 +238,27 @@ export default function ChatBubble() {
   };
 
   const filtered = useMemo(() => {
-    if (!peerUsername) return [];
-    const all = [...history, ...messages];
-    return all.filter((m) => m.from === peerUsername || m.to === peerUsername);
-  }, [messages, history, peerUsername]);
+    if (!peerUsername && !peerEmail) return [];
+    const target = peerUsername || peerEmail;
+    const all = [...history, ...messages].filter(
+      (m) => m.from === target || m.to === target
+    );
+    const seen = new Set<string>();
+    const deduped: IncomingChatMessage[] = [];
+    for (const m of all) {
+      const key = `${m.from}|${m.to}|${m.timestamp ?? ""}|${m.content}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduped.push(m);
+      }
+    }
+    deduped.sort((a: any, b: any) => {
+      const ta = new Date(a.timestamp || 0).getTime();
+      const tb = new Date(b.timestamp || 0).getTime();
+      return ta - tb;
+    });
+    return deduped;
+  }, [messages, history, peerUsername, peerEmail]);
 
   // Minimized (floating) button
   if (minimized) {
@@ -252,7 +268,7 @@ export default function ChatBubble() {
         style={{
           position: "absolute",
           right: 16,
-          bottom: 118 + (Platform.OS === "ios" ? keyboardHeight : 0),
+          bottom: 118 + (Platform.OS === "ios" ? keyboardHeight : 64),
           zIndex: 50,
         }}
       >
@@ -289,7 +305,7 @@ export default function ChatBubble() {
       style={{
         position: "absolute",
         right: 16,
-        bottom: 188 + (Platform.OS === "ios" ? keyboardHeight : 0),
+        bottom: 188 + (Platform.OS === "ios" ? keyboardHeight : 64),
         width: 280,
         backgroundColor: "#fff",
         borderRadius: 12,
@@ -312,7 +328,7 @@ export default function ChatBubble() {
         >
           <View>
             <Text style={{ fontWeight: "600", color: colors.text.primary }}>
-              Chat
+              {t("chat.title")}
             </Text>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -412,7 +428,7 @@ export default function ChatBubble() {
               {users.length === 0 && messages.length === 0 && (
                 <View style={{ padding: 12 }}>
                   <Text style={{ color: colors.text.secondary, fontSize: 12 }}>
-                    Không có người dùng
+                    {t("chat.noUsers")}
                   </Text>
                 </View>
               )}
@@ -448,7 +464,7 @@ export default function ChatBubble() {
         })}
         {filtered.length === 0 && (
           <Text style={{ color: colors.text.secondary, fontSize: 12 }}>
-            No messages
+            {t("chat.noMessages")}
           </Text>
         )}
       </ScrollView>
@@ -467,7 +483,7 @@ export default function ChatBubble() {
         <TextInput
           value={text}
           onChangeText={setText}
-          placeholder="Type a message"
+          placeholder={t("chat.typeMessage")}
           style={{
             flex: 1,
             backgroundColor: "#f1f3f5",

@@ -1,15 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Client, IMessage } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE } from "../services/api";
-
-export type IncomingChatMessage = {
-  from: string;
-  to: string;
-  content: string;
-  timestamp?: string;
-};
+import { NotificationResponse } from "../services/endpoints/notifications";
 
 function toHttpBase(httpBase?: string): string | undefined {
   if (!httpBase) return undefined;
@@ -21,10 +15,18 @@ function toHttpBase(httpBase?: string): string | undefined {
   }
 }
 
-export function useStompChat() {
+export function useWebSocketNotifications(
+  onNewNotification?: (notification: NotificationResponse) => void
+) {
   const [connected, setConnected] = useState(false);
-  const [messages, setMessages] = useState<IncomingChatMessage[]>([]);
   const clientRef = useRef<Client | null>(null);
+  const callbackRef = useRef(onNewNotification);
+  const subscriptionRef = useRef<any>(null);
+
+  // Update callback ref when it changes
+  useEffect(() => {
+    callbackRef.current = onNewNotification;
+  }, [onNewNotification]);
 
   const httpBase = useMemo(() => toHttpBase(API_BASE), []);
 
@@ -37,10 +39,7 @@ export function useStompChat() {
         const email =
           user?.email || user?.userEmail || user?.emailAddress || user?.mail;
 
-        // no console logs in production
-
         if (!httpBase) {
-          console.log("ERROR: httpBase is undefined!");
           return;
         }
 
@@ -57,12 +56,23 @@ export function useStompChat() {
           heartbeatOutgoing: 10000,
           onConnect: () => {
             setConnected(true);
-            client.subscribe("/user/queue/messages", (msg: IMessage) => {
-              try {
-                const payload = JSON.parse(msg.body);
-                setMessages((prev) => [...prev, payload]);
-              } catch {}
-            });
+            // Subscribe to notifications topic
+            const subscription = client.subscribe(
+              "/user/queue/notifications",
+              (msg: IMessage) => {
+                try {
+                  const notification: NotificationResponse = JSON.parse(
+                    msg.body
+                  );
+                  if (callbackRef.current) {
+                    callbackRef.current(notification);
+                  }
+                } catch {
+                  // Silently handle parsing errors
+                }
+              }
+            );
+            subscriptionRef.current = subscription;
           },
           onStompError: (frame) => {
             setConnected(false);
@@ -76,12 +86,18 @@ export function useStompChat() {
         });
         clientRef.current = client;
         client.activate();
-      } catch {}
+      } catch {
+        // Silently handle setup errors
+      }
     };
 
     setupClient();
     return () => {
       setConnected(false);
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
       if (clientRef.current) {
         clientRef.current.deactivate();
         clientRef.current = null;
@@ -89,36 +105,7 @@ export function useStompChat() {
     };
   }, [httpBase]);
 
-  const send = useCallback(
-    async (toName: string, content: string) => {
-      const client = clientRef.current;
-      if (!client || !connected) {
-        return;
-      }
-
-      const userData = await AsyncStorage.getItem("userData");
-      const parsed = userData ? JSON.parse(userData) : {};
-      const fromUsername =
-        (parsed?.username as string) || (parsed?.name as string) || "";
-
-      if (!fromUsername) {
-        return;
-      }
-
-      const body = JSON.stringify({
-        senderName: fromUsername,
-        receiverName: toName,
-        content,
-      });
-
-      try {
-        client.publish({ destination: "/app/chat.send", body });
-      } catch {}
-    },
-    [connected]
-  );
-
-  return { connected, messages, send };
+  return { connected };
 }
 
-export default useStompChat;
+export default useWebSocketNotifications;

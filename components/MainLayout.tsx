@@ -30,7 +30,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       return "tour";
     if (pathname === "/article" || pathname.startsWith("/article/"))
       return "article";
-    if (pathname === "/userProfile" || pathname.startsWith("/auth/profile/"))
+    if (pathname === "/auth/profile" || pathname.startsWith("/auth/profile/"))
       return "user";
     return "home";
   };

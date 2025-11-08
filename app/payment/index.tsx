@@ -11,17 +11,13 @@ import { WebView } from "react-native-webview";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { premiumEndpoints } from "../../services/endpoints/premium";
 import { tourEndpoints } from "../../services/endpoints/tour";
 
 interface PaymentParams {
   bookingId?: string;
   userEmail?: string;
-  type?: "booking" | "premium";
-  plan?: "1month" | "3months";
   payUrl?: string;
   orderId?: string;
-  durationInMonths?: string;
 }
 
 export default function PaymentScreen() {
@@ -36,11 +32,8 @@ export default function PaymentScreen() {
   const {
     bookingId = "",
     userEmail = "",
-    type = "booking",
-    plan = "1month",
     payUrl: directPayUrl = "",
     orderId: directOrderId = "",
-    durationInMonths = "",
   } = params;
 
   const createPayment = useCallback(async () => {
@@ -48,25 +41,10 @@ export default function PaymentScreen() {
       setLoading(true);
       setError(null);
 
-      if (directPayUrl && type === "premium") {
-        setPaymentUrl(directPayUrl);
-        setLoading(false);
-        return;
-      }
-
-      let response;
-
-      if (type === "premium") {
-        response = await premiumEndpoints.createPayment({
-          durationInMonths: parseInt(durationInMonths) || 1,
-          userEmail: userEmail,
-        });
-      } else {
-        response = await tourEndpoints.createBookingPayment({
-          bookingId: parseInt(bookingId) || 0,
-          userEmail: userEmail,
-        });
-      }
+      const response = await tourEndpoints.createBookingPayment({
+        bookingId: parseInt(bookingId) || 0,
+        userEmail: userEmail,
+      });
 
       if (response.data.success && response.data.payUrl) {
         setPaymentUrl(response.data.payUrl);
@@ -78,15 +56,7 @@ export default function PaymentScreen() {
     } finally {
       setLoading(false);
     }
-  }, [
-    userEmail,
-    type,
-    bookingId,
-    durationInMonths,
-    directPayUrl,
-    directOrderId,
-    t,
-  ]);
+  }, [userEmail, bookingId, directPayUrl, directOrderId, t]);
 
   useEffect(() => {
     createPayment();
@@ -112,9 +82,6 @@ export default function PaymentScreen() {
             responseCode: responseCode || "",
             paymentMethod: paymentMethod || "vnpay",
             bookingId: bookingId,
-            type: type,
-            plan: type === "premium" ? plan : undefined,
-            durationInMonths: durationInMonths,
           },
         });
 

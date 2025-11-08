@@ -113,7 +113,7 @@
       "textField": "텍스트 필드",
       "description": "설명",
       "tapToAdd": "탭하여 추가",
-      "photoVideo": "사진/ 비디오",
+      "photoVideo": "사진",
       "chooseHashtags": "해시태그를 선택하세요:",
       "hashtag": "해시태그"
     },
@@ -264,12 +264,9 @@
       "cccd": "신분증 번호",
       "id": "ID",
       "role": "역할",
-      "premium": "프리미엄",
       "joinedAt": "가입일"
     },
     "notUpdated": "미입력",
-    "premiumYes": "업그레이드됨",
-    "premiumNo": "업그레이드 안됨",
     "editModalTitle": "정보 수정",
     "genderOptions": {
       "unknown": "미설정",
@@ -353,6 +350,7 @@
       "note": "메모",
       "bookingInfo": "예약 정보",
       "departureDate": "출발일",
+      "selectDate": "날짜 선택",
       "totalGuests": "총 인원",
       "adult": "성인",
       "children": "어린이",
@@ -381,6 +379,7 @@
         "emailInvalid": "유효하지 않은 이메일 주소",
         "phoneTenDigits": "전화번호는 정확히 10자리여야 합니다",
         "pickUpPointRequired": "픽업 지점을 입력해주세요",
+        "departureDateRequired": "출발일을 선택해주세요",
         "adultDobInvalid": "성인 {{index}}: 유효한 생년월일을 선택해주세요",
         "adultAgeMin": "성인 {{index}}: 나이는 18세 이상이어야 합니다",
         "childDobInvalid": "어린이 {{index}}: 유효한 생년월일을 선택해주세요",
@@ -409,7 +408,44 @@
       "guestDetails": "고객 세부정보",
       "paymentRedirect": "결제 리다이렉트",
       "paymentSuccess": "결제 성공",
-      "paymentFailed": "결제 실패"
+      "paymentFailed": "결제 실패",
+      "voucher": "바우처",
+      "selectVoucher": "바우처 선택",
+      "noVoucher": "바우처 미선택",
+      "discount": "할인",
+      "remaining": "남은 수량",
+      "select": "선택",
+      "close": "닫기",
+      "availableVouchers": "사용 가능한 바우처"
+    },
+    "giftModal": {
+      "clickNow": "지금 클릭",
+      "hasReward": "* 보상 있음",
+      "dontShowTitle": "다시 표시하지 않으시겠습니까?",
+      "dontShowMessage": "향후 이 알림을 숨기시겠습니까?",
+      "dontShowAgain": "다시 표시하지 않음"
+    },
+    "voucher": {
+      "list": {
+        "title": "바우처 목록",
+        "searchPlaceholder": "바우처 검색...",
+        "empty": "바우처를 찾을 수 없습니다",
+        "emptySubtitle": "검색어나 필터를 조정해보세요."
+      },
+      "filter": {
+        "all": "전체",
+        "active": "활성",
+        "inactive": "비활성",
+        "expired": "만료됨"
+      },
+      "status": {
+        "active": "활성",
+        "inactive": "비활성",
+        "expired": "만료됨"
+      },
+      "minOrder": "최소 주문",
+      "validUntil": "유효 기간",
+      "outOfStock": "품절"
     },
     "share": {
       "title": "투어 공유",
@@ -477,8 +513,7 @@
       "responseTime": "응답 시간",
       "viewBooking": "예약 보기",
       "goHome": "홈으로",
-      "fetchError": "거래 상세를 불러오지 못했습니다",
-      "premiumSuccessMessage": "축하합니다! 프리미엄으로 성공적으로 업그레이드되었습니다!"
+      "fetchError": "거래 상세를 불러오지 못했습니다"
     }
   },
   "common": {
@@ -513,28 +548,6 @@
     "hoursAgo": "{{hours}}시간 전",
     "daysAgo": "{{days}}일 전"
   },
-  "premium": {
-    "title": "프리미엄",
-    "activeStatus": "프리미엄 계정 활성화",
-    "validUntil": "유효 기간",
-    "yourBenefits": "귀하의 혜택",
-    "benefitsTitle": "프리미엄 혜택",
-    "choosePlan": "플랜 선택",
-    "plan1Month": "1개월",
-    "plan3Months": "3개월",
-    "purchase": "구매하기",
-    "successTitle": "성공",
-    "purchaseSuccess": "프리미엄으로 성공적으로 업그레이드되었습니다!",
-    "developmentTitle": "개발 중",
-    "developmentMessage": "프리미엄 구매 기능이 개발 중입니다. 나중에 다시 방문해주세요!",
-    "benefits": {
-      "unlimitedTours": "모든 투어 무제한 접근",
-      "prioritySupport": "24/7 우선 지원",
-      "exclusiveContent": "독점 콘텐츠 및 새로운 투어",
-      "noAds": "광고 없는 경험",
-      "advancedFeatures": "고급 기능 및 개인화"
-    }
-  },
   "settings": {
     "title": "설정",
     "subtitle": "계정 환경설정을 확인하고 설정하세요",
@@ -548,9 +561,27 @@
       "transactions": "거래내역"
     }
   },
+  "notifications": {
+    "title": "알림",
+    "all": "전체",
+    "unread": "읽지 않음",
+    "empty": "알림이 없습니다",
+    "markAllAsRead": "모두 읽음으로 표시",
+    "markAsRead": "읽음으로 표시",
+    "delete": "알림 삭제",
+    "deleteConfirm": "알림 삭제",
+    "deleteMessage": "이 알림을 삭제하시겠습니까?",
+    "justNow": "방금 전",
+    "minutes": "분",
+    "hours": "시간",
+    "days": "일",
+    "error": "오류",
+    "loadError": "알림을 불러올 수 없습니다",
+    "networkError": "네트워크 오류. 연결을 확인해주세요.",
+    "serverError": "서버 오류. 나중에 다시 시도해주세요."
+  },
   "profile": {
     "editProfile": "프로필 수정",
-    "upgradePremium": "프리미엄 업그레이드",
     "order": {
       "title": "내 주문",
       "subtitle": "주문 및 거래 내역을 여기에서 확인하세요"
@@ -566,9 +597,34 @@
     "supportCenter": {
       "title": "지원 센터",
       "subtitle": "질문에 대한 최고의 답을 찾아보세요"
-    }
+    },
+    "updateSuccess": "성공적으로 업데이트되었습니다!"
+  },
+  "profileEdit": {
+    "title": "계정 정보",
+    "photo": {
+      "title": "프로필 사진",
+      "description": "프로필 사진을 추가하면 프로필이 더 개성있어집니다."
+    },
+    "gender": "성별",
+    "genderMale": "남성",
+    "genderFemale": "여성",
+    "genderOther": "기타",
+    "info": "프로필 정보",
+    "fullName": "성명",
+    "fullNamePlaceholder": "성명을 입력하세요",
+    "phone": "전화번호",
+    "phonePlaceholder": "10자리 전화번호",
+    "birthDate": "생년월일",
+    "birthDatePlaceholder": "YYYY-MM-DD",
+    "address": "주소",
+    "addressPlaceholder": "주소를 입력하세요"
   },
   "chat": {
-    "selectUser": "채팅할 사용자 선택"
+    "title": "채팅",
+    "selectUser": "채팅할 사용자 선택",
+    "noUsers": "사용자가 없습니다",
+    "noMessages": "메시지가 없습니다",
+    "typeMessage": "메시지 입력"
   }
 }

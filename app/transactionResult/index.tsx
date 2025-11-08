@@ -14,16 +14,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as MailComposer from "expo-mail-composer";
 import { transactionEndpoints } from "../../services/endpoints/transactions";
 import { tourEndpoints } from "../../services/endpoints/tour";
-import { usePremium } from "../../src/contexts/premiumContext";
 
 interface TransactionResultParams {
   orderId: string;
   responseCode: string;
   paymentMethod: string;
   bookingId?: string;
-  type?: "booking" | "premium";
-  plan?: "1month" | "3months";
-  durationInMonths?: string;
 }
 
 interface TransactionDetails {
@@ -43,7 +39,6 @@ interface TransactionDetails {
 }
 
 export default function TransactionResult() {
-  const { completeUpgrade, refreshStatus } = usePremium();
   const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -53,17 +48,12 @@ export default function TransactionResult() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [premiumStatus, setPremiumStatus] = useState<{
-    expiryDate?: string;
-    premiumType?: string;
-  } | null>(null);
 
   const {
     orderId,
     responseCode,
     paymentMethod,
     bookingId,
-    type = "booking",
   } = params as unknown as TransactionResultParams;
 
   const isSuccess = responseCode === "00";
@@ -94,24 +84,6 @@ export default function TransactionResult() {
     const handleSuccess = async () => {
       if (!isSuccess || emailAttemptedRef.current) return;
       emailAttemptedRef.current = true;
-
-      if (type === "premium" && orderId) {
-        try {
-          const upgradeResult = await completeUpgrade(orderId);
-
-          if (upgradeResult.success) {
-            setPremiumStatus({
-              expiryDate: upgradeResult.expiryDate,
-              premiumType: upgradeResult.premiumType,
-            });
-          }
-        } catch (error) {
-          try {
-            await refreshStatus();
-          } catch {}
-        }
-        return;
-      }
 
       if (bookingId) {
         try {
@@ -203,13 +175,7 @@ export default function TransactionResult() {
           </Text>
           <Text style={styles.statusSubtext}>
             {isSuccess
-              ? type === "premium"
-                ? premiumStatus?.premiumType === "PREMIUM"
-                  ? `Premium upgrade successful! Valid until: ${
-                      premiumStatus.expiryDate || "N/A"
-                    }`
-                  : t("payment.result.premiumSuccessMessage")
-                : t("payment.result.successMessage")
+              ? t("payment.result.successMessage")
               : isFailed
               ? t("payment.result.failedMessage")
               : t("payment.result.pendingMessage")}
@@ -304,21 +270,7 @@ export default function TransactionResult() {
         )}
 
         <View style={styles.buttonContainer}>
-          {isSuccess &&
-            type === "premium" &&
-            premiumStatus?.premiumType === "PREMIUM" && (
-              <TouchableOpacity
-                style={styles.primaryButton}
-                onPress={handleGoHome}
-              >
-                <Ionicons name="diamond" size={20} color="#fff" />
-                <Text style={styles.primaryButtonText}>
-                  Enjoy Premium Features
-                </Text>
-              </TouchableOpacity>
-            )}
-
-          {isSuccess && bookingId && type === "booking" && (
+          {isSuccess && bookingId && (
             <TouchableOpacity
               style={styles.primaryButton}
               onPress={handleViewBooking}

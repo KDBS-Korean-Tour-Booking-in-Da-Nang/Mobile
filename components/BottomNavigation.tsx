@@ -73,7 +73,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
       label: t("nav.profile"),
       icon: "person-outline",
       activeIcon: "person",
-      route: "/auth/profile/userProfile",
+      route: "/auth/profile",
     },
   ];
 

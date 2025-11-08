@@ -18,6 +18,7 @@ import {
   updateComment,
   deleteComment,
   createReport,
+  getCommentReactionSummary,
 } from "../services/endpoints/forum";
 import { useAuthContext } from "../src/contexts/authContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -55,49 +56,26 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     Record<number, number>
   >({});
 
-  const initLikedMap = async () => {
-    if (user?.email) {
-      try {
-        const stored = await AsyncStorage.getItem(
-          `likedComments_${user.email}`
-        );
-        if (stored) {
-          const likedComments = JSON.parse(stored);
-          setLikedMap(likedComments || {});
-        }
-      } catch {
-        // Silent fail
-      }
-    }
-  };
-
-  const saveLikedMap = async (newLikedMap: Record<number, boolean>) => {
-    if (user?.email) {
-      try {
-        await AsyncStorage.setItem(
-          `likedComments_${user.email}`,
-          JSON.stringify(newLikedMap)
-        );
-      } catch {
-        // Silent fail
-      }
-    }
-  };
-
-  const updateLikedMap = (commentId: number, isLiked: boolean) => {
-    setLikedMap((prev) => {
-      const newMap = {
-        ...prev,
-        [commentId]: isLiked,
-      };
-      saveLikedMap(newMap);
-      return newMap;
-    });
-  };
-
   useEffect(() => {
-    initLikedMap();
-  }, [user?.email, initLikedMap]);
+    const hydrateReactionsFromBackend = async () => {
+      if (!user?.email || !Array.isArray(comments) || comments.length === 0)
+        return;
+      const nextMap: Record<number, boolean> = { ...likedMap };
+      for (const c of comments) {
+        try {
+          const summary = await getCommentReactionSummary(
+            c.forumCommentId,
+            user.email
+          );
+          if (summary) {
+            nextMap[c.forumCommentId] = summary.userReaction === "LIKE";
+          }
+        } catch {}
+      }
+      setLikedMap(nextMap);
+    };
+    hydrateReactionsFromBackend();
+  }, [comments, user?.email]);
 
   const handleSubmitComment = async () => {
     if (!newComment.trim()) {
@@ -254,7 +232,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
               user.email
             );
 
-            // Mark as reported
             try {
               await AsyncStorage.setItem(key, "1");
               setHasReportedComment((prev) => ({
@@ -481,26 +458,36 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                       return;
                     }
                     const isLiked = !!likedMap[comment.forumCommentId];
+                    if (!isLiked) {
+                      setLikedMap((prev) => ({
+                        ...prev,
+                        [comment.forumCommentId]: true,
+                      }));
+                      comment.react = (comment.react || 0) + 1;
+                    } else {
+                      setLikedMap((prev) => ({
+                        ...prev,
+                        [comment.forumCommentId]: false,
+                      }));
+                      comment.react = Math.max(0, (comment.react || 0) - 1);
+                    }
                     try {
-                      if (!isLiked) {
-                        await addCommentReaction(
-                          comment.forumCommentId,
-                          "LIKE",
-                          user.email
-                        );
-                        comment.react = (comment.react || 0) + 1;
+                      await addCommentReaction(
+                        comment.forumCommentId,
+                        "LIKE",
+                        user.email
+                      );
+                      const summary = await getCommentReactionSummary(
+                        comment.forumCommentId,
+                        user.email
+                      );
+                      if (summary) {
                         setLikedMap((prev) => ({
                           ...prev,
-                          [comment.forumCommentId]: true,
+                          [comment.forumCommentId]:
+                            summary.userReaction === "LIKE",
                         }));
-                      } else {
-                        await addCommentReaction(
-                          comment.forumCommentId,
-                          "LIKE",
-                          user.email
-                        );
-                        comment.react = Math.max(0, (comment.react || 0) - 1);
-                        updateLikedMap(comment.forumCommentId, false);
+                        comment.react = summary.likeCount || 0;
                       }
                     } catch {}
                   }}
@@ -666,26 +653,37 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                               return;
                             }
                             const isLiked = !!likedMap[reply.forumCommentId];
+                            if (!isLiked) {
+                              setLikedMap((prev) => ({
+                                ...prev,
+                                [reply.forumCommentId]: true,
+                              }));
+                              reply.react = (reply.react || 0) + 1;
+                            } else {
+                              setLikedMap((prev) => ({
+                                ...prev,
+                                [reply.forumCommentId]: false,
+                              }));
+                              reply.react = Math.max(0, (reply.react || 0) - 1);
+                            }
                             try {
-                              if (!isLiked) {
-                                await addCommentReaction(
-                                  reply.forumCommentId,
-                                  "LIKE",
-                                  user.email
-                                );
-                                reply.react = (reply.react || 0) + 1;
-                                updateLikedMap(reply.forumCommentId, true);
-                              } else {
-                                await addCommentReaction(
-                                  reply.forumCommentId,
-                                  "LIKE",
-                                  user.email
-                                );
-                                reply.react = Math.max(
-                                  0,
-                                  (reply.react || 0) - 1
-                                );
-                                updateLikedMap(reply.forumCommentId, false);
+                              await addCommentReaction(
+                                reply.forumCommentId,
+                                "LIKE",
+                                user.email
+                              );
+                              // Sau khi gửi, fetch lại status từ backend cho chắc
+                              const summary = await getCommentReactionSummary(
+                                reply.forumCommentId,
+                                user.email
+                              );
+                              if (summary) {
+                                setLikedMap((prev) => ({
+                                  ...prev,
+                                  [reply.forumCommentId]:
+                                    summary.userReaction === "LIKE",
+                                }));
+                                reply.react = summary.likeCount || 0;
                               }
                             } catch {}
                           }}
@@ -894,33 +892,42 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                       }
                                       const isLiked =
                                         !!likedMap[nestedReply.forumCommentId];
+                                      if (!isLiked) {
+                                        setLikedMap((prev) => ({
+                                          ...prev,
+                                          [nestedReply.forumCommentId]: true,
+                                        }));
+                                        nestedReply.react =
+                                          (nestedReply.react || 0) + 1;
+                                      } else {
+                                        setLikedMap((prev) => ({
+                                          ...prev,
+                                          [nestedReply.forumCommentId]: false,
+                                        }));
+                                        nestedReply.react = Math.max(
+                                          0,
+                                          (nestedReply.react || 0) - 1
+                                        );
+                                      }
                                       try {
-                                        if (!isLiked) {
-                                          await addCommentReaction(
+                                        await addCommentReaction(
+                                          nestedReply.forumCommentId,
+                                          "LIKE",
+                                          user.email
+                                        );
+                                        const summary =
+                                          await getCommentReactionSummary(
                                             nestedReply.forumCommentId,
-                                            "LIKE",
                                             user.email
                                           );
+                                        if (summary) {
+                                          setLikedMap((prev) => ({
+                                            ...prev,
+                                            [nestedReply.forumCommentId]:
+                                              summary.userReaction === "LIKE",
+                                          }));
                                           nestedReply.react =
-                                            (nestedReply.react || 0) + 1;
-                                          updateLikedMap(
-                                            nestedReply.forumCommentId,
-                                            true
-                                          );
-                                        } else {
-                                          await addCommentReaction(
-                                            nestedReply.forumCommentId,
-                                            "LIKE",
-                                            user.email
-                                          );
-                                          nestedReply.react = Math.max(
-                                            0,
-                                            (nestedReply.react || 0) - 1
-                                          );
-                                          updateLikedMap(
-                                            nestedReply.forumCommentId,
-                                            false
-                                          );
+                                            summary.likeCount || 0;
                                         }
                                       } catch {}
                                     }}
@@ -1166,36 +1173,48 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                 !!likedMap[
                                                   deepNestedReply.forumCommentId
                                                 ];
-                                              try {
-                                                if (!isLiked) {
-                                                  await addCommentReaction(
-                                                    deepNestedReply.forumCommentId,
-                                                    "LIKE",
-                                                    user.email
-                                                  );
-                                                  deepNestedReply.react =
+                                              if (!isLiked) {
+                                                setLikedMap((prev) => ({
+                                                  ...prev,
+                                                  [deepNestedReply.forumCommentId]:
+                                                    true,
+                                                }));
+                                                deepNestedReply.react =
+                                                  (deepNestedReply.react || 0) +
+                                                  1;
+                                              } else {
+                                                setLikedMap((prev) => ({
+                                                  ...prev,
+                                                  [deepNestedReply.forumCommentId]:
+                                                    false,
+                                                }));
+                                                deepNestedReply.react =
+                                                  Math.max(
+                                                    0,
                                                     (deepNestedReply.react ||
-                                                      0) + 1;
-                                                  updateLikedMap(
-                                                    deepNestedReply.forumCommentId,
-                                                    true
+                                                      0) - 1
                                                   );
-                                                } else {
-                                                  await addCommentReaction(
+                                              }
+                                              try {
+                                                await addCommentReaction(
+                                                  deepNestedReply.forumCommentId,
+                                                  "LIKE",
+                                                  user.email
+                                                );
+                                                const summary =
+                                                  await getCommentReactionSummary(
                                                     deepNestedReply.forumCommentId,
-                                                    "LIKE",
                                                     user.email
                                                   );
+                                                if (summary) {
+                                                  setLikedMap((prev) => ({
+                                                    ...prev,
+                                                    [deepNestedReply.forumCommentId]:
+                                                      summary.userReaction ===
+                                                      "LIKE",
+                                                  }));
                                                   deepNestedReply.react =
-                                                    Math.max(
-                                                      0,
-                                                      (deepNestedReply.react ||
-                                                        0) - 1
-                                                    );
-                                                  updateLikedMap(
-                                                    deepNestedReply.forumCommentId,
-                                                    false
-                                                  );
+                                                    summary.likeCount || 0;
                                                 }
                                               } catch {}
                                             }}

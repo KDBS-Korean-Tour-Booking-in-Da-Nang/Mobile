@@ -123,7 +123,7 @@
       "textField": "Trường văn bản",
       "description": "Mô tả",
       "tapToAdd": "Chạm để thêm",
-      "photoVideo": "Ảnh/ Video",
+      "photoVideo": "Ảnh",
       "chooseHashtags": "Chọn hashtag:",
       "hashtag": "hashtag"
     },
@@ -271,12 +271,9 @@
       "cccd": "CCCD",
       "id": "ID",
       "role": "Vai trò",
-      "premium": "Premium",
       "joinedAt": "Ngày tham gia"
     },
     "notUpdated": "Chưa cập nhật",
-    "premiumYes": "Đã nâng cấp",
-    "premiumNo": "Chưa nâng cấp",
     "editModalTitle": "Chỉnh sửa thông tin",
     "genderOptions": {
       "unknown": "Chưa cập nhật",
@@ -399,6 +396,7 @@
         "emailInvalid": "Địa chỉ email không hợp lệ",
         "phoneTenDigits": "Số điện thoại phải gồm đúng 10 số",
         "pickUpPointRequired": "Vui lòng nhập điểm đón",
+        "departureDateRequired": "Vui lòng chọn ngày khởi hành",
         "adultDobInvalid": "Người lớn {{index}}: Vui lòng chọn ngày sinh hợp lệ",
         "adultAgeMin": "Người lớn {{index}}: Tuổi phải từ 18 trở lên",
         "childDobInvalid": "Trẻ em {{index}}: Vui lòng chọn ngày sinh hợp lệ",
@@ -427,7 +425,44 @@
       "guestDetails": "Chi tiết khách hàng",
       "paymentRedirect": "Chuyển hướng thanh toán",
       "paymentSuccess": "Thanh toán thành công",
-      "paymentFailed": "Thanh toán thất bại"
+      "paymentFailed": "Thanh toán thất bại",
+      "voucher": "Voucher",
+      "selectVoucher": "Chọn voucher",
+      "noVoucher": "Chưa chọn voucher",
+      "discount": "Giảm giá",
+      "remaining": "Còn lại",
+      "select": "Chọn",
+      "close": "Đóng",
+      "availableVouchers": "Voucher khả dụng"
+    },
+    "giftModal": {
+      "clickNow": "Nhấp ngay",
+      "hasReward": "* có thưởng",
+      "dontShowTitle": "Không hiển thị lại?",
+      "dontShowMessage": "Bạn có muốn ẩn thông báo này trong các lần sau không?",
+      "dontShowAgain": "Không hiển thị lại"
+    },
+    "voucher": {
+      "list": {
+        "title": "Danh sách Voucher",
+        "searchPlaceholder": "Tìm kiếm voucher...",
+        "empty": "Không tìm thấy voucher",
+        "emptySubtitle": "Hãy thử điều chỉnh từ khóa hoặc bộ lọc."
+      },
+      "filter": {
+        "all": "Tất cả",
+        "active": "Đang hoạt động",
+        "inactive": "Không hoạt động",
+        "expired": "Hết hạn"
+      },
+      "status": {
+        "active": "Đang hoạt động",
+        "inactive": "Không hoạt động",
+        "expired": "Hết hạn"
+      },
+      "minOrder": "Đơn tối thiểu",
+      "validUntil": "Có hiệu lực đến",
+      "outOfStock": "Đã hết"
     },
     "share": {
       "title": "Chia sẻ Tour",
@@ -496,8 +531,7 @@
       "responseTime": "Thời gian phản hồi",
       "viewBooking": "Xem đặt chỗ",
       "goHome": "Về trang chủ",
-      "fetchError": "Không thể tải chi tiết giao dịch",
-      "premiumSuccessMessage": "Chúc mừng! Bạn đã nâng cấp lên Premium thành công!"
+      "fetchError": "Không thể tải chi tiết giao dịch"
     }
   },
   "common": {
@@ -532,28 +566,6 @@
     "hoursAgo": "{{hours}} giờ trước",
     "daysAgo": "{{days}} ngày trước"
   },
-  "premium": {
-    "title": "Premium",
-    "activeStatus": "Tài khoản Premium đang hoạt động",
-    "validUntil": "Có hiệu lực đến",
-    "yourBenefits": "Quyền lợi của bạn",
-    "benefitsTitle": "Quyền lợi Premium",
-    "choosePlan": "Chọn gói",
-    "plan1Month": "1 tháng",
-    "plan3Months": "3 tháng",
-    "purchase": "Mua ngay",
-    "successTitle": "Thành công",
-    "purchaseSuccess": "Bạn đã nâng cấp lên Premium thành công!",
-    "developmentTitle": "Đang phát triển",
-    "developmentMessage": "Tính năng mua Premium đang được phát triển. Vui lòng quay lại sau!",
-    "benefits": {
-      "unlimitedTours": "Truy cập không giới hạn tất cả tour",
-      "prioritySupport": "Hỗ trợ ưu tiên 24/7",
-      "exclusiveContent": "Nội dung độc quyền và tour mới",
-      "noAds": "Trải nghiệm không quảng cáo",
-      "advancedFeatures": "Tính năng nâng cao và cá nhân hóa"
-    }
-  },
   "settings": {
     "title": "Cài đặt",
     "subtitle": "Xem và thiết lập tuỳ chọn tài khoản",
@@ -567,9 +579,27 @@
       "transactions": "Giao dịch"
     }
   },
+  "notifications": {
+    "title": "Thông báo",
+    "all": "Tất cả",
+    "unread": "Chưa đọc",
+    "empty": "Không có thông báo",
+    "markAllAsRead": "Đánh dấu tất cả đã đọc",
+    "markAsRead": "Đánh dấu đã đọc",
+    "delete": "Xóa thông báo",
+    "deleteConfirm": "Xóa thông báo",
+    "deleteMessage": "Bạn có chắc chắn muốn xóa thông báo này?",
+    "justNow": "Vừa xong",
+    "minutes": "phút",
+    "hours": "giờ",
+    "days": "ngày",
+    "error": "Lỗi",
+    "loadError": "Không thể tải thông báo",
+    "networkError": "Lỗi kết nối. Vui lòng kiểm tra kết nối mạng.",
+    "serverError": "Lỗi server. Vui lòng thử lại sau."
+  },
   "profile": {
     "editProfile": "Chỉnh sửa hồ sơ",
-    "upgradePremium": "Nâng cấp Premium",
     "order": {
       "title": "Đơn hàng của bạn",
       "subtitle": "Xem đơn hàng và lịch sử giao dịch tại đây"
@@ -585,9 +615,34 @@
     "supportCenter": {
       "title": "Trung tâm hỗ trợ",
       "subtitle": "Tìm câu trả lời phù hợp cho câu hỏi của bạn"
-    }
+    },
+    "updateSuccess": "Cập nhật thành công!"
+  },
+  "profileEdit": {
+    "title": "Thông tin tài khoản",
+    "photo": {
+      "title": "Ảnh đại diện",
+      "description": "Thêm ảnh đại diện để hồ sơ của bạn nổi bật hơn."
+    },
+    "gender": "Giới tính",
+    "genderMale": "Nam",
+    "genderFemale": "Nữ",
+    "genderOther": "Khác",
+    "info": "Thông tin hồ sơ",
+    "fullName": "Họ và tên",
+    "fullNamePlaceholder": "Nhập họ và tên",
+    "phone": "Số điện thoại",
+    "phonePlaceholder": "Số điện thoại 10 số",
+    "birthDate": "Ngày sinh",
+    "birthDatePlaceholder": "YYYY-MM-DD",
+    "address": "Địa chỉ",
+    "addressPlaceholder": "Nhập địa chỉ"
   },
   "chat": {
-    "selectUser": "Chọn người chat"
+    "title": "Trò chuyện",
+    "selectUser": "Chọn người chat",
+    "noUsers": "Không có người dùng",
+    "noMessages": "Chưa có tin nhắn",
+    "typeMessage": "Nhập tin nhắn"
   }
 }

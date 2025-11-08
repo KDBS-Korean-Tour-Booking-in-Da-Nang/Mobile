@@ -19,7 +19,12 @@ export interface ArticleResponse {
 export const getApprovedArticles = async (): Promise<Article[]> => {
   try {
     const response = await api.get("/api/article/status/APPROVED");
-    return response.data;
+    const data = response.data as Article[];
+    return data.sort(
+      (a, b) =>
+        new Date(b.articleCreatedDate).getTime() -
+        new Date(a.articleCreatedDate).getTime()
+    );
   } catch (error) {
     throw error;
   }
@@ -37,7 +42,12 @@ export const getArticleById = async (id: number): Promise<Article> => {
 export const getAllArticles = async (): Promise<Article[]> => {
   try {
     const response = await api.get("/api/article");
-    return response.data;
+    const data = response.data as Article[];
+    return data.sort(
+      (a, b) =>
+        new Date(b.articleCreatedDate).getTime() -
+        new Date(a.articleCreatedDate).getTime()
+    );
   } catch (error) {
     throw error;
   }

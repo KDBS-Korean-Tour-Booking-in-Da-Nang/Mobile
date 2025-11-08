@@ -47,9 +47,6 @@ const styles = StyleSheet.create({
     color: "#212529",
     letterSpacing: -0.5,
   },
-  premiumIconContainer: {
-    padding: 4,
-  },
   rightActions: {
     flexDirection: "row",
     alignItems: "center",

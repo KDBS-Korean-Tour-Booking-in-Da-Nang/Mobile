@@ -5,154 +5,129 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Image,
-  TextInput,
-  Alert,
+  Platform,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../../navigation/navigation";
 import { useAuthContext } from "../../../src/contexts/authContext";
+import { colors } from "../../../constants/theme";
 import MainLayout from "../../../components/MainLayout";
 import { useTranslation } from "react-i18next";
+import { useFocusEffect } from "@react-navigation/native";
 
-export default function EditProfile() {
-  const { goBack } = useNavigation();
+export default function UserProfile() {
+  const { goBack, navigate } = useNavigation();
   const { user } = useAuthContext();
   const { t } = useTranslation();
-  const [selectedGender, setSelectedGender] = useState<"sir" | "mrs" | null>(
-    null
-  );
-  const [firstName, setFirstName] = useState(
-    user?.username?.split(" ")[0] || ""
-  );
-  const [lastName, setLastName] = useState(
-    user?.username?.split(" ").slice(1).join(" ") || ""
-  );
-
-  const handleSave = () => {
-    if (!firstName.trim()) {
-      Alert.alert(t("common.error"), t("profile.errors.firstNameRequired"));
-      return;
-    }
-    if (!lastName.trim()) {
-      Alert.alert(t("common.error"), t("profile.errors.lastNameRequired"));
-      return;
-    }
-    if (!selectedGender) {
-      Alert.alert(t("common.error"), t("profile.errors.genderRequired"));
-      return;
-    }
-
-    // TODO: Implement save profile logic
-    Alert.alert(t("common.success"), t("profile.updateSuccess"));
-    goBack();
-  };
 
   return (
     <MainLayout>
       <View style={styles.container}>
-        {/* Header with Back Button */}
         <View style={styles.header}>
           <TouchableOpacity onPress={goBack} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color="#000" />
-            <Text style={styles.backText}>Back</Text>
+            <Ionicons name="chevron-back" size={24} color="#6c757d" />
+            <Text style={styles.backText}>{t("common.goBack")}</Text>
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Page Title */}
-          <Text style={styles.pageTitle}>Account Info</Text>
-
-          {/* Profile Photo Section */}
-          <View style={styles.section}>
-            <View style={styles.photoCard}>
-              <View style={styles.photoContainer}>
+          <View style={styles.profileHeader}>
+            <View style={styles.profileCard}>
+              <View style={styles.avatarContainer}>
                 {user?.avatar ? (
-                  <Image source={{ uri: user.avatar }} style={styles.avatar} />
+                  <Image
+                    source={{ uri: user.avatar }}
+                    style={styles.avatar}
+                    contentFit="cover"
+                  />
                 ) : (
                   <View style={styles.avatar}>
-                    <Ionicons name="person" size={40} color="#ccc" />
+                    <Ionicons
+                      name="person"
+                      size={40}
+                      color={colors.text.secondary}
+                    />
                   </View>
                 )}
-                <TouchableOpacity style={styles.addPhotoButton}>
-                  <Ionicons name="add" size={16} color="#fff" />
-                </TouchableOpacity>
               </View>
-              <View style={styles.photoInfo}>
-                <Text style={styles.photoTitle}>Your Photo</Text>
-                <Text style={styles.photoDescription}>
-                  Adding a profile picture makes your profile more personalized.
+              <TouchableOpacity
+                style={styles.profileInfo}
+                onPress={() => navigate("/auth/profile/edit")}
+              >
+                <Text style={styles.username}>{user?.username}</Text>
+                <Text style={styles.editProfileText}>
+                  {t("profile.editProfile")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.optionsContainer}>
+            <TouchableOpacity style={styles.optionCard}>
+              <View style={styles.optionContent}>
+                <Text style={styles.optionTitle}>
+                  {t("profile.order.title")}
+                </Text>
+                <Text style={styles.optionDescription}>
+                  {t("profile.order.subtitle")}
                 </Text>
               </View>
-            </View>
+              <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.optionCard}>
+              <View style={styles.optionContent}>
+                <Text style={styles.optionTitle}>
+                  {t("profile.payment.title")}
+                </Text>
+                <Text style={styles.optionDescription}>
+                  {t("profile.payment.subtitle")}
+                </Text>
+              </View>
+              <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.optionCard}>
+              <View style={styles.optionContent}>
+                <Text style={styles.optionTitle}>
+                  {t("profile.coupon.title")}
+                </Text>
+                <Text style={styles.optionDescription}>
+                  {t("profile.coupon.subtitle")}
+                </Text>
+              </View>
+              <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.optionCard}>
+              <View style={styles.optionContent}>
+                <Text style={styles.optionTitle}>
+                  {t("profile.supportCenter.title")}
+                </Text>
+                <Text style={styles.optionDescription}>
+                  {t("profile.supportCenter.subtitle")}
+                </Text>
+              </View>
+              <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.optionCard}
+              onPress={() => navigate("/home/settings")}
+            >
+              <View style={styles.optionContent}>
+                <Text style={styles.optionTitle}>{t("settings.title")}</Text>
+                <Text style={styles.optionDescription}>
+                  {t("settings.subtitle")}
+                </Text>
+              </View>
+              <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
+            </TouchableOpacity>
+
+            <View style={styles.bottomSpacing} />
           </View>
-
-          {/* Gender Selection */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Gender</Text>
-            <View style={styles.genderContainer}>
-              <TouchableOpacity
-                style={styles.genderOption}
-                onPress={() => setSelectedGender("sir")}
-              >
-                <View style={styles.radioButton}>
-                  {selectedGender === "sir" && (
-                    <View style={styles.radioSelected} />
-                  )}
-                </View>
-                <Text style={styles.genderText}>Sir</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.genderOption}
-                onPress={() => setSelectedGender("mrs")}
-              >
-                <View style={styles.radioButton}>
-                  {selectedGender === "mrs" && (
-                    <View style={styles.radioSelected} />
-                  )}
-                </View>
-                <Text style={styles.genderText}>Mrs.</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Name Input Fields */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Name</Text>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>First Name</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Your first name"
-                placeholderTextColor="#999"
-                value={firstName}
-                onChangeText={setFirstName}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Last Name</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Your last name"
-                placeholderTextColor="#999"
-                value={lastName}
-                onChangeText={setLastName}
-              />
-            </View>
-          </View>
-
-          {/* Extra spacing at bottom */}
-          <View style={styles.bottomSpacing} />
         </ScrollView>
-
-        {/* Save Button */}
-        <View style={styles.saveButtonContainer}>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>Save</Text>
-          </TouchableOpacity>
-        </View>
       </View>
     </MainLayout>
   );
@@ -175,150 +150,92 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 16,
-    color: "#000",
+    color: "#6c757d",
     marginLeft: 4,
   },
   content: {
     flex: 1,
+    paddingBottom: Platform.select({ ios: 200, android: 220 }) as number,
+  },
+  profileHeader: {
+    backgroundColor: "#E3F2FD",
+    paddingBottom: 20,
     paddingHorizontal: 20,
   },
-  pageTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#000",
-    marginTop: 20,
-    marginBottom: 30,
-  },
-  section: {
-    marginBottom: 30,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 15,
-  },
-  photoCard: {
+  profileCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 20,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  photoContainer: {
-    position: "relative",
+  avatarContainer: {
     marginRight: 16,
   },
   avatar: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#e9ecef",
     alignItems: "center",
     justifyContent: "center",
   },
-  addPhotoButton: {
-    position: "absolute",
-    bottom: -2,
-    right: -2,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#000",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#fff",
-  },
-  photoInfo: {
+  profileInfo: {
     flex: 1,
   },
-  photoTitle: {
-    fontSize: 16,
+  username: {
+    fontSize: 18,
     fontWeight: "bold",
-    color: "#000",
+    color: "#212529",
     marginBottom: 4,
   },
-  photoDescription: {
+  editProfileText: {
     fontSize: 14,
-    color: "#666",
-    lineHeight: 20,
+    color: "#6c757d",
   },
-  genderContainer: {
-    flexDirection: "row",
-    gap: 20,
+  optionsContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
-  genderOption: {
+  optionCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  radioButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#ccc",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 8,
+  optionContent: {
+    flex: 1,
   },
-  radioSelected: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#000",
-  },
-  genderText: {
-    fontSize: 16,
-    color: "#000",
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  inputLabel: {
+  optionTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#000",
-    marginBottom: 8,
+    color: "#212529",
+    marginBottom: 4,
   },
-  textInput: {
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 25,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    fontSize: 16,
-    backgroundColor: "#fff",
-    height: 56,
+  optionDescription: {
+    fontSize: 14,
+    color: "#6c757d",
+    lineHeight: 20,
+  },
+  seeAllText: {
+    fontSize: 14,
+    color: "#6c757d",
+    fontWeight: "500",
   },
   bottomSpacing: {
-    height: 100,
-  },
-  saveButtonContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-    paddingTop: 20,
-    backgroundColor: "#f8f9fa",
-  },
-  saveButton: {
-    backgroundColor: "#000000",
-    borderRadius: 25,
-    paddingVertical: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
-    minHeight: 56,
-    width: "100%",
-  },
-  saveButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
+    height: Platform.select({ ios: 100, android: 120 }) as number,
   },
 });
