@@ -97,6 +97,13 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 16,
   },
+  toggleHint: {
+    fontSize: 12,
+    color: "#6c757d",
+    marginTop: -8,
+    marginBottom: 12,
+    lineHeight: 16,
+  },
   radioOuter: {
     width: 18,
     height: 18,
@@ -115,13 +122,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
     color: "#666",
   },
-  updateHint: {
-    fontSize: 12,
-    color: "#FF6B6B",
-    marginTop: 4,
-    fontStyle: "italic",
-  },
-
   fieldGroup: { marginBottom: 14 },
   label: { fontSize: 14, color: "#111", marginBottom: 8, fontWeight: "600" },
   input: {

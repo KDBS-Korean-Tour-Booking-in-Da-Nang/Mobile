@@ -4,7 +4,7 @@ export const authEndpoints = {
   login: (payload: { email: string; password: string }) =>
     api.post("/api/auth/login", payload),
 
-  logout: () => api.post("/api/auth/logout"),
+  logout: (token: string) => api.post("/api/auth/logout", { token }),
 
   forgotPasswordRequest: (payload: { email: string }) =>
     api.post("/api/auth/forgot-password/request", payload),

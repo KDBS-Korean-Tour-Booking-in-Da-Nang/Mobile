@@ -21,6 +21,8 @@ export const tourEndpoints = {
   createBooking: (payload: any) => api.post("/api/booking", payload),
   getBookingById: (bookingId: number) =>
     api.get(`/api/booking/id/${bookingId}`),
+  updateBooking: (bookingId: number, payload: any) =>
+    api.put(`/api/booking/${bookingId}`, payload),
   getBookingsByEmail: (email: string) => api.get(`/api/booking/email/${email}`),
   getBookingsByTourId: (tourId: number) =>
     api.get(`/api/booking/tour/${tourId}`),

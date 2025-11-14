@@ -30,6 +30,8 @@ import { createPost } from "../../../services/endpoints/forum";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+// vouchers are shown only in the dedicated voucher list screen
+
 export default function TourList() {
   const { navigate, goBack } = useNavigation();
   const { t } = useTranslation();
@@ -62,7 +64,7 @@ export default function TourList() {
       setLoading(true);
       const toursData = (await tourEndpoints.getAll()).data;
       setTours(Array.isArray(toursData) ? toursData : []);
-    } catch (error) {
+    } catch {
       Alert.alert(t("common.error"), t("tour.errors.loadFailed"));
     } finally {
       setLoading(false);
@@ -118,7 +120,7 @@ export default function TourList() {
   };
 
   const handleGiftModalPress = () => {
-    navigate("/tour/voucher-list" as any);
+    navigate("/tour/voucherList" as any);
   };
 
   const handleScroll = useCallback((event: any) => {
@@ -320,6 +322,8 @@ export default function TourList() {
             </TouchableOpacity>
           ) : null}
         </View>
+
+        {/* Voucher highlights removed per request. Vouchers are shown only in /tour/voucherList */}
 
         <View style={styles.toursGrid}>
           {filteredTours.length > 0 ? (

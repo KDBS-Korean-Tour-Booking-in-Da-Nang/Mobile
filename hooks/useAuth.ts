@@ -62,6 +62,7 @@ export const useSignUp = () => {
         username: fullName,
         email,
         password,
+        role: "USER",
       });
       return response?.data ?? true;
     } catch (err: any) {

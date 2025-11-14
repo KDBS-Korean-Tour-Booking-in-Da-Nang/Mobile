@@ -342,6 +342,7 @@
     "booking": {
       "contactInfo": "연락처 정보",
       "usePersonalInfo": "개인정보 사용",
+      "guestUsePersonalInfoNote": "고객 대신 예약하는 경우 Booking Information 섹션에 다시 입력해주세요.",
       "fullName": "성명",
       "address": "주소",
       "phoneNumber": "전화번호",
@@ -368,7 +369,6 @@
       "idNumber": "신분증/여권번호",
       "dateOfBirth": "생년월일",
       "dobShort": "생년월일",
-      "updateInfoHint": "프로필을 업데이트하여 이 필드를 자동으로 채우세요",
       "adultCount": "성인",
       "childrenCount": "어린이",
       "babyCount": "유아",
@@ -380,13 +380,19 @@
         "phoneTenDigits": "전화번호는 정확히 10자리여야 합니다",
         "pickUpPointRequired": "픽업 지점을 입력해주세요",
         "departureDateRequired": "출발일을 선택해주세요",
+        "departureDateInvalid": "유효하지 않은 출발일",
+        "departureDateMinError": "출발일은 {{date}}부터 선택 가능합니다 ({{days}}일 전 예약 필요)",
+        "departureDateMaxError": "이 투어는 {{date}}까지만 예약 가능합니다",
         "adultDobInvalid": "성인 {{index}}: 유효한 생년월일을 선택해주세요",
         "adultAgeMin": "성인 {{index}}: 나이는 18세 이상이어야 합니다",
         "childDobInvalid": "어린이 {{index}}: 유효한 생년월일을 선택해주세요",
         "childAgeRange": "어린이 {{index}}: 나이는 2세 이상 18세 미만이어야 합니다",
         "babyDobInvalid": "유아 {{index}}: 유효한 생년월일을 선택해주세요",
         "babyAgeMax": "유아 {{index}}: 나이는 2세 미만이어야 합니다"
-      }
+      },
+      "departureDateRange": "{{minDate}}부터 {{maxDate}}까지 선택 가능",
+      "departureDateMinOnly": "{{minDate}}부터 선택 가능",
+      "bookingDeadlineNote": "{{days}}일 전 예약 필요"
     },
     "errors": {
       "notFound": "투어를 찾을 수 없습니다",
@@ -445,7 +451,18 @@
       },
       "minOrder": "최소 주문",
       "validUntil": "유효 기간",
-      "outOfStock": "품절"
+      "validFrom": "유효 시작일",
+      "outOfStock": "품절",
+      "applicableTour": "적용 투어",
+      "viewApplicableTours": "적용 가능한 투어 목록 보기",
+      "company": "회사",
+      "detail": {
+        "title": "바우처 상세",
+        "notFound": "바우처를 찾을 수 없습니다",
+        "discountInfo": "할인 정보",
+        "validityInfo": "유효성 정보",
+        "otherInfo": "기타 정보"
+      }
     },
     "share": {
       "title": "투어 공유",
@@ -481,7 +498,10 @@
       "submitError": "평가 제출에 실패했습니다. 다시 시도해주세요",
       "deleteConfirm": "이 평가를 삭제하시겠습니까?",
       "noReviews": "아직 평가가 없습니다. 이 투어의 첫 번째 평가자가 되어보세요!",
-      "alreadyRated": "이 투어를 {{star}}점으로 평가했어요"
+      "alreadyRated": "이 투어를 {{star}}점으로 평가했어요",
+      "checkingBooking": "확인 중...",
+      "bookingRequired": "평가하기 전에 이 투어를 예약해야 합니다",
+      "bookingRequiredMessage": "평가를 공유하려면 이 투어를 예약해주세요."
     }
   },
   "payment": {

@@ -12,29 +12,24 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { tourEndpoints } from "../../services/endpoints/tour";
+import { API_BASE } from "../../services/api";
 
-interface PaymentParams {
+interface TossPaymentParams {
   bookingId?: string;
   userEmail?: string;
-  payUrl?: string;
-  orderId?: string;
+  voucherCode?: string;
 }
 
-export default function PaymentScreen() {
+export default function TossPaymentScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const params = useLocalSearchParams<Partial<PaymentParams>>();
+  const params = useLocalSearchParams<Partial<TossPaymentParams>>();
 
-  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const [paymentHtml, setPaymentHtml] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const {
-    bookingId = "",
-    userEmail = "",
-    payUrl: directPayUrl = "",
-    orderId: directOrderId = "",
-  } = params;
+  const { bookingId = "", userEmail = "", voucherCode = "" } = params;
 
   const createPayment = useCallback(async () => {
     try {
@@ -44,19 +39,136 @@ export default function PaymentScreen() {
       const response = await tourEndpoints.createBookingPayment({
         bookingId: parseInt(bookingId) || 0,
         userEmail: userEmail,
+        voucherCode: voucherCode || undefined,
       });
 
-      if (response.data.success && response.data.payUrl) {
-        setPaymentUrl(response.data.payUrl);
+      const data = response.data || {};
+      if (
+        data.success &&
+        data.clientKey &&
+        data.customerKey &&
+        data.amount != null &&
+        data.orderId &&
+        data.successUrl &&
+        data.failUrl
+      ) {
+        const amountValue =
+          typeof data.amount === "string" ? data.amount : String(data.amount);
+        const html = `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Toss Payment</title>
+    <script src="https://js.tosspayments.com/v2/standard"></script>
+    <style>
+      body { 
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+        margin: 0; 
+        padding: 16px; 
+        background-color: #f5f5f5;
+      }
+      .wrap { 
+        max-width: 720px; 
+        margin: 0 auto; 
+        background: #fff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      #payment-method {
+        margin-bottom: 16px;
+      }
+      #agreement {
+        margin-top: 16px;
+      }
+      #pay {
+        margin-top: 24px;
+        width: 100%;
+        height: 52px;
+        background: #007AFF;
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      #pay:hover {
+        background: #0051D5;
+      }
+      #pay:active {
+        background: #0040A8;
+      }
+      #pay:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h2 style="margin-top: 0; margin-bottom: 20px; color: #333;">Thanh toán Toss</h2>
+      <div id="payment-method"></div>
+      <div id="agreement"></div>
+      <button id="pay">Thanh toán</button>
+    </div>
+    <script>
+      (async function() {
+        try {
+          const clientKey = ${JSON.stringify(data.clientKey)};
+          const customerKey = ${JSON.stringify(data.customerKey)};
+          const orderId = ${JSON.stringify(data.orderId)};
+          const successUrl = ${JSON.stringify(data.successUrl)};
+          const failUrl = ${JSON.stringify(data.failUrl)};
+          var amountStr = ${JSON.stringify(amountValue)};
+          var amountNum = Number(amountStr);
+
+          const tp = TossPayments(clientKey);
+          const widgets = tp.widgets({ customerKey: customerKey });
+
+          await widgets.setAmount({ currency: "KRW", value: amountNum });
+
+          await Promise.all([
+            widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" }),
+            widgets.renderAgreement({ selector: "#agreement", variantKey: "AGREEMENT" }),
+          ]);
+
+          document.getElementById("pay").addEventListener("click", async function() {
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = "Đang xử lý...";
+            try {
+              await widgets.requestPayment({
+                orderId: orderId,
+                orderName: "Booking payment",
+                successUrl: successUrl,
+                failUrl: failUrl
+              });
+            } catch (e) {
+              btn.disabled = false;
+              btn.textContent = "Thanh toán";
+              window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({ type: "error", message: e && e.message ? e.message : "requestPayment failed" }));
+            }
+          });
+        } catch (err) {
+          window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({ type: "error", message: (err && err.message) || "Init widget failed" }));
+        }
+      })();
+    </script>
+  </body>
+</html>`;
+        setPaymentHtml(html);
       } else {
-        setError(response.data.message || t("payment.createFailed"));
+        setError(data.message || t("payment.createFailed"));
       }
     } catch (err: any) {
       setError(err.response?.data?.message || t("payment.createFailed"));
     } finally {
       setLoading(false);
     }
-  }, [userEmail, bookingId, directPayUrl, directOrderId, t]);
+  }, [userEmail, bookingId, voucherCode, t]);
 
   useEffect(() => {
     createPayment();
@@ -67,20 +179,22 @@ export default function PaymentScreen() {
 
     if (
       url.includes("/transaction-result") ||
-      url.includes("transaction-result")
+      url.includes("transaction-result") ||
+      url.includes("/transactionResult") ||
+      url.includes("transactionResult")
     ) {
       try {
         const urlObj = new URL(url);
         const orderId = urlObj.searchParams.get("orderId");
-        const responseCode = urlObj.searchParams.get("responseCode");
         const paymentMethod = urlObj.searchParams.get("paymentMethod");
+        const status = urlObj.searchParams.get("status");
 
         router.replace({
-          pathname: "/transactionResult",
+          pathname: "/transactionResult" as any,
           params: {
-            orderId: orderId || directOrderId || "",
-            responseCode: responseCode || "",
-            paymentMethod: paymentMethod || "vnpay",
+            orderId: orderId || "",
+            status: status || "",
+            paymentMethod: paymentMethod || "TOSS",
             bookingId: bookingId,
           },
         });
@@ -114,11 +228,11 @@ export default function PaymentScreen() {
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t("payment.title")}</Text>
+          <Text style={styles.headerTitle}>Thanh toán Toss</Text>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>{t("payment.creating")}</Text>
+          <Text style={styles.loadingText}>Đang tải...</Text>
         </View>
       </View>
     );
@@ -131,31 +245,31 @@ export default function PaymentScreen() {
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t("payment.title")}</Text>
+          <Text style={styles.headerTitle}>Thanh toán Toss</Text>
         </View>
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={64} color="#FF3B30" />
-          <Text style={styles.errorTitle}>{t("payment.error")}</Text>
+          <Text style={styles.errorTitle}>Lỗi</Text>
           <Text style={styles.errorMessage}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={createPayment}>
-            <Text style={styles.retryButtonText}>{t("common.retry")}</Text>
+            <Text style={styles.retryButtonText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
       </View>
     );
   }
 
-  if (!paymentUrl) {
+  if (!paymentHtml) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t("payment.title")}</Text>
+          <Text style={styles.headerTitle}>Thanh toán Toss</Text>
         </View>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorTitle}>{t("payment.noUrl")}</Text>
+          <Text style={styles.errorTitle}>Không thể tải trang thanh toán</Text>
         </View>
       </View>
     );
@@ -167,11 +281,11 @@ export default function PaymentScreen() {
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t("payment.title")}</Text>
+        <Text style={styles.headerTitle}>Thanh toán Toss</Text>
       </View>
 
       <WebView
-        source={{ uri: paymentUrl }}
+        source={{ html: paymentHtml, baseUrl: API_BASE || "" }}
         onShouldStartLoadWithRequest={handleWebViewRequest}
         style={styles.webview}
         startInLoadingState={true}
@@ -180,14 +294,12 @@ export default function PaymentScreen() {
         renderLoading={() => (
           <View style={styles.webviewLoading}>
             <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.webviewLoadingText}>
-              {t("payment.loading")}
-            </Text>
+            <Text style={styles.webviewLoadingText}>Đang tải...</Text>
           </View>
         )}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
-          setError(t("payment.loadFailed"));
+          setError("Không thể tải trang thanh toán");
         }}
         onHttpError={(e) => {}}
       />

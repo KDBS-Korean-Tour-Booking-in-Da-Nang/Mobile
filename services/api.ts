@@ -21,7 +21,6 @@ const api = axios.create({
 export const apiForm = axios.create({
   baseURL: API_BASE_URL,
   timeout: 20000,
-
 });
 
 api.interceptors.request.use(
@@ -40,13 +39,8 @@ api.interceptors.request.use(
 
       if (userData) {
         const user = JSON.parse(userData);
-        let email: string | undefined = user?.email;
-        if (!email) {
-          email = user?.userEmail || user?.emailAddress || user?.mail;
-        }
-        if (email) {
-          (config.headers as any)["User-Email"] = email;
-        }
+        const email: string | undefined = user?.email;
+        if (email) (config.headers as any)["User-Email"] = email;
       }
     } catch {}
     return config;
@@ -69,8 +63,7 @@ apiForm.interceptors.request.use(
       }
       if (userData) {
         const user = JSON.parse(userData);
-        let email: string | undefined = user?.email;
-        if (!email) email = user?.userEmail || user?.emailAddress || user?.mail;
+        const email: string | undefined = user?.email;
         if (email) (config.headers as any)["User-Email"] = email;
       }
     } catch {}

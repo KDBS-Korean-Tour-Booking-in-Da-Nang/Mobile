@@ -72,7 +72,7 @@ export const usersEndpoints = {
   getAll: () => api.get("/api/users"),
 
   register: (payload: { username: string; email: string; password: string }) =>
-    api.post("/api/users/register", payload),
+    api.post("/api/users/register", { ...payload, role: "USER" }),
 
   regenerateOtp: (payload: { email: string }) =>
     api.post("/api/users/regenerate-otp", payload),

@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Modal,
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,12 +24,25 @@ import BookingButton from "../../../components/BookingButton";
 import RateTour from "../../../components/RateTour";
 import { useTranslation } from "react-i18next";
 import { tourEndpoints } from "../../../services/endpoints/tour";
-import { TourResponse } from "../../../src/types/tour";
+import { TourResponse, VoucherDiscountType } from "../../../src/types/tour";
+import { voucherEndpoints } from "../../../services/endpoints/voucher";
+import { useAuthContext } from "../../../src/contexts/authContext";
 import styles from "./styles";
+
+type VoucherPreviewItem = {
+  id: number;
+  code: string;
+  name: string;
+  discountType: VoucherDiscountType;
+  discountValue: number;
+  minOrderValue: number;
+  endDate?: string;
+};
 
 export default function TourDetail() {
   const { goBack, navigate } = useNavigation();
   const { t } = useTranslation();
+  const { user } = useAuthContext();
   const params = useLocalSearchParams();
   const tourId = params.id ? Number(params.id) : 1;
 
@@ -41,6 +55,14 @@ export default function TourDetail() {
   const [isNavVisible, setIsNavVisible] = useState(true);
   const lastScrollY = useRef(0);
   const scrollThreshold = 50;
+  const [voucherLoading, setVoucherLoading] = useState(false);
+  const [voucherError, setVoucherError] = useState<string | null>(null);
+  const [availableVouchers, setAvailableVouchers] = useState<
+    VoucherPreviewItem[]
+  >([]);
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [hasBookedTour, setHasBookedTour] = useState(false);
+  const [checkingBooking, setCheckingBooking] = useState(false);
 
   useEffect(() => {
     const loadTour = async () => {
@@ -78,6 +100,135 @@ export default function TourDetail() {
       navigate(`/tour/buying?id=${tour.id}`);
     }
   };
+
+  const formatVoucherDiscount = useCallback((voucher: VoucherPreviewItem) => {
+    const value = Number(voucher.discountValue || 0);
+    if (voucher.discountType === VoucherDiscountType.PERCENT) {
+      return `-${value}%`;
+    }
+    return `-${value.toLocaleString()} Đ`;
+  }, []);
+
+  const formatVoucherExpiry = useCallback((value?: string) => {
+    if (!value) return "";
+    try {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) {
+        return value;
+      }
+      const dd = String(date.getDate()).padStart(2, "0");
+      const mm = String(date.getMonth() + 1).padStart(2, "0");
+      const yyyy = date.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    } catch {
+      return value || "";
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    if (!tour?.id) {
+      setAvailableVouchers([]);
+      setVoucherError(null);
+      setVoucherLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    const loadVouchers = async () => {
+      setVoucherLoading(true);
+      setVoucherError(null);
+      try {
+        const response = await voucherEndpoints.previewAllAvailable(tour.id);
+        const data = Array.isArray(response.data) ? response.data : [];
+        const normalized = data
+          .map((raw: any) => {
+            try {
+              const code = String(raw.voucherCode || raw.code || "").trim();
+              if (!code) return null;
+              const toNumber = (val: any) => {
+                if (val === null || val === undefined) return 0;
+                const num = Number(val);
+                return Number.isNaN(num) ? 0 : num;
+              };
+
+              const discountTypeRaw = String(
+                raw.discountType || raw.type || ""
+              ).toUpperCase();
+
+              return {
+                id: Number(raw.voucherId ?? raw.id ?? 0),
+                code,
+                name: String(raw.name || raw.voucherName || code),
+                discountType:
+                  discountTypeRaw === VoucherDiscountType.PERCENT
+                    ? VoucherDiscountType.PERCENT
+                    : VoucherDiscountType.FIXED,
+                discountValue: toNumber(raw.discountValue),
+                minOrderValue: toNumber(raw.minOrderValue),
+                endDate: raw.endDate || raw.expiredAt || "",
+              } as VoucherPreviewItem;
+            } catch {
+              return null;
+            }
+          })
+          .filter((item): item is VoucherPreviewItem => !!item);
+
+        if (!active) return;
+        setAvailableVouchers(normalized);
+      } catch (error: any) {
+        if (!active) return;
+        const message =
+          error?.response?.data?.message ||
+          error?.message ||
+          t("tour.detail.voucherLoadFailed", {
+            defaultValue: "Không thể tải voucher khả dụng.",
+          });
+        setVoucherError(message);
+        setAvailableVouchers([]);
+      } finally {
+        if (active) {
+          setVoucherLoading(false);
+        }
+      }
+    };
+
+    loadVouchers();
+
+    return () => {
+      active = false;
+    };
+  }, [tour?.id, t]);
+
+  useEffect(() => {
+    const checkUserBooking = async () => {
+      if (!user?.email || !tour?.id) {
+        setHasBookedTour(false);
+        return;
+      }
+
+      setCheckingBooking(true);
+      try {
+        const bookings = (await tourEndpoints.getBookingsByEmail(user.email))
+          .data;
+        const hasBooked = Array.isArray(bookings)
+          ? bookings.some(
+              (booking: any) =>
+                booking.tourId === tour.id || booking.tour?.id === tour.id
+            )
+          : false;
+        setHasBookedTour(hasBooked);
+      } catch (error) {
+        console.error("Error checking booking:", error);
+        setHasBookedTour(false);
+      } finally {
+        setCheckingBooking(false);
+      }
+    };
+
+    checkUserBooking();
+  }, [user?.email, tour?.id]);
 
   const imageList = useMemo(() => {
     const contentImages = (tour?.contents || [])
@@ -467,6 +618,50 @@ export default function TourDetail() {
             </View>
           </View>
 
+          <TouchableOpacity
+            style={styles.voucherRow}
+            onPress={() => setShowVoucherModal(true)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.voucherRowContent}>
+              <View style={styles.voucherRowLeft}>
+                <Ionicons name="ticket" size={24} color="#FF6B6B" />
+                <View style={styles.voucherRowTextContainer}>
+                  <Text style={styles.voucherRowTitle}>
+                    {t("tour.detail.applicableVouchers", {
+                      defaultValue: "Voucher áp dụng",
+                    })}
+                  </Text>
+                  {voucherLoading ? (
+                    <Text style={styles.voucherRowSubtitle}>
+                      {t("tour.detail.loadingVouchers", {
+                        defaultValue: "Đang tải...",
+                      })}
+                    </Text>
+                  ) : availableVouchers.length > 0 ? (
+                    <Text style={styles.voucherRowSubtitle}>
+                      {availableVouchers.length}{" "}
+                      {t("tour.detail.vouchersAvailable", {
+                        defaultValue: "voucher khả dụng",
+                      })}
+                    </Text>
+                  ) : (
+                    <Text style={styles.voucherRowSubtitle}>
+                      {t("tour.detail.viewVouchers", {
+                        defaultValue: "Xem voucher",
+                      })}
+                    </Text>
+                  )}
+                </View>
+              </View>
+              {voucherLoading ? (
+                <ActivityIndicator size="small" color="#007AFF" />
+              ) : (
+                <Ionicons name="chevron-forward" size={20} color="#999" />
+              )}
+            </View>
+          </TouchableOpacity>
+
           {tour.contents && tour.contents.length > 0 && (
             <>
               {tour.contents.map((content, idx) => {
@@ -474,11 +669,11 @@ export default function TourDetail() {
                   if (!html || typeof html !== "string") return null;
 
                   try {
-                    const items: Array<{
+                    const items: {
                       label?: string;
                       text?: string;
                       img?: string;
-                    }> = [];
+                    }[] = [];
                     const liRegex = /<li[^>]*>([\s\S]*?)<\/li>/gi;
                     let liMatch: RegExpExecArray | null;
                     while ((liMatch = liRegex.exec(html))) {
@@ -596,11 +791,150 @@ export default function TourDetail() {
 
           <BookingButton onPress={handleBooking} />
 
-          <RateTour tourId={tour?.id || 0} onRateSubmitted={(rate) => {}} />
+          <RateTour
+            tourId={tour?.id || 0}
+            onRateSubmitted={(rate) => {}}
+            hasBookedTour={hasBookedTour}
+            checkingBooking={checkingBooking}
+          />
 
           <View style={styles.bottomSpace} />
         </View>
       </ScrollView>
+
+      {/* Voucher Modal */}
+      <Modal
+        visible={showVoucherModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowVoucherModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {t("tour.detail.applicableVouchers", {
+                  defaultValue: "Voucher áp dụng",
+                })}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowVoucherModal(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close-circle" size={26} color="#6c757d" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalScrollView}>
+              {voucherLoading ? (
+                <View style={styles.voucherLoadingContainer}>
+                  <ActivityIndicator size="small" color="#007AFF" />
+                  <Text style={styles.voucherLoadingText}>
+                    {t("tour.detail.loadingVouchers", {
+                      defaultValue: "Đang tải voucher...",
+                    })}
+                  </Text>
+                </View>
+              ) : voucherError ? (
+                <View style={styles.voucherEmptyContainer}>
+                  <Ionicons
+                    name="alert-circle-outline"
+                    size={48}
+                    color="#ff6b6b"
+                  />
+                  <Text style={styles.voucherErrorText}>{voucherError}</Text>
+                </View>
+              ) : availableVouchers.length > 0 ? (
+                availableVouchers.map((voucher) => {
+                  const discountText = formatVoucherDiscount(voucher);
+                  const expiryText = formatVoucherExpiry(voucher.endDate);
+                  const key = voucher.id > 0 ? `${voucher.id}` : voucher.code;
+                  return (
+                    <View key={key} style={styles.voucherOptionCard}>
+                      <View style={styles.voucherOptionContent}>
+                        <View style={styles.voucherOptionLeft}>
+                          <View style={styles.voucherOptionIcon}>
+                            <Ionicons name="ticket" size={20} color="#FF6B6B" />
+                          </View>
+                          <View style={styles.voucherOptionInfo}>
+                            <Text style={styles.voucherOptionCode}>
+                              {voucher.code}
+                            </Text>
+                            {voucher.name && voucher.name !== voucher.code && (
+                              <Text style={styles.voucherOptionName}>
+                                {voucher.name}
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+                      </View>
+                      <View style={styles.voucherOptionDetails}>
+                        <View style={styles.voucherOptionDetailRow}>
+                          <Text style={styles.voucherOptionDetailLabel}>
+                            {t("tour.confirm.discount")}:
+                          </Text>
+                          <Text style={styles.voucherOptionDetailValue}>
+                            {discountText}
+                          </Text>
+                        </View>
+                        {voucher.minOrderValue > 0 && (
+                          <View style={styles.voucherOptionDetailRow}>
+                            <Text style={styles.voucherOptionDetailLabel}>
+                              {t("tour.detail.minOrder", {
+                                defaultValue: "Đơn tối thiểu",
+                              })}
+                              :
+                            </Text>
+                            <Text style={styles.voucherOptionDetailValue}>
+                              {Number(
+                                voucher.minOrderValue || 0
+                              ).toLocaleString()}{" "}
+                              Đ
+                            </Text>
+                          </View>
+                        )}
+                        {expiryText && (
+                          <View style={styles.voucherOptionDetailRow}>
+                            <Text style={styles.voucherOptionDetailLabel}>
+                              {t("tour.detail.validTo", {
+                                defaultValue: "Hiệu lực đến",
+                              })}
+                              :
+                            </Text>
+                            <Text style={styles.voucherOptionDetailValue}>
+                              {expiryText}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  );
+                })
+              ) : (
+                <View style={styles.voucherEmptyContainer}>
+                  <Ionicons name="ticket-outline" size={48} color="#ccc" />
+                  <Text style={styles.voucherEmptyText}>
+                    {t("tour.detail.noVoucherAvailable", {
+                      defaultValue: "Chưa có voucher phù hợp.",
+                    })}
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.modalCloseButtonFull}
+                onPress={() => setShowVoucherModal(false)}
+              >
+                <Text style={styles.modalCloseButtonText}>
+                  {t("common.close") || "Đóng"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </MainLayout>
   );
 }

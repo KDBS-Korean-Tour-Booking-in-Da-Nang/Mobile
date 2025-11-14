@@ -22,6 +22,8 @@ interface RateTourProps {
     comment: string;
     createdAt: string;
   }) => void;
+  hasBookedTour?: boolean;
+  checkingBooking?: boolean;
 }
 
 interface Rate {
@@ -34,7 +36,12 @@ interface Rate {
   username?: string;
 }
 
-const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
+const RateTour: React.FC<RateTourProps> = ({
+  tourId,
+  onRateSubmitted,
+  hasBookedTour = false,
+  checkingBooking = false,
+}) => {
   const { user } = useAuthContext();
   const { t } = useTranslation();
   const [content, setContent] = useState("");
@@ -145,6 +152,15 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
 
     if (!user?.email) {
       Alert.alert(t("tour.rate.errorTitle"), t("tour.rate.loginRequired"));
+      return;
+    }
+
+    if (!hasBookedTour) {
+      Alert.alert(
+        t("tour.rate.errorTitle"),
+        t("tour.rate.bookingRequired") ||
+          "Bạn cần đặt tour trước khi có thể đánh giá"
+      );
       return;
     }
 
@@ -264,7 +280,26 @@ const RateTour: React.FC<RateTourProps> = ({ tourId, onRateSubmitted }) => {
 
   return (
     <View style={styles.container}>
-      {!hasUserRated && (
+      {checkingBooking && (
+        <View style={styles.formContainer}>
+          <Text style={styles.title}>
+            {t("tour.rate.checkingBooking") || "Đang kiểm tra..."}
+          </Text>
+        </View>
+      )}
+      {!checkingBooking && !hasBookedTour && (
+        <View style={styles.formContainer}>
+          <Text style={styles.title}>
+            {t("tour.rate.bookingRequired") ||
+              "Bạn cần đặt tour trước khi có thể đánh giá"}
+          </Text>
+          <Text style={styles.bookingRequiredText}>
+            {t("tour.rate.bookingRequiredMessage") ||
+              "Vui lòng đặt tour này để có thể chia sẻ đánh giá của bạn."}
+          </Text>
+        </View>
+      )}
+      {!checkingBooking && hasBookedTour && !hasUserRated && (
         <View style={styles.formContainer}>
           <View style={styles.formHeader}>
             <Text style={styles.title}>{t("tour.rate.title")}</Text>
@@ -489,6 +524,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#007AFF",
     textAlign: "center",
+  },
+  bookingRequiredText: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    marginTop: 8,
+    textAlign: "center",
+    lineHeight: 20,
   },
 });
 

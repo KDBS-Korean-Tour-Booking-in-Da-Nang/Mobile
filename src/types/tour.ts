@@ -1,5 +1,6 @@
 export interface TourResponse {
   id: number;
+  companyId?: number;
   tourName: string;
   tourDescription: string;
   tourImgPath: string;
@@ -15,6 +16,8 @@ export interface TourResponse {
   tourStatus: TourStatus;
   createdAt: string;
   contents: TourContentResponse[];
+  tourDeadline?: number; // Số ngày tối thiểu từ ngày hiện tại đến ngày có thể đặt tour
+  tourExpirationDate?: string; // Hạn cuối có thể đặt tour (format: YYYY-MM-DD)
 }
 
 export interface TourContentResponse {
@@ -64,6 +67,7 @@ export interface GuestInfo {
 
 export interface BookingRequest {
   tourId: number;
+  userEmail: string;
   contactName: string;
   contactAddress?: string;
   contactPhone: string;
@@ -131,17 +135,9 @@ export interface BookingSummaryResponse {
   createdAt: string;
 }
 
-export interface VNPayPaymentResponse {
-  orderId: string;
-  success: boolean;
-  orderInfo: string;
-  payUrl: string;
-  transactionId: string;
-}
-
 export enum VoucherDiscountType {
-  PERCENTAGE = "PERCENTAGE",
-  FIXED_AMOUNT = "FIXED_AMOUNT",
+  PERCENT = "PERCENT",
+  FIXED = "FIXED",
 }
 
 export enum VoucherStatus {
@@ -165,4 +161,8 @@ export interface VoucherResponse {
   status: VoucherStatus;
   createdAt: string;
   updatedAt: string;
+  tourId?: number;
+  companyUsername?: string;
+  tourName?: string;
+  tourIds?: number[];
 }

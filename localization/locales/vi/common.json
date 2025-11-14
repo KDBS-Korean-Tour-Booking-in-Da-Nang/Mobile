@@ -359,6 +359,7 @@
       "title": "Đặt tour",
       "contactInfo": "Thông tin liên hệ",
       "usePersonalInfo": "Sử dụng thông tin cá nhân",
+      "guestUsePersonalInfoNote": "Nếu đặt hộ khách, vui lòng nhập lại thông tin tại Booking Information.",
       "fullName": "Họ tên",
       "address": "Địa chỉ",
       "phoneNumber": "Số điện thoại",
@@ -374,7 +375,6 @@
       "atLeastOneAdult": "Ít nhất 1 người lớn",
       "total": "Tổng cộng",
       "bookingNow": "Đặt tour ngay",
-      "updateInfoHint": "Bạn hãy cập nhật thông tin để tiện lợi cho lần sau nhé",
       "dob": "Ngày sinh",
       "fullname": "Họ tên",
       "gender": "Giới tính",
@@ -386,6 +386,7 @@
       "idNumber": "CCCD/Hộ chiếu",
       "dateOfBirth": "Ngày sinh",
       "dobShort": "Ngày sinh",
+      "selectDate": "Chọn ngày",
       "adultCount": "Người lớn",
       "childrenCount": "Trẻ em",
       "babyCount": "Em bé",
@@ -397,13 +398,20 @@
         "phoneTenDigits": "Số điện thoại phải gồm đúng 10 số",
         "pickUpPointRequired": "Vui lòng nhập điểm đón",
         "departureDateRequired": "Vui lòng chọn ngày khởi hành",
+        "departureDateInvalid": "Ngày khởi hành không hợp lệ",
+        "departureDateMinError": "Ngày khởi hành phải từ {{date}} trở đi (cần đặt trước {{days}} ngày)",
+        "departureDateMaxError": "Tour này chỉ có thể đặt đến ngày {{date}}",
         "adultDobInvalid": "Người lớn {{index}}: Vui lòng chọn ngày sinh hợp lệ",
         "adultAgeMin": "Người lớn {{index}}: Tuổi phải từ 18 trở lên",
         "childDobInvalid": "Trẻ em {{index}}: Vui lòng chọn ngày sinh hợp lệ",
         "childAgeRange": "Trẻ em {{index}}: Tuổi phải từ 2 đến dưới 18",
         "babyDobInvalid": "Em bé {{index}}: Vui lòng chọn ngày sinh hợp lệ",
         "babyAgeMax": "Em bé {{index}}: Tuổi phải dưới 2"
-      }
+      },
+      "departureDateRange": "Có thể chọn từ {{minDate}} đến {{maxDate}}",
+      "departureDateMinOnly": "Có thể chọn từ {{minDate}} trở đi",
+      "bookingDeadlineNote": "cần đặt trước {{days}} ngày",
+      "selectDate": "Chọn ngày"
     },
     "errors": {
       "notFound": "Không tìm thấy tour",
@@ -462,7 +470,18 @@
       },
       "minOrder": "Đơn tối thiểu",
       "validUntil": "Có hiệu lực đến",
-      "outOfStock": "Đã hết"
+      "validFrom": "Có hiệu lực từ",
+      "outOfStock": "Đã hết",
+      "applicableTour": "Áp dụng cho tour",
+      "viewApplicableTours": "Xem danh sách tour áp dụng",
+      "company": "Công ty",
+      "detail": {
+        "title": "Chi tiết Voucher",
+        "notFound": "Không tìm thấy voucher",
+        "discountInfo": "Thông tin giảm giá",
+        "validityInfo": "Thông tin hiệu lực",
+        "otherInfo": "Thông tin khác"
+      }
     },
     "share": {
       "title": "Chia sẻ Tour",
@@ -499,7 +518,10 @@
       "submitError": "Gửi đánh giá thất bại. Vui lòng thử lại",
       "deleteConfirm": "Bạn có chắc chắn muốn xóa đánh giá này?",
       "noReviews": "Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá tour này!",
-      "alreadyRated": "Bạn đã đánh giá tour này với {{star}} sao"
+      "alreadyRated": "Bạn đã đánh giá tour này với {{star}} sao",
+      "checkingBooking": "Đang kiểm tra...",
+      "bookingRequired": "Bạn cần đặt tour trước khi có thể đánh giá",
+      "bookingRequiredMessage": "Vui lòng đặt tour này để có thể chia sẻ đánh giá của bạn."
     }
   },
   "payment": {
