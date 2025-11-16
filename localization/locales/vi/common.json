@@ -411,7 +411,12 @@
       "departureDateRange": "Có thể chọn từ {{minDate}} đến {{maxDate}}",
       "departureDateMinOnly": "Có thể chọn từ {{minDate}} trở đi",
       "bookingDeadlineNote": "cần đặt trước {{days}} ngày",
-      "selectDate": "Chọn ngày"
+      "selectDate": "Chọn ngày",
+      "updateInfo": "Cập nhật thông tin",
+      "waitingForUpdate": "Chờ cập nhật thông tin",
+      "confirmUpdate": "Bạn chắc chắn cập nhật đúng thông tin chứ?",
+      "updateSuccess": "Cập nhật thông tin thành công!",
+      "updateFailed": "Không thể cập nhật thông tin. Vui lòng thử lại."
     },
     "errors": {
       "notFound": "Không tìm thấy tour",
@@ -419,7 +424,8 @@
       "bookingFailed": "Đặt tour thất bại. Vui lòng thử lại.",
       "loadFailed": "Tải danh sách tour thất bại. Vui lòng thử lại.",
       "tourNotFound": "Không tìm thấy tour",
-      "paymentFailed": "Tạo thanh toán thất bại. Vui lòng thử lại."
+      "paymentFailed": "Tạo thanh toán thất bại. Vui lòng thử lại.",
+      "bookingHistoryLoadFailed": "Không thể tải lịch sử đặt tour. Vui lòng thử lại."
     },
     "confirm": {
       "tourInfo": "Thông tin tour",
@@ -441,7 +447,13 @@
       "remaining": "Còn lại",
       "select": "Chọn",
       "close": "Đóng",
-      "availableVouchers": "Voucher khả dụng"
+      "availableVouchers": "Voucher khả dụng",
+      "noVoucherAvailable": "Không có voucher khả dụng cho booking này. Voucher có thể đã hết hạn, hết số lượng, hoặc không áp dụng cho tour này.",
+      "loadingVouchers": "Đang tải voucher...",
+      "voucherLoadFailed": "Không thể tải voucher",
+      "voucherApplyFailed": "Không thể áp dụng voucher. Vui lòng thử lại.",
+      "createBookingFirst": "Vui lòng tạo booking trước để xem voucher khả dụng",
+      "bookingMissing": "Không tìm thấy booking để thanh toán. Vui lòng quay lại bước trước."
     },
     "giftModal": {
       "clickNow": "Nhấp ngay",
@@ -539,10 +551,11 @@
       "success": "Thanh toán thành công",
       "failed": "Thanh toán thất bại",
       "pending": "Đang xử lý thanh toán",
+      "pendingPayment": "Chờ thanh toán",
       "successMessage": "Thanh toán của bạn đã hoàn tất thành công.",
       "failedMessage": "Thanh toán của bạn không thể hoàn tất.",
       "pendingMessage": "Thanh toán của bạn đang được xử lý.",
-      "details": "Chi tiết giao dịch",
+      "details": "Lịch sử đặt tour",
       "orderId": "Mã đơn hàng",
       "bookingId": "Mã đặt chỗ",
       "paymentMethod": "Phương thức thanh toán",
@@ -554,7 +567,8 @@
       "viewBooking": "Xem đặt chỗ",
       "goHome": "Về trang chủ",
       "fetchError": "Không thể tải chi tiết giao dịch"
-    }
+    },
+    "continuePayment": "Tiếp tục thanh toán"
   },
   "common": {
     "error": "Lỗi",
@@ -563,6 +577,7 @@
     "goBack": "Quay lại",
     "cancel": "Hủy",
     "confirm": "Xác nhận",
+    "submit": "Gửi",
     "save": "Lưu",
     "ok": "OK",
     "na": "Không có",

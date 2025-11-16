@@ -1,19 +1,8 @@
 import api from "../api";
+import { Conversation } from "../../src/types/response/chat.response";
+import { ChatMessage } from "../../src/types/request/chat.request";
 
-export type Conversation = {
-  id?: string;
-  user1: string;
-  user2: string;
-  lastMessage?: string;
-  updatedAt?: string;
-};
-
-export type ChatMessage = {
-  from: string;
-  to: string;
-  content: string;
-  timestamp?: string;
-};
+export type { Conversation, ChatMessage };
 
 export function getConversation(user1: string, user2: string) {
   return api.get(
@@ -33,4 +22,3 @@ export function sendMessage(body: ChatMessage) {
 
 const chatEndpoints = { getConversation, getAllConversations, sendMessage };
 export default chatEndpoints;
-

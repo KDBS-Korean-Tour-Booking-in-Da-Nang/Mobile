@@ -1,20 +1,10 @@
 import api from "../../services/api";
+import {
+  Article,
+  ArticleResponse,
+} from "../../src/types/response/article.response";
 
-export interface Article {
-  articleId: number;
-  articleTitle: string;
-  articleContent: string;
-  articleDescription: string;
-  articleThumbnail: string;
-  articleLink: string;
-  articleStatus: "PENDING" | "APPROVED" | "UNAPPROVED";
-  articleCreatedDate: string;
-}
-
-export interface ArticleResponse {
-  data: Article[];
-  message?: string;
-}
+export type { Article, ArticleResponse };
 
 export const getApprovedArticles = async (): Promise<Article[]> => {
   try {

@@ -12,12 +12,12 @@ import {
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import {
+import forumEndpoints, {
   PostResponse,
   CreatePostRequest,
-  createPost,
-  updatePost,
 } from "../services/endpoints/forum";
+import { PostRawResponse } from "../src/types/response/forum.response";
+import api from "../services/api";
 import { useAuthContext } from "../src/contexts/authContext";
 import { useTranslation } from "react-i18next";
 
@@ -42,6 +42,116 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [hashtagInput, setHashtagInput] = useState("");
   const [images, setImages] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const createPostFormData = (data: {
+    title: string;
+    content: string;
+    userEmail?: string;
+    hashtags?: string[];
+    images?: any[];
+  }): FormData => {
+    const formData = new FormData();
+    formData.append("title", data.title);
+    formData.append("content", data.content);
+    if (data.userEmail) {
+      formData.append("userEmail", data.userEmail);
+    }
+    if (data.hashtags && data.hashtags.length > 0) {
+      data.hashtags.forEach((hashtag) => {
+        formData.append("hashtags", hashtag);
+      });
+    }
+    if (data.images) {
+      data.images.forEach((image: any, idx: number) => {
+        const uri: string = image?.uri || image?.path || "";
+        const clean = uri.split("?")[0];
+        const ext = (
+          clean.match(/\.([a-zA-Z0-9]+)$/)?.[1] || "jpg"
+        ).toLowerCase();
+        const mime =
+          image?.type ||
+          (ext === "jpg" || ext === "jpeg" ? "image/jpeg" : `image/${ext}`);
+        const name = image?.name || `photo_${Date.now()}_${idx}.${ext}`;
+        if (uri) {
+          formData.append("images", { uri, name, type: mime } as any);
+        }
+      });
+    }
+    return formData;
+  };
+
+  const createUpdatePostFormData = (data: {
+    title?: string;
+    content?: string;
+    userEmail?: string;
+    hashtags?: string[];
+    images?: any[];
+  }): FormData => {
+    const formData = new FormData();
+    if (data.title !== undefined) formData.append("title", data.title);
+    if (data.content !== undefined) formData.append("content", data.content);
+    if (data.userEmail) formData.append("userEmail", data.userEmail);
+    if (data.hashtags) {
+      data.hashtags.forEach((hashtag) => formData.append("hashtags", hashtag));
+    }
+    if (data.images && data.images.length > 0) {
+      data.images.forEach((image: any, idx: number) => {
+        const uri: string = image?.uri || image?.path || "";
+        const clean = uri.split("?")[0];
+        const ext = (
+          clean.match(/\.([a-zA-Z0-9]+)$/)?.[1] || "jpg"
+        ).toLowerCase();
+        const mime =
+          image?.type ||
+          (ext === "jpg" || ext === "jpeg" ? "image/jpeg" : `image/${ext}`);
+        const name = image?.name || `photo_${Date.now()}_${idx}.${ext}`;
+        if (uri) {
+          formData.append("images", { uri, name, type: mime } as any);
+        }
+      });
+    }
+    return formData;
+  };
+
+  const transformApiPost = (apiPost: PostRawResponse): PostResponse => {
+    const toAbsoluteUrl = (path: string): string => {
+      if (!path) return path;
+      if (/^https?:\/\//i.test(path)) return path;
+      const base = (api.defaults.baseURL || "").replace(/\/$/, "");
+      const origin = base.endsWith("/api") ? base.slice(0, -4) : base;
+      const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+      return `${origin}${normalizedPath}`;
+    };
+
+    let hashtags: string[] = [];
+    if (apiPost.hashtags) {
+      if (Array.isArray(apiPost.hashtags)) {
+        hashtags = apiPost.hashtags.map((h) => {
+          if (typeof h === "string") return h;
+          if (typeof h === "object" && h.content) return h.content;
+          return String(h);
+        });
+      }
+    }
+
+    return {
+      id: apiPost.forumPostId,
+      title: apiPost.title,
+      content: apiPost.content,
+      username: apiPost.username || "Unknown User",
+      userAvatar: apiPost.userAvatar || "",
+      imageUrls: apiPost.images
+        ? apiPost.images.map((i) => toAbsoluteUrl(i.imgPath))
+        : [],
+      hashtags,
+      createdAt: apiPost.createdAt,
+      likeCount: apiPost.reactions?.likeCount || 0,
+      dislikeCount: apiPost.reactions?.dislikeCount || 0,
+      totalReactions: apiPost.reactions?.totalReactions || 0,
+      userReaction: apiPost.reactions?.userReaction || null,
+      commentCount: 0,
+    };
+  };
 
   const popularHashtags = [
     "danang",
@@ -160,9 +270,28 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
       let response: PostResponse;
       if (editPost) {
-        response = await updatePost(editPost.id, postData);
+        const formData = createUpdatePostFormData({
+          title: postData.title,
+          content: postData.content,
+          hashtags: postData.hashtags,
+          images: postData.images,
+          userEmail: postData.userEmail,
+        });
+        const apiResponse = await forumEndpoints.updatePost(
+          editPost.id,
+          formData
+        );
+        response = transformApiPost(apiResponse.data);
       } else {
-        response = await createPost(postData);
+        const formData = createPostFormData({
+          title: postData.title,
+          content: postData.content,
+          hashtags: postData.hashtags,
+          images: postData.images,
+          userEmail: postData.userEmail,
+        });
+        const apiResponse = await forumEndpoints.createPost(formData);
+        response = transformApiPost(apiResponse.data);
       }
 
       onPostCreated(response);

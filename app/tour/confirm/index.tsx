@@ -17,12 +17,12 @@ import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { tourEndpoints } from "../../../services/endpoints/tour";
 import { voucherEndpoints } from "../../../services/endpoints/voucher";
+import { TourResponse } from "../../../src/types/response/tour.response";
 import {
-  TourResponse,
   VoucherResponse,
   VoucherDiscountType,
   VoucherStatus,
-} from "../../../src/types/tour";
+} from "../../../src/types/response/voucher.response";
 import styles from "./styles";
 
 export default function ConfirmTour() {
@@ -180,10 +180,7 @@ export default function ConfirmTour() {
           .filter((v): v is VoucherResponse => !!v && !!v.code);
 
         if (normalized.length === 0) {
-          setVoucherError(
-            t("tour.confirm.noVoucherAvailable") ||
-              "Không có voucher khả dụng cho booking này. Voucher có thể đã hết hạn, hết số lượng, hoặc không áp dụng cho tour này."
-          );
+          setVoucherError(t("tour.confirm.noVoucherAvailable"));
         } else {
           setVoucherError(null);
         }
@@ -203,9 +200,7 @@ export default function ConfirmTour() {
           setVoucher(null);
         }
       } catch (error) {
-        setVoucherError(
-          t("tour.confirm.voucherLoadFailed") || "Không thể tải voucher"
-        );
+        setVoucherError(t("tour.confirm.voucherLoadFailed"));
         setAvailableVouchers([]);
         setSelectedVoucherId(null);
         setVoucher(null);
@@ -229,8 +224,7 @@ export default function ConfirmTour() {
         const message =
           err?.response?.data?.message ||
           err?.message ||
-          t("tour.confirm.voucherApplyFailed") ||
-          "Không thể áp dụng voucher. Vui lòng thử lại.";
+          t("tour.confirm.voucherApplyFailed");
         Alert.alert(t("common.error"), message);
         setVoucher(null);
         setSelectedVoucherId(null);
@@ -336,20 +330,112 @@ export default function ConfirmTour() {
 
   React.useEffect(() => {
     const restorePendingBooking = async () => {
-      if (currentBookingId || !resolvedEmail || !currentTourId) return;
-      try {
-        const cached = await AsyncStorage.getItem(pendingKey);
-        if (cached) {
-          const saved = JSON.parse(cached);
-          if (saved?.bookingId) {
-            setCurrentBookingId(saved.bookingId);
+      if (currentBookingId) return;
+      
+      if (currentTourId && resolvedEmail) {
+        try {
+          const cached = await AsyncStorage.getItem(pendingKey);
+          if (cached) {
+            const saved = JSON.parse(cached);
+            if (saved?.bookingId) {
+              setCurrentBookingId(saved.bookingId);
+              return;
+            }
           }
-        }
-      } catch (err) {}
+        } catch (err) {}
+      }
+
+      if (resolvedEmail && !currentTourId) {
+        try {
+          const keys = await AsyncStorage.getAllKeys();
+          const pendingKeys = keys.filter((k) =>
+            k.startsWith(`pendingBooking:${userEmailKey}:`)
+          );
+
+          if (pendingKeys.length > 0) {
+            let latestBooking: { bookingId: number; tourId: number } | null = null;
+            let latestTs = 0;
+
+            for (const key of pendingKeys) {
+              try {
+                const cached = await AsyncStorage.getItem(key);
+                if (cached) {
+                  const saved = JSON.parse(cached);
+                  if (saved?.bookingId && saved?.ts && saved.ts > latestTs) {
+                    latestTs = saved.ts;
+                    const parts = key.split(":");
+                    const tourIdFromKey = parts[2] ? Number(parts[2]) : null;
+                    if (tourIdFromKey && !isNaN(tourIdFromKey)) {
+                      latestBooking = {
+                        bookingId: saved.bookingId,
+                        tourId: tourIdFromKey,
+                      };
+                    }
+                  }
+                }
+              } catch (err) {}
+            }
+
+            if (latestBooking) {
+              setCurrentTourId(latestBooking.tourId);
+              setCurrentBookingId(latestBooking.bookingId);
+              return;
+            }
+          }
+
+          try {
+            const bookingsResponse = await tourEndpoints.getBookingsByEmail(
+              resolvedEmail
+            );
+            const bookings = Array.isArray(bookingsResponse.data)
+              ? bookingsResponse.data
+              : [];
+
+            const unpaidBookings = bookings
+              .filter((b: any) => {
+                const status = String(b.status || "").toUpperCase();
+                return (
+                  status !== "SUCCESS" &&
+                  status !== "COMPLETED" &&
+                  status !== "CANCELLED"
+                );
+              })
+              .sort((a: any, b: any) => {
+                const aTime = new Date(a.createdAt || 0).getTime();
+                const bTime = new Date(b.createdAt || 0).getTime();
+                return bTime - aTime;
+              });
+
+            if (unpaidBookings.length > 0) {
+              const latestUnpaid = unpaidBookings[0];
+              const bookingId = latestUnpaid.bookingId || latestUnpaid.id;
+              const tourId = latestUnpaid.tourId;
+
+              if (bookingId && tourId) {
+                setCurrentTourId(tourId);
+                setCurrentBookingId(bookingId);
+
+                const cacheKey = `pendingBooking:${userEmailKey}:${tourId}`;
+                try {
+                  await AsyncStorage.setItem(
+                    cacheKey,
+                    JSON.stringify({ bookingId, ts: Date.now() })
+                  );
+                } catch (err) {}
+              }
+            }
+          } catch (err: any) {
+            const statusCode = err?.response?.status;
+            if (statusCode !== 400 && statusCode !== 404) {
+              console.error("Error loading bookings from database:", err);
+            }
+          }
+        } catch (err) {}
+      }
     };
 
     restorePendingBooking();
-  }, [currentBookingId, currentTourId, pendingKey, resolvedEmail]);
+  }, [currentBookingId, currentTourId, pendingKey, resolvedEmail, userEmailKey]);
 
   React.useEffect(() => {
     const loadTour = async () => {
@@ -404,11 +490,11 @@ export default function ConfirmTour() {
 
     const bookingId = currentBookingId;
     if (!bookingId) {
-      Alert.alert(
-        t("common.error"),
-        t("tour.confirm.bookingMissing") ||
-          "Không tìm thấy booking để thanh toán. Vui lòng quay lại bước trước."
-      );
+      Alert.alert(t("common.error"), t("tour.confirm.bookingMissing"));
+      return;
+    }
+
+    if (confirming) {
       return;
     }
 
@@ -426,50 +512,18 @@ export default function ConfirmTour() {
           pendingKey,
           JSON.stringify({ bookingId, ts: Date.now() })
         );
-      } catch (err) {
-        // Unable to cache booking before payment
-      }
+      } catch (err) {}
 
-      const paymentPayload: any = {
-        bookingId,
-        userEmail: userEmailKey || bookingData.customerEmail || "",
-        voucherCode: voucher?.code || undefined,
-      };
-
-      const paymentResponse = (
-        await tourEndpoints.createBookingPayment(paymentPayload)
-      ).data;
-
-      if (paymentResponse?.success) {
-        Alert.alert(
-          t("tour.confirm.paymentRedirect"),
-          `Booking created successfully!\nRedirecting to payment page...`,
-          [
-            {
-              text: t("common.ok"),
-              onPress: () => {
-                router.push({
-                  pathname: "/payment" as any,
-                  params: {
-                    bookingId: String(bookingId),
-                    userEmail: paymentPayload.userEmail,
-                    amount: finalTotal.toString(),
-                    voucherCode: voucher?.code || "",
-                    orderInfo: `Booking payment for tour: ${tour.tourName}`,
-                  },
-                });
-              },
-            },
-          ]
-        );
-      } else {
-        Alert.alert(
-          t("common.error"),
-          paymentResponse?.message ||
-            t("tour.errors.paymentFailed") ||
-            "Không thể tạo thanh toán. Vui lòng thử lại."
-        );
-      }
+      router.push({
+        pathname: "/payment" as any,
+        params: {
+          bookingId: String(bookingId),
+          userEmail: userEmailKey || bookingData.customerEmail || "",
+          amount: finalTotal.toString(),
+          voucherCode: voucher?.code || "",
+          orderInfo: `Booking payment for tour: ${tour.tourName}`,
+        },
+      });
     } catch (error: any) {
       const message =
         error?.response?.data?.message ||
@@ -784,8 +838,7 @@ export default function ConfirmTour() {
                   if (!currentBookingId) {
                     Alert.alert(
                       t("common.info") || "Thông tin",
-                      t("tour.confirm.createBookingFirst") ||
-                        "Vui lòng tạo booking trước để xem voucher khả dụng"
+                      t("tour.confirm.createBookingFirst")
                     );
                     return;
                   }
@@ -978,7 +1031,7 @@ export default function ConfirmTour() {
                 <View style={styles.voucherLoadingContainer}>
                   <ActivityIndicator size="small" color="#007AFF" />
                   <Text style={styles.voucherLoadingText}>
-                    {t("tour.confirm.loadingVouchers") || "Đang tải voucher..."}
+                    {t("tour.confirm.loadingVouchers")}
                   </Text>
                 </View>
               ) : availableVouchers.length > 0 ? (
@@ -1027,9 +1080,7 @@ export default function ConfirmTour() {
                 <View style={styles.voucherEmptyContainer}>
                   <Ionicons name="ticket-outline" size={48} color="#ccc" />
                   <Text style={styles.voucherEmptyText}>
-                    {voucherError ||
-                      t("tour.confirm.noVoucherAvailable") ||
-                      "Không có voucher khả dụng"}
+                    {voucherError || t("tour.confirm.noVoucherAvailable")}
                   </Text>
                 </View>
               )}

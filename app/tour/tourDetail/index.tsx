@@ -24,7 +24,8 @@ import BookingButton from "../../../components/BookingButton";
 import RateTour from "../../../components/RateTour";
 import { useTranslation } from "react-i18next";
 import { tourEndpoints } from "../../../services/endpoints/tour";
-import { TourResponse, VoucherDiscountType } from "../../../src/types/tour";
+import { TourResponse } from "../../../src/types/response/tour.response";
+import { VoucherDiscountType } from "../../../src/types/response/voucher.response";
 import { voucherEndpoints } from "../../../services/endpoints/voucher";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import styles from "./styles";
@@ -208,19 +209,39 @@ export default function TourDetail() {
         return;
       }
 
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(user.email)) {
+        setHasBookedTour(false);
+        return;
+      }
+
       setCheckingBooking(true);
       try {
         const bookings = (await tourEndpoints.getBookingsByEmail(user.email))
           .data;
-        const hasBooked = Array.isArray(bookings)
-          ? bookings.some(
+        const tourBookings = Array.isArray(bookings)
+          ? bookings.filter(
               (booking: any) =>
                 booking.tourId === tour.id || booking.tour?.id === tour.id
             )
-          : false;
-        setHasBookedTour(hasBooked);
-      } catch (error) {
-        console.error("Error checking booking:", error);
+          : [];
+
+        if (tourBookings.length === 0) {
+          setHasBookedTour(false);
+          return;
+        }
+
+        const hasSuccessfulBooking = tourBookings.some((booking: any) => {
+          const status = String(booking.status || booking.bookingStatus || "").toUpperCase();
+          return status === "BOOKING_SUCCESS" || status === "SUCCESS";
+        });
+
+        setHasBookedTour(hasSuccessfulBooking);
+      } catch (error: any) {
+        const statusCode = error?.response?.status;
+        if (statusCode !== 400 && statusCode !== 404) {
+          console.error("Error checking booking:", error);
+        }
         setHasBookedTour(false);
       } finally {
         setCheckingBooking(false);
@@ -682,7 +703,6 @@ export default function TourDetail() {
                         /<strong[^>]*>([\s\S]*?)<\/strong>/i.exec(liInner);
                       const imgMatch =
                         /<img[^>]*src=["']([^"']+)["'][^>]*>/i.exec(liInner);
-                      // Remove tags and strong label from text, keep readable content
                       const liTextRaw = liInner
                         .replace(/<strong[^>]*>[\s\S]*?<\/strong>/i, "")
                         .replace(/<[^>]+>/g, " ")

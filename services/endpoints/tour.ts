@@ -1,4 +1,9 @@
 import api from "../../services/api";
+import {
+  BookingRequest,
+  BookingPaymentRequest,
+  ChangeBookingStatusRequest,
+} from "../../src/types/request/booking.request";
 
 export const tourEndpoints = {
   getAll: () => api.get("/api/tour"),
@@ -18,19 +23,24 @@ export const tourEndpoints = {
     }),
   search: (params: Record<string, any>) =>
     api.get("/api/tour/search", { params }),
-  createBooking: (payload: any) => api.post("/api/booking", payload),
+  createBooking: (payload: BookingRequest) => api.post("/api/booking", payload),
   getBookingById: (bookingId: number) =>
     api.get(`/api/booking/id/${bookingId}`),
-  updateBooking: (bookingId: number, payload: any) =>
+  updateBooking: (bookingId: number, payload: BookingRequest) =>
     api.put(`/api/booking/${bookingId}`, payload),
-  getBookingsByEmail: (email: string) => api.get(`/api/booking/email/${email}`),
+  changeBookingStatus: (
+    bookingId: number,
+    payload: ChangeBookingStatusRequest
+  ) => api.put(`/api/booking/change-status/${bookingId}`, payload),
+  getBookingsByEmail: (email: string) =>
+    api.get(`/api/booking/email/${encodeURIComponent(email)}`),
   getBookingsByTourId: (tourId: number) =>
     api.get(`/api/booking/tour/${tourId}`),
   getBookingSummaryByEmail: (email: string) =>
-    api.get(`/api/booking/summary/email/${email}`),
+    api.get(`/api/booking/summary/email/${encodeURIComponent(email)}`),
   calculateBookingTotal: (bookingId: number) =>
     api.get(`/api/booking/id/${bookingId}/total`),
-  createBookingPayment: (payload: any) =>
+  createBookingPayment: (payload: BookingPaymentRequest) =>
     api.post("/api/booking/payment", payload),
   sendBookingEmail: (bookingId: number) =>
     api.post(`/api/booking/id/${bookingId}/send-email`),

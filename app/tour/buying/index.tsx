@@ -23,7 +23,7 @@ import BookingButton from "../../../components/BookingButton";
 import { useTranslation } from "react-i18next";
 import { tourEndpoints } from "../../../services/endpoints/tour";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { TourResponse } from "../../../src/types/tour";
+import { TourResponse } from "../../../src/types/response/tour.response";
 import styles from "./styles";
 
 export default function BuyingTour() {
@@ -247,24 +247,21 @@ export default function BuyingTour() {
     return age;
   };
 
-  // Tính toán ngày tối thiểu có thể chọn (today + tourDeadline)
   const getMinimumDepartureDate = (): Date => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     if (tour?.tourDeadline && tour.tourDeadline > 0) {
       const minDate = new Date(today);
-      minDate.setDate(today.getDate() + tour.tourDeadline);
+      minDate.setDate(today.getDate() + tour.tourDeadline + 1);
       return minDate;
     }
 
-    // Nếu không có deadline, cho phép chọn từ ngày mai
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
     return tomorrow;
   };
 
-  // Tính toán ngày tối đa có thể chọn (tourExpirationDate)
   const getMaximumDepartureDate = (): Date | undefined => {
     if (!tour?.tourExpirationDate) return undefined;
 
@@ -301,7 +298,6 @@ export default function BuyingTour() {
       return false;
     }
 
-    // Validate departureDate với tour_deadline và tour_expiration_date
     const departureDateObj = parseDob(formData.departureDate);
     if (!departureDateObj) {
       Alert.alert(
@@ -311,7 +307,6 @@ export default function BuyingTour() {
       return false;
     }
 
-    // Chuẩn hóa ngày để chỉ so sánh phần ngày (không tính giờ)
     const normalizeDateForComparison = (date: Date): Date => {
       const normalized = new Date(date);
       normalized.setHours(0, 0, 0, 0);
@@ -327,7 +322,6 @@ export default function BuyingTour() {
       ? normalizeDateForComparison(maxDate)
       : null;
 
-    // Kiểm tra ngày không được nhỏ hơn minimum date
     if (departureDateNormalized < minDateNormalized) {
       const minDateStr = `${String(minDate.getDate()).padStart(
         2,
@@ -346,7 +340,6 @@ export default function BuyingTour() {
       return false;
     }
 
-    // Kiểm tra ngày không được lớn hơn expiration date
     if (maxDateNormalized && departureDateNormalized > maxDateNormalized) {
       const maxDateStr = tour?.tourExpirationDate
         ? new Date(tour.tourExpirationDate).toLocaleDateString("vi-VN")
@@ -665,9 +658,7 @@ export default function BuyingTour() {
           pendingKey,
           JSON.stringify({ bookingId, ts: Date.now() })
         );
-      } catch {
-        // Unable to cache pending booking
-      }
+      } catch {}
 
       const confirmUrl = `/tour/confirm?tourId=${
         tour.id
@@ -1041,50 +1032,6 @@ export default function BuyingTour() {
                 minimumDate={getMinimumDepartureDate()}
                 maximumDate={getMaximumDepartureDate()}
               />
-              {(() => {
-                const minDate = getMinimumDepartureDate();
-                const maxDate = getMaximumDepartureDate();
-                const minDateStr = `${String(minDate.getDate()).padStart(
-                  2,
-                  "0"
-                )}/${String(minDate.getMonth() + 1).padStart(
-                  2,
-                  "0"
-                )}/${minDate.getFullYear()}`;
-
-                if (maxDate) {
-                  const maxDateStr = `${String(maxDate.getDate()).padStart(
-                    2,
-                    "0"
-                  )}/${String(maxDate.getMonth() + 1).padStart(
-                    2,
-                    "0"
-                  )}/${maxDate.getFullYear()}`;
-                  return (
-                    <Text style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
-                      {t("tour.booking.departureDateRange", {
-                        minDate: minDateStr,
-                        maxDate: maxDateStr,
-                      })}
-                      {tour?.tourDeadline &&
-                        ` (${t("tour.booking.bookingDeadlineNote", {
-                          days: tour.tourDeadline,
-                        })})`}
-                    </Text>
-                  );
-                }
-                return (
-                  <Text style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
-                    {t("tour.booking.departureDateMinOnly", {
-                      minDate: minDateStr,
-                    })}
-                    {tour?.tourDeadline &&
-                      ` (${t("tour.booking.bookingDeadlineNote", {
-                        days: tour.tourDeadline,
-                      })})`}
-                  </Text>
-                );
-              })()}
             </View>
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>{t("tour.booking.note")}</Text>
@@ -1243,7 +1190,6 @@ export default function BuyingTour() {
                           value={adultDob[idx]}
                           onChange={(val) => {
                             setAdultDob((prev) => ({ ...prev, [idx]: val }));
-                            // live validate adult >= 18
                             const d = parseDob(val);
                             const age = calcAgeYears(val);
                             if (!d || age == null) {
@@ -1951,12 +1897,10 @@ const DateField: React.FC<DateFieldProps> = ({
       } catch {}
     }
 
-    // Đảm bảo ngày không nhỏ hơn minimumDate
     if (initialDate < minDate) {
       initialDate = minDate;
     }
 
-    // Đảm bảo ngày không lớn hơn maximumDate (nếu có)
     if (maximumDate && initialDate > maximumDate) {
       initialDate = maximumDate;
     }
@@ -1982,7 +1926,6 @@ const DateField: React.FC<DateFieldProps> = ({
           const minDate = minimumDate || new Date();
           const maxDate = maximumDate;
 
-          // Chuẩn hóa ngày để so sánh (chỉ so sánh ngày, không tính giờ)
           const normalizeDate = (date: Date) => {
             const normalized = new Date(date);
             normalized.setHours(0, 0, 0, 0);
@@ -1993,32 +1936,26 @@ const DateField: React.FC<DateFieldProps> = ({
           const minDateNormalized = normalizeDate(minDate);
           const maxDateNormalized = maxDate ? normalizeDate(maxDate) : null;
 
-          // Kiểm tra ngày có nằm trong phạm vi hợp lệ không
           if (selectedNormalized < minDateNormalized) {
-            // Ngày quá sớm, không cho phép chọn
             return;
           }
 
           if (maxDateNormalized && selectedNormalized > maxDateNormalized) {
-            // Ngày quá muộn, không cho phép chọn
             return;
           }
 
           setSelectedDate(selected);
           onChange(formatDate(selected));
-          // Tự động đóng modal sau khi chọn ngày
           setTimeout(() => {
             setShowPicker(false);
           }, 300);
         }
         return;
       }
-      // Android
       if (selected) {
         const minDate = minimumDate || new Date();
         const maxDate = maximumDate;
 
-        // Chuẩn hóa ngày để so sánh (chỉ so sánh ngày, không tính giờ)
         const normalizeDate = (date: Date) => {
           const normalized = new Date(date);
           normalized.setHours(0, 0, 0, 0);
@@ -2029,14 +1966,11 @@ const DateField: React.FC<DateFieldProps> = ({
         const minDateNormalized = normalizeDate(minDate);
         const maxDateNormalized = maxDate ? normalizeDate(maxDate) : null;
 
-        // Kiểm tra ngày có nằm trong phạm vi hợp lệ không
         if (selectedNormalized < minDateNormalized) {
-          // Ngày quá sớm, không cho phép chọn
           return;
         }
 
         if (maxDateNormalized && selectedNormalized > maxDateNormalized) {
-          // Ngày quá muộn, không cho phép chọn
           return;
         }
 
@@ -2147,7 +2081,6 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
   const handleDateChange = (event: any, selected?: Date) => {
     try {
       if (Platform.OS === "ios") {
-        // Với calendar mode, event.type có thể là "set" hoặc "dismissed"
         if (event?.type === "dismissed") {
           setShowPicker(false);
           return;
@@ -2155,7 +2088,6 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
         if (selected) {
           setSelectedDate(selected);
           onChange(formatDate(selected));
-          // Tự động đóng modal sau khi chọn ngày
           setTimeout(() => {
             setShowPicker(false);
           }, 300);

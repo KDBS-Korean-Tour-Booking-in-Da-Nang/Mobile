@@ -403,14 +403,21 @@
       "bookingDeadlineNote": "booking required {{days}} days in advance",
       "selectDate": "Select date",
       "idNumberInvalid": "ID/Passport must be 10 digits",
-      "success": "Tour booked successfully!"
+      "success": "Tour booked successfully!",
+      "updateInfo": "Update Information",
+      "waitingForUpdate": "Waiting for Update",
+      "confirmUpdate": "Are you sure you want to update the information correctly?",
+      "updateSuccess": "Information updated successfully!",
+      "updateFailed": "Failed to update information. Please try again."
     },
     "errors": {
       "notFound": "No tours found",
       "missingData": "Missing tour or booking data",
       "bookingFailed": "Booking failed. Please try again.",
       "loadFailed": "Failed to load tours. Please try again.",
-      "tourNotFound": "Tour not found"
+      "tourNotFound": "Tour not found",
+      "paymentFailed": "Failed to create payment. Please try again.",
+      "bookingHistoryLoadFailed": "Failed to load booking history. Please try again."
     },
     "confirm": {
       "tourInfo": "Tour Information",
@@ -432,7 +439,13 @@
       "remaining": "Remaining",
       "select": "Select",
       "close": "Close",
-      "availableVouchers": "Available Vouchers"
+      "availableVouchers": "Available Vouchers",
+      "noVoucherAvailable": "No vouchers available for this booking. Vouchers may have expired, run out, or are not applicable to this tour.",
+      "loadingVouchers": "Loading vouchers...",
+      "voucherLoadFailed": "Failed to load vouchers",
+      "voucherApplyFailed": "Failed to apply voucher. Please try again.",
+      "createBookingFirst": "Please create a booking first to view available vouchers",
+      "bookingMissing": "Booking not found for payment. Please go back to the previous step."
     },
     "giftModal": {
       "clickNow": "Click now",
@@ -529,10 +542,11 @@
       "success": "Payment Successful",
       "failed": "Payment Failed",
       "pending": "Payment Pending",
+      "pendingPayment": "Pending Payment",
       "successMessage": "Your payment was completed successfully.",
       "failedMessage": "Your payment could not be completed.",
       "pendingMessage": "Your payment is being processed.",
-      "details": "Transaction Details",
+      "details": "Booking History",
       "orderId": "Order ID",
       "bookingId": "Booking ID",
       "paymentMethod": "Payment Method",
@@ -543,8 +557,9 @@
       "responseTime": "Response Time",
       "viewBooking": "View Booking",
       "goHome": "Go Home",
-      "fetchError": "Failed to fetch transaction details",
-    }
+      "fetchError": "Failed to fetch transaction details"
+    },
+    "continuePayment": "Continue Payment"
   },
   "common": {
     "error": "Error",
@@ -553,6 +568,7 @@
     "goBack": "Go Back",
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "submit": "Submit",
     "save": "Save",
     "ok": "OK",
     "na": "N/A",

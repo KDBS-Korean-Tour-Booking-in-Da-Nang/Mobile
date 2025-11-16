@@ -1,15 +1,11 @@
 import api, { apiForm } from "../api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-export type UpdateUserRequest = {
-  email: string;
-  username?: string;
-  phone?: string;
-  birthDate?: string;
-  address?: string;
-  gender?: "MALE" | "FEMALE" | "OTHER";
-  avatarImg?: { uri: string; name?: string; type?: string } | any;
-};
+import {
+  UpdateUserRequest,
+  RegisterRequest,
+  RegenerateOtpRequest,
+  VerifyEmailRequest,
+} from "../../src/types/request/user.request";
 
 async function updateUser(params: UpdateUserRequest) {
   const form = new FormData();
@@ -62,7 +58,6 @@ async function updateUser(params: UpdateUserRequest) {
 
   return apiForm.put("/api/users/update", form, {
     headers: {
-      // "Content-Type": "multipart/form-data",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
@@ -71,13 +66,13 @@ async function updateUser(params: UpdateUserRequest) {
 export const usersEndpoints = {
   getAll: () => api.get("/api/users"),
 
-  register: (payload: { username: string; email: string; password: string }) =>
+  register: (payload: RegisterRequest) =>
     api.post("/api/users/register", { ...payload, role: "USER" }),
 
-  regenerateOtp: (payload: { email: string }) =>
+  regenerateOtp: (payload: RegenerateOtpRequest) =>
     api.post("/api/users/regenerate-otp", payload),
 
-  verifyEmail: (payload: { email: string; otpCode: string }) =>
+  verifyEmail: (payload: VerifyEmailRequest) =>
     api.post("/api/users/verify-email", payload),
   updateUser,
 };

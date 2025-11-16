@@ -1,7 +1,6 @@
 import api from "../../services/api";
 
 export const tossEndpoints = {
-  // Confirm via query params (POST with params, no body)
   confirmWithQuery: (
     paymentKey: string,
     orderId: string,
@@ -15,7 +14,6 @@ export const tossEndpoints = {
       },
     }),
 
-  // Alternative: hit backend success endpoint directly (GET with params)
   successWithQuery: (
     paymentKey: string,
     orderId: string,

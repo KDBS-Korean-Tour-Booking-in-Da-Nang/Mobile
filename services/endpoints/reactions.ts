@@ -1,10 +1,7 @@
 import api from "../../services/api";
+import { AddReactionRequest } from "../../src/types/request/reaction.request";
 
-export interface AddReactionRequest {
-  targetId: number;
-  targetType: "POST" | "COMMENT";
-  reactionType: "LIKE" | "DISLIKE";
-}
+export type { AddReactionRequest };
 
 export async function addReaction(
   userEmail: string,

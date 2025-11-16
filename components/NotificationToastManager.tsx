@@ -22,7 +22,7 @@ export default function NotificationToastManager() {
       notificationType === "BOOKING_UPDATE_REQUEST" ||
       notificationType === "BOOKING_REJECTED"
     ) {
-      navigate(`/tour/booking/detailHistory?bookingId=${targetId}`);
+      navigate(`/tour/historyBooking/detailHistory?bookingId=${targetId}`);
       return;
     }
 
@@ -45,7 +45,7 @@ export default function NotificationToastManager() {
         goToForum(targetId);
         break;
       case "BOOKING":
-        navigate(`/tour/booking/detailHistory?bookingId=${targetId}`);
+        navigate(`/tour/historyBooking/detailHistory?bookingId=${targetId}`);
         break;
       case "TOUR":
         navigate(`/tour/tourDetail?tourId=${targetId}`);

@@ -12,17 +12,9 @@ import {
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
+import forumEndpoints, {
   PostResponse,
-  CommentResponse,
-  addReaction,
-  removeReaction,
-  getReactionSummary,
-  savePost,
-  unsavePost,
-  checkPostSaved,
-  getCommentsByPost,
-  createReport,
+  ForumCommentResponse,
 } from "../services/endpoints/forum";
 import ReportModal from "./ReportModal";
 import { useAuthContext } from "../src/contexts/authContext";
@@ -56,7 +48,7 @@ const PostCard: React.FC<PostCardProps> = ({
   const [dislikeCount, setDislikeCount] = useState(post.dislikeCount);
   const [isSaved, setIsSaved] = useState(false);
   const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState<CommentResponse[]>([]);
+  const [comments, setComments] = useState<ForumCommentResponse[]>([]);
   const [commentCount, setCommentCount] = useState(post.commentCount || 0);
   const [isLoading, setIsLoading] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -81,7 +73,8 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const checkIfSaved = useCallback(async () => {
     try {
-      const saved = await checkPostSaved(post.id);
+      const response = await forumEndpoints.checkPostSaved(post.id);
+      const saved = response.data?.saved || false;
       setIsSaved(saved);
     } catch {}
   }, [post.id]);
@@ -90,7 +83,12 @@ const PostCard: React.FC<PostCardProps> = ({
     checkIfSaved();
     (async () => {
       try {
-        const summary = await getReactionSummary(post.id, "POST", user?.email);
+        const response = await forumEndpoints.getReactionSummary(
+          post.id,
+          "POST",
+          user?.email
+        );
+        const summary = response.data;
         if (summary) {
           setLikeCount(summary.likeCount || 0);
           setDislikeCount(summary.dislikeCount || 0);
@@ -115,7 +113,8 @@ const PostCard: React.FC<PostCardProps> = ({
   useEffect(() => {
     (async () => {
       try {
-        const postComments = await getCommentsByPost(post.id);
+        const response = await forumEndpoints.getCommentsByPost(post.id);
+        const postComments = response.data || [];
         setCommentCount(postComments.length || 0);
       } catch {}
     })();
@@ -131,11 +130,11 @@ const PostCard: React.FC<PostCardProps> = ({
     try {
       if (reactionType === "LIKE") {
         if (isLiked) {
-          await removeReaction(post.id, "POST");
+          await forumEndpoints.removeReaction(post.id, "POST");
           setIsLiked(false);
           setLikeCount((prev) => Math.max(0, prev - 1));
         } else {
-          await addReaction({
+          await forumEndpoints.addReaction({
             targetId: post.id,
             targetType: "POST",
             reactionType: "LIKE",
@@ -143,11 +142,12 @@ const PostCard: React.FC<PostCardProps> = ({
           setIsLiked(true);
           setLikeCount((prev) => prev + 1);
           try {
-            const summary = await getReactionSummary(
+            const summaryResponse = await forumEndpoints.getReactionSummary(
               post.id,
               "POST",
               user?.email
             );
+            const summary = summaryResponse.data;
             if (summary) {
               setLikeCount(summary.likeCount || 0);
               setDislikeCount(summary.dislikeCount || 0);
@@ -161,11 +161,11 @@ const PostCard: React.FC<PostCardProps> = ({
         }
       } else {
         if (isDisliked) {
-          await removeReaction(post.id, "POST");
+          await forumEndpoints.removeReaction(post.id, "POST");
           setIsDisliked(false);
           setDislikeCount((prev) => Math.max(0, prev - 1));
         } else {
-          await addReaction({
+          await forumEndpoints.addReaction({
             targetId: post.id,
             targetType: "POST",
             reactionType: "DISLIKE",
@@ -173,11 +173,12 @@ const PostCard: React.FC<PostCardProps> = ({
           setIsDisliked(true);
           setDislikeCount((prev) => prev + 1);
           try {
-            const summary = await getReactionSummary(
+            const summaryResponse = await forumEndpoints.getReactionSummary(
               post.id,
               "POST",
               user?.email
             );
+            const summary = summaryResponse.data;
             if (summary) {
               setLikeCount(summary.likeCount || 0);
               setDislikeCount(summary.dislikeCount || 0);
@@ -206,10 +207,10 @@ const PostCard: React.FC<PostCardProps> = ({
     setIsLoading(true);
     try {
       if (isSaved) {
-        await unsavePost(post.id);
+        await forumEndpoints.unsavePost(post.id);
         setIsSaved(false);
       } else {
-        await savePost(post.id);
+        await forumEndpoints.savePost(post.id);
         setIsSaved(true);
       }
     } catch {
@@ -237,7 +238,7 @@ const PostCard: React.FC<PostCardProps> = ({
   const submitReport = async (reasons: string[], description: string) => {
     try {
       setReportLoading(true);
-      await createReport(
+      await forumEndpoints.createReport(
         {
           targetType: "POST",
           targetId: post.id,
@@ -286,7 +287,8 @@ const PostCard: React.FC<PostCardProps> = ({
   const toggleComments = async () => {
     if (!showComments) {
       try {
-        const postComments = await getCommentsByPost(post.id);
+        const response = await forumEndpoints.getCommentsByPost(post.id);
+        const postComments = response.data || [];
         setComments(postComments);
         setCommentCount(postComments.length);
       } catch {}
@@ -717,7 +719,9 @@ const PostCard: React.FC<PostCardProps> = ({
                   }}
                 >
                   <Ionicons name="trash-outline" size={18} color="#ff4444" />
-                  <Text style={styles.menuItemTextDanger}>{t("common.delete")}</Text>
+                  <Text style={styles.menuItemTextDanger}>
+                    {t("common.delete")}
+                  </Text>
                 </TouchableOpacity>
               </>
             ) : (
@@ -752,7 +756,9 @@ const PostCard: React.FC<PostCardProps> = ({
                     }}
                   >
                     <Ionicons name="flag-outline" size={18} color="#ff4444" />
-                    <Text style={styles.menuItemTextDanger}>{t("forum.report")}</Text>
+                    <Text style={styles.menuItemTextDanger}>
+                      {t("forum.report")}
+                    </Text>
                   </TouchableOpacity>
                 )}
               </>

@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { tourEndpoints } from "../../services/endpoints/tour";
+import { transactionEndpoints } from "../../services/endpoints/transactions";
 import { API_BASE } from "../../services/api";
 
 interface TossPaymentParams {
@@ -28,11 +29,25 @@ export default function TossPaymentScreen() {
   const [paymentHtml, setPaymentHtml] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const paymentCreatedRef = React.useRef(false);
+  const orderIdRef = React.useRef<string | null>(null);
+  const transactionIdRef = React.useRef<number | null>(null);
 
   const { bookingId = "", userEmail = "", voucherCode = "" } = params;
 
   const createPayment = useCallback(async () => {
+    if (paymentCreatedRef.current) {
+      return;
+    }
+
+    if (!bookingId) {
+      setError("Booking ID is required");
+      setLoading(false);
+      return;
+    }
+
     try {
+      paymentCreatedRef.current = true;
       setLoading(true);
       setError(null);
 
@@ -52,6 +67,20 @@ export default function TossPaymentScreen() {
         data.successUrl &&
         data.failUrl
       ) {
+        orderIdRef.current = data.orderId || null;
+        
+        const txId = data.transactionId || data.transaction_id || data.id || null;
+        transactionIdRef.current = txId ? Number(txId) : null;
+        
+        if (transactionIdRef.current) {
+          console.log("TransactionId from createBookingPayment response:", transactionIdRef.current);
+        } else {
+          console.log("No transactionId in createBookingPayment response, will try to get from orderId later");
+        }
+        if (orderIdRef.current) {
+          console.log("OrderId saved:", orderIdRef.current);
+        }
+
         const amountValue =
           typeof data.amount === "string" ? data.amount : String(data.amount);
         const html = `
@@ -164,7 +193,10 @@ export default function TossPaymentScreen() {
         setError(data.message || t("payment.createFailed"));
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || t("payment.createFailed"));
+      paymentCreatedRef.current = false;
+      const errorMessage =
+        err?.response?.data?.message || t("payment.createFailed");
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -176,13 +208,7 @@ export default function TossPaymentScreen() {
 
   const handleWebViewRequest = (request: any): boolean => {
     const url = request.url;
-
-    if (
-      url.includes("/transaction-result") ||
-      url.includes("transaction-result") ||
-      url.includes("/transactionResult") ||
-      url.includes("transactionResult")
-    ) {
+    if (url.includes("transaction-result")) {
       try {
         const urlObj = new URL(url);
         const orderId = urlObj.searchParams.get("orderId");
@@ -200,7 +226,7 @@ export default function TossPaymentScreen() {
         });
 
         return false;
-      } catch (err) {
+      } catch {
         return true;
       }
     }
@@ -216,7 +242,67 @@ export default function TossPaymentScreen() {
       },
       {
         text: t("common.confirm"),
-        onPress: () => router.back(),
+        onPress: async () => {
+          try {
+            if (orderIdRef.current) {
+              try {
+                console.log("Updating transaction status for orderId:", orderIdRef.current, "to FAILED");
+                const response = await transactionEndpoints.changeTransactionStatus(
+                  orderIdRef.current,
+                  "FAILED"
+                );
+                console.log("Transaction status updated successfully:", response?.data);
+                console.log("Response status:", response?.status);
+              } catch (error: any) {
+                console.error("========== ERROR UPDATING TRANSACTION STATUS ==========");
+                console.error("Error:", error);
+                console.error("Error message:", error?.message);
+                console.error("Error code:", error?.code);
+                if (error?.response) {
+                  console.error("Error response data:", JSON.stringify(error?.response?.data, null, 2));
+                  console.error("Error response status:", error?.response?.status);
+                  console.error("Error response headers:", error?.response?.headers);
+                } else {
+                  console.error("No response from server - possible network error");
+                }
+                console.error("Request URL:", error?.config?.url);
+                console.error("Request method:", error?.config?.method);
+                console.error("Request data:", error?.config?.data);
+                console.error("OrderId used:", orderIdRef.current);
+                console.error("========================================================");
+              }
+            } else {
+              console.warn("No orderId found, cannot update transaction status");
+            }
+
+            if (bookingId) {
+              try {
+                await tourEndpoints.changeBookingStatus(
+                  parseInt(bookingId) || 0,
+                  {
+                    status: "BOOKING_FAILED",
+                    message: "User cancelled payment",
+                  }
+                );
+              } catch (error: any) {
+                console.error("Error updating booking status:", error);
+                console.error("Error response:", error?.response?.data);
+              }
+            }
+
+            router.replace({
+              pathname: "/transactionResult" as any,
+              params: {
+                orderId: orderIdRef.current || "",
+                status: "FAILED",
+                paymentMethod: "TOSS",
+                bookingId: bookingId,
+              },
+            });
+          } catch {
+            router.back();
+          }
+        },
       },
     ]);
   };
@@ -245,13 +331,19 @@ export default function TossPaymentScreen() {
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Thanh toán Toss</Text>
+          <Text style={styles.headerTitle}>Payment Toss</Text>
         </View>
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={64} color="#FF3B30" />
           <Text style={styles.errorTitle}>Lỗi</Text>
           <Text style={styles.errorMessage}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={createPayment}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => {
+              paymentCreatedRef.current = false;
+              createPayment();
+            }}
+          >
             <Text style={styles.retryButtonText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
@@ -297,8 +389,7 @@ export default function TossPaymentScreen() {
             <Text style={styles.webviewLoadingText}>Đang tải...</Text>
           </View>
         )}
-        onError={(syntheticEvent) => {
-          const { nativeEvent } = syntheticEvent;
+        onError={() => {
           setError("Không thể tải trang thanh toán");
         }}
         onHttpError={(e) => {}}

@@ -16,8 +16,8 @@ import {
   VoucherResponse,
   VoucherDiscountType,
   VoucherStatus,
-  TourResponse,
-} from "../../../../src/types/tour";
+} from "../../../../src/types/response/voucher.response";
+import { TourResponse } from "../../../../src/types/response/tour.response";
 import styles from "./styles";
 import { voucherEndpoints } from "../../../../services/endpoints/voucher";
 import { tourEndpoints } from "../../../../services/endpoints/tour";

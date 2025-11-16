@@ -9,26 +9,19 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  CommentResponse,
-  createComment,
-  addCommentReaction,
-  replyToComment,
-  getRepliesByComment,
-  updateComment,
-  deleteComment,
-  createReport,
-  getCommentReactionSummary,
+import forumEndpoints, {
+  ForumCommentResponse,
 } from "../services/endpoints/forum";
+import api from "../services/api";
 import { useAuthContext } from "../src/contexts/authContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
 
 interface CommentSectionProps {
   postId: number;
-  comments: CommentResponse[];
-  onCommentAdded: (comment: CommentResponse) => void;
-  onCommentUpdated?: (comment: CommentResponse) => void;
+  comments: ForumCommentResponse[];
+  onCommentAdded: (comment: ForumCommentResponse) => void;
+  onCommentUpdated?: (comment: ForumCommentResponse) => void;
   onCommentDeleted?: (commentId: number) => void;
 }
 
@@ -47,7 +40,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   const [likedMap, setLikedMap] = useState<Record<number, boolean>>({});
   const [replyOpen, setReplyOpen] = useState<Record<number, boolean>>({});
   const [repliesMap, setRepliesMap] = useState<
-    Record<number, CommentResponse[]>
+    Record<number, ForumCommentResponse[]>
   >({});
   const [editingComment, setEditingComment] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
@@ -56,6 +49,15 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     Record<number, number>
   >({});
 
+  const toAbsoluteUrl = (path: string): string => {
+    if (!path) return path;
+    if (/^https?:\/\//i.test(path)) return path;
+    const base = (api.defaults.baseURL || "").replace(/\/$/, "");
+    const origin = base.endsWith("/api") ? base.slice(0, -4) : base;
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    return `${origin}${normalizedPath}`;
+  };
+
   useEffect(() => {
     const hydrateReactionsFromBackend = async () => {
       if (!user?.email || !Array.isArray(comments) || comments.length === 0)
@@ -63,10 +65,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       const nextMap: Record<number, boolean> = { ...likedMap };
       for (const c of comments) {
         try {
-          const summary = await getCommentReactionSummary(
+          const response = await forumEndpoints.getCommentReactionSummary(
             c.forumCommentId,
             user.email
           );
+          const summary = response.data;
           if (summary) {
             nextMap[c.forumCommentId] = summary.userReaction === "LIKE";
           }
@@ -114,13 +117,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         return;
       }
 
-      const comment = await createComment({
+      const response = await forumEndpoints.createComment({
         forumPostId: Number(postId),
         content: newComment.trim(),
         userEmail: chosenEmail,
       });
 
-      onCommentAdded(comment);
+      onCommentAdded(response.data);
       setNewComment("");
     } catch {
       Alert.alert(t("forum.errorTitle"), t("forum.cannotPerformAction"));
@@ -146,7 +149,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     }
   };
 
-  const handleEditComment = (comment: CommentResponse) => {
+  const handleEditComment = (comment: ForumCommentResponse) => {
     setEditingComment(comment.forumCommentId);
     setEditText(comment.content);
   };
@@ -163,13 +166,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     }
 
     try {
-      const updatedComment = await updateComment(commentId, {
+      const response = await forumEndpoints.updateComment(commentId, {
         forumPostId: postId,
         content: editText.trim(),
         userEmail: user.email,
       });
 
-      onCommentUpdated?.(updatedComment);
+      onCommentUpdated?.(response.data);
       setEditingComment(null);
       setEditText("");
     } catch {
@@ -189,7 +192,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
             return;
           }
           try {
-            await deleteComment(commentId, user.email);
+            await forumEndpoints.deleteComment(commentId, user.email);
             onCommentDeleted?.(commentId);
           } catch {
             Alert.alert(t("forum.errorTitle"), t("forum.cannotPerformAction"));
@@ -222,7 +225,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         style: "destructive",
         onPress: async () => {
           try {
-            await createReport(
+            await forumEndpoints.createReport(
               {
                 targetType: "COMMENT",
                 targetId: commentId,
@@ -263,7 +266,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     ]);
   };
 
-  const isCommentOwner = (comment: CommentResponse) => {
+  const isCommentOwner = (comment: ForumCommentResponse) => {
     return user?.username === comment.username;
   };
 
@@ -288,7 +291,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     async (commentId: number) => {
       if (!repliesMap[commentId]) {
         try {
-          const data = await getRepliesByComment(commentId);
+          const response = await forumEndpoints.getRepliesByComment(commentId);
+          const data = response.data.map((c: any) => ({
+            ...c,
+            imgPath: c?.imgPath ? toAbsoluteUrl(c.imgPath) : undefined,
+          }));
           setRepliesMap((prev) => ({
             ...prev,
             [commentId]: data,
@@ -321,15 +328,16 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       if (visited.has(commentId)) return;
       visited.add(commentId);
       try {
-        // Fetch children directly to avoid relying on possibly stale state
-        const children = await getRepliesByComment(commentId);
+        const response = await forumEndpoints.getRepliesByComment(commentId);
+        const children = response.data.map((c: any) => ({
+          ...c,
+          imgPath: c?.imgPath ? toAbsoluteUrl(c.imgPath) : undefined,
+        }));
         setRepliesMap((prev) => ({ ...prev, [commentId]: children }));
         for (const child of children) {
           await preloadRecursively(child.forumCommentId);
         }
-      } catch {
-        // ignore per-node failures
-      }
+      } catch {}
     };
 
     const start = async () => {
@@ -356,7 +364,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
       <View style={styles.commentsList}>
         {comments
-          .filter((comment) => !comment.parentCommentId) // Only show top-level comments
+          .filter((comment) => !comment.parentCommentId)
           .map((comment) => (
             <View key={comment.forumCommentId} style={styles.commentItem}>
               <View style={styles.commentHeader}>
@@ -472,15 +480,17 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                       comment.react = Math.max(0, (comment.react || 0) - 1);
                     }
                     try {
-                      await addCommentReaction(
+                      await forumEndpoints.addCommentReaction(
                         comment.forumCommentId,
                         "LIKE",
                         user.email
                       );
-                      const summary = await getCommentReactionSummary(
-                        comment.forumCommentId,
-                        user.email
-                      );
+                      const summaryResponse =
+                        await forumEndpoints.getCommentReactionSummary(
+                          comment.forumCommentId,
+                          user.email
+                        );
+                      const summary = summaryResponse.data;
                       if (summary) {
                         setLikedMap((prev) => ({
                           ...prev,
@@ -667,16 +677,17 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                               reply.react = Math.max(0, (reply.react || 0) - 1);
                             }
                             try {
-                              await addCommentReaction(
+                              await forumEndpoints.addCommentReaction(
                                 reply.forumCommentId,
                                 "LIKE",
                                 user.email
                               );
-                              // Sau khi gửi, fetch lại status từ backend cho chắc
-                              const summary = await getCommentReactionSummary(
-                                reply.forumCommentId,
-                                user.email
-                              );
+                              const summaryResponse =
+                                await forumEndpoints.getCommentReactionSummary(
+                                  reply.forumCommentId,
+                                  user.email
+                                );
+                              const summary = summaryResponse.data;
                               if (summary) {
                                 setLikedMap((prev) => ({
                                   ...prev,
@@ -910,16 +921,17 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                         );
                                       }
                                       try {
-                                        await addCommentReaction(
+                                        await forumEndpoints.addCommentReaction(
                                           nestedReply.forumCommentId,
                                           "LIKE",
                                           user.email
                                         );
-                                        const summary =
-                                          await getCommentReactionSummary(
+                                        const summaryResponse =
+                                          await forumEndpoints.getCommentReactionSummary(
                                             nestedReply.forumCommentId,
                                             user.email
                                           );
+                                        const summary = summaryResponse.data;
                                         if (summary) {
                                           setLikedMap((prev) => ({
                                             ...prev,
@@ -1196,16 +1208,18 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                   );
                                               }
                                               try {
-                                                await addCommentReaction(
+                                                await forumEndpoints.addCommentReaction(
                                                   deepNestedReply.forumCommentId,
                                                   "LIKE",
                                                   user.email
                                                 );
-                                                const summary =
-                                                  await getCommentReactionSummary(
+                                                const summaryResponse =
+                                                  await forumEndpoints.getCommentReactionSummary(
                                                     deepNestedReply.forumCommentId,
                                                     user.email
                                                   );
+                                                const summary =
+                                                  summaryResponse.data;
                                                 if (summary) {
                                                   setLikedMap((prev) => ({
                                                     ...prev,
@@ -1337,15 +1351,20 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                     return;
                                                   }
                                                   try {
+                                                    const response =
+                                                      await forumEndpoints.replyToComment(
+                                                        {
+                                                          forumPostId:
+                                                            Number(postId),
+                                                          content: text,
+                                                          userEmail:
+                                                            user.email!,
+                                                          parentCommentId:
+                                                            deepNestedReply.forumCommentId,
+                                                        }
+                                                      );
                                                     const newDeepNestedReply =
-                                                      await replyToComment({
-                                                        forumPostId:
-                                                          Number(postId),
-                                                        content: text,
-                                                        userEmail: user.email!,
-                                                        parentCommentId:
-                                                          deepNestedReply.forumCommentId,
-                                                      });
+                                                      response.data;
 
                                                     if (
                                                       newDeepNestedReply.parentCommentId ===
@@ -1483,18 +1502,19 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                               return;
                                             }
                                             try {
+                                              const response =
+                                                await forumEndpoints.replyToComment(
+                                                  {
+                                                    forumPostId: Number(postId),
+                                                    content: text,
+                                                    userEmail: user.email!,
+                                                    parentCommentId:
+                                                      nestedReply.forumCommentId,
+                                                  }
+                                                );
                                               const newDeepNestedReply =
-                                                await replyToComment({
-                                                  forumPostId: Number(postId),
-                                                  content: text,
-                                                  userEmail: user.email!,
-                                                  parentCommentId:
-                                                    nestedReply.forumCommentId,
-                                                });
+                                                response.data;
 
-                                              // Debug: Check if nested reply has correct parentCommentId
-
-                                              // Only add to repliesMap if it's actually a reply
                                               if (
                                                 newDeepNestedReply.parentCommentId ===
                                                 nestedReply.forumCommentId
@@ -1623,14 +1643,14 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                     return;
                                   }
                                   try {
-                                    const newNestedReply = await replyToComment(
-                                      {
+                                    const response =
+                                      await forumEndpoints.replyToComment({
                                         forumPostId: Number(postId),
                                         content: text,
                                         userEmail: user.email!,
                                         parentCommentId: reply.forumCommentId,
-                                      }
-                                    );
+                                      });
+                                    const newNestedReply = response.data;
 
                                     // Debug: Check if nested reply has correct parentCommentId
 
@@ -1728,16 +1748,15 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                             return;
                           }
                           try {
-                            const newReply = await replyToComment({
-                              forumPostId: Number(postId),
-                              content: text,
-                              userEmail: user.email!,
-                              parentCommentId: comment.forumCommentId,
-                            });
+                            const response =
+                              await forumEndpoints.replyToComment({
+                                forumPostId: Number(postId),
+                                content: text,
+                                userEmail: user.email!,
+                                parentCommentId: comment.forumCommentId,
+                              });
+                            const newReply = response.data;
 
-                            // Debug: Check if reply has correct parentCommentId
-
-                            // Only add to repliesMap if it's actually a reply
                             if (
                               newReply.parentCommentId ===
                               comment.forumCommentId
@@ -1888,6 +1907,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#333",
+    paddingLeft: 8,
   },
   commentTime: {
     fontSize: 12,
@@ -1898,6 +1918,7 @@ const styles = StyleSheet.create({
     color: "#666",
     lineHeight: 20,
     marginBottom: 8,
+    paddingLeft: 8,
   },
   commentImage: {
     width: 100,

@@ -17,13 +17,11 @@ import { useTranslation } from "react-i18next";
 import { colors } from "../../constants/theme";
 import ScrollableLayout from "../../components/ScrollableLayout";
 import { useAuthContext } from "../../src/contexts/authContext";
-import {
-  getAllPosts,
-  PostResponse,
-  getReactionSummary,
-} from "../../services/endpoints/forum";
+import forumEndpoints, { PostResponse } from "../../services/endpoints/forum";
+import { PostRawResponse } from "../../src/types/response/forum.response";
+import api from "../../services/api";
 import tourEndpoints from "../../services/endpoints/tour";
-import { TourResponse } from "../../src/types/tour";
+import { TourResponse } from "../../src/types/response/tour.response";
 import {
   getApprovedArticles,
   Article,
@@ -219,7 +217,7 @@ export default function Home() {
       try {
         setArticlesLoading(true);
         const articlesData = await getApprovedArticles();
-        setArticles(articlesData); 
+        setArticles(articlesData);
       } catch (error) {
         setArticles([]);
       } finally {
@@ -348,10 +346,52 @@ export default function Home() {
     };
   }, [i18n]);
 
+  const transformApiPost = (apiPost: PostRawResponse): PostResponse => {
+    const toAbsoluteUrl = (path: string): string => {
+      if (!path) return path;
+      if (/^https?:\/\//i.test(path)) return path;
+      const base = (api.defaults.baseURL || "").replace(/\/$/, "");
+      const origin = base.endsWith("/api") ? base.slice(0, -4) : base;
+      const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+      return `${origin}${normalizedPath}`;
+    };
+
+    let hashtags: string[] = [];
+    if (apiPost.hashtags) {
+      if (Array.isArray(apiPost.hashtags)) {
+        hashtags = apiPost.hashtags.map((h) => {
+          if (typeof h === "string") return h;
+          if (typeof h === "object" && h.content) return h.content;
+          return String(h);
+        });
+      }
+    }
+
+    return {
+      id: apiPost.forumPostId,
+      title: apiPost.title,
+      content: apiPost.content,
+      username: apiPost.username || "Unknown User",
+      userAvatar: apiPost.userAvatar || "",
+      imageUrls: apiPost.images
+        ? apiPost.images.map((i) => toAbsoluteUrl(i.imgPath))
+        : [],
+      hashtags,
+      createdAt: apiPost.createdAt,
+      likeCount: apiPost.reactions?.likeCount || 0,
+      dislikeCount: apiPost.reactions?.dislikeCount || 0,
+      totalReactions: apiPost.reactions?.totalReactions || 0,
+      userReaction: apiPost.reactions?.userReaction || null,
+      commentCount: 0,
+    };
+  };
+
   useEffect(() => {
     (async () => {
       try {
-        const posts = await getAllPosts();
+        const response = await forumEndpoints.getAllPosts();
+        const apiPosts = Array.isArray(response.data) ? response.data : [];
+        const posts = apiPosts.map(transformApiPost);
         const postsWithHashtags = posts
           .filter((p) => p.hashtags && p.hashtags.length > 0)
           .sort(
@@ -363,11 +403,12 @@ export default function Home() {
         const postsWithReactions = await Promise.all(
           postsWithHashtags.map(async (post) => {
             try {
-              const reactionSummary = await getReactionSummary(
+              const reactionResponse = await forumEndpoints.getReactionSummary(
                 post.id,
                 "POST",
                 user?.email
               );
+              const reactionSummary = reactionResponse.data;
               const like = reactionSummary?.likeCount || 0;
               const dislike = reactionSummary?.dislikeCount || 0;
               const total =
@@ -636,7 +677,6 @@ export default function Home() {
           </View>
           <View style={styles.bottomSpacing} />
         </View>
-
       </ScrollableLayout>
       <ChatBubble />
     </View>

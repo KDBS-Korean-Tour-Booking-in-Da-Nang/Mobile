@@ -1,9 +1,5 @@
 import api from "../../services/api";
-
-export interface ApplyVoucherPayload {
-  bookingId: number;
-  voucherCode: string;
-}
+import { ApplyVoucherRequest } from "../../src/types/request/voucher.request";
 
 export const voucherEndpoints = {
   getAll: () => api.get("/api/vouchers"),
@@ -11,7 +7,7 @@ export const voucherEndpoints = {
     api.get(`/api/vouchers/company/${companyId}`),
   previewAllAvailable: (bookingId: number) =>
     api.get(`/api/vouchers/preview-all/${bookingId}`),
-  applyVoucher: (payload: ApplyVoucherPayload) =>
+  applyVoucher: (payload: ApplyVoucherRequest) =>
     api.post("/api/vouchers/apply", payload),
 };
 

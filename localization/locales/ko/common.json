@@ -392,7 +392,12 @@
       },
       "departureDateRange": "{{minDate}}부터 {{maxDate}}까지 선택 가능",
       "departureDateMinOnly": "{{minDate}}부터 선택 가능",
-      "bookingDeadlineNote": "{{days}}일 전 예약 필요"
+      "bookingDeadlineNote": "{{days}}일 전 예약 필요",
+      "updateInfo": "정보 업데이트",
+      "waitingForUpdate": "정보 업데이트 대기 중",
+      "confirmUpdate": "정보를 올바르게 업데이트하시겠습니까?",
+      "updateSuccess": "정보가 성공적으로 업데이트되었습니다!",
+      "updateFailed": "정보를 업데이트할 수 없습니다. 다시 시도해주세요."
     },
     "errors": {
       "notFound": "투어를 찾을 수 없습니다",
@@ -400,7 +405,8 @@
       "bookingFailed": "예약에 실패했습니다. 다시 시도해주세요.",
       "loadFailed": "투어를 불러오는데 실패했습니다. 다시 시도해주세요.",
       "tourNotFound": "투어를 찾을 수 없습니다",
-      "paymentFailed": "결제 생성에 실패했습니다. 다시 시도해주세요."
+      "paymentFailed": "결제 생성에 실패했습니다. 다시 시도해주세요.",
+      "bookingHistoryLoadFailed": "예약 내역을 불러오지 못했습니다. 다시 시도해주세요."
     },
     "confirm": {
       "tourInfo": "투어 정보",
@@ -422,7 +428,13 @@
       "remaining": "남은 수량",
       "select": "선택",
       "close": "닫기",
-      "availableVouchers": "사용 가능한 바우처"
+      "availableVouchers": "사용 가능한 바우처",
+      "noVoucherAvailable": "이 예약에 사용 가능한 바우처가 없습니다. 바우처가 만료되었거나 소진되었거나 이 투어에 적용되지 않을 수 있습니다.",
+      "loadingVouchers": "바우처 로딩 중...",
+      "voucherLoadFailed": "바우처를 불러오지 못했습니다",
+      "voucherApplyFailed": "바우처를 적용하지 못했습니다. 다시 시도해주세요.",
+      "createBookingFirst": "사용 가능한 바우처를 보려면 먼저 예약을 생성해주세요",
+      "bookingMissing": "결제할 예약을 찾을 수 없습니다. 이전 단계로 돌아가주세요."
     },
     "giftModal": {
       "clickNow": "지금 클릭",
@@ -519,10 +531,11 @@
       "success": "결제 성공",
       "failed": "결제 실패",
       "pending": "결제 처리 중",
+      "pendingPayment": "결제 대기",
       "successMessage": "결제가 성공적으로 완료되었습니다.",
       "failedMessage": "결제를 완료할 수 없습니다.",
       "pendingMessage": "결제가 처리 중입니다.",
-      "details": "거래 상세",
+      "details": "예약 내역",
       "orderId": "주문 ID",
       "bookingId": "예약 ID",
       "paymentMethod": "결제 수단",
@@ -534,7 +547,8 @@
       "viewBooking": "예약 보기",
       "goHome": "홈으로",
       "fetchError": "거래 상세를 불러오지 못했습니다"
-    }
+    },
+    "continuePayment": "결제 계속하기"
   },
   "common": {
     "error": "오류",
@@ -543,6 +557,7 @@
     "goBack": "돌아가기",
     "cancel": "취소",
     "confirm": "확인",
+    "submit": "제출",
     "save": "저장",
     "ok": "확인",
     "na": "없음",

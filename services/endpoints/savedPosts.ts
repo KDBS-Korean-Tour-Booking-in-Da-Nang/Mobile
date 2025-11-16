@@ -1,21 +1,8 @@
 import api from "../../services/api";
+import { SavePostRequest } from "../../src/types/request/savedPost.request";
+import { SavedPostResponse } from "../../src/types/response/savedPost.response";
 
-export interface SavePostRequest {
-  postId: number;
-  note?: string;
-}
-
-export interface SavedPostResponse {
-  savedPostId: number;
-  postId: number;
-  postTitle: string;
-  postContent: string;
-  postAuthor: string;
-  postAuthorAvatar: string;
-  postCreatedAt: string;
-  note?: string;
-  savedAt: string;
-}
+export type { SavePostRequest, SavedPostResponse };
 
 export async function savePost(
   data: SavePostRequest,

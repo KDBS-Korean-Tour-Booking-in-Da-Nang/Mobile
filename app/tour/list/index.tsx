@@ -24,13 +24,11 @@ import MainLayout from "../../../components/MainLayout";
 import { useNavigation } from "../../../navigation/navigation";
 import { useTranslation } from "react-i18next";
 import { tourEndpoints } from "../../../services/endpoints/tour";
-import { TourResponse } from "../../../src/types/tour";
+import { TourResponse } from "../../../src/types/response/tour.response";
 import styles from "./styles";
-import { createPost } from "../../../services/endpoints/forum";
+import forumEndpoints from "../../../services/endpoints/forum";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// vouchers are shown only in the dedicated voucher list screen
 
 export default function TourList() {
   const { navigate, goBack } = useNavigation();
@@ -83,7 +81,6 @@ export default function TourList() {
   }, [loadTours]);
 
   const checkGiftModalPreference = async () => {
-    // Luôn hiển thị icon mỗi lần vào trang (không check AsyncStorage nữa)
     setShowGiftModal(true);
     setDontShowAgain(false);
   };
@@ -94,14 +91,12 @@ export default function TourList() {
       return;
     }
 
-    // Hiển thị modal hỏi
     setShowCloseModal(true);
   };
 
   const handleCloseModalConfirm = async () => {
     try {
       if (closeModalDontShow) {
-        // Chỉ lưu trong session hiện tại, không lưu vào AsyncStorage
         setDontShowAgain(true);
       }
       setShowGiftModal(false);
@@ -197,13 +192,52 @@ export default function TourList() {
       } as any;
       const marker = `[[META:${JSON.stringify(meta)}]]`;
       const contentToSend = `${shareContent.trim()}\n\n${marker}`;
-      await createPost({
+
+      const createPostFormData = (data: {
+        title: string;
+        content: string;
+        userEmail?: string;
+        hashtags?: string[];
+        images?: any[];
+      }): FormData => {
+        const formData = new FormData();
+        formData.append("title", data.title);
+        formData.append("content", data.content);
+        if (data.userEmail) {
+          formData.append("userEmail", data.userEmail);
+        }
+        if (data.hashtags && data.hashtags.length > 0) {
+          data.hashtags.forEach((hashtag) => {
+            formData.append("hashtags", hashtag);
+          });
+        }
+        if (data.images) {
+          data.images.forEach((image: any, idx: number) => {
+            const uri: string = image?.uri || image?.path || "";
+            const clean = uri.split("?")[0];
+            const ext = (
+              clean.match(/\.([a-zA-Z0-9]+)$/)?.[1] || "jpg"
+            ).toLowerCase();
+            const mime =
+              image?.type ||
+              (ext === "jpg" || ext === "jpeg" ? "image/jpeg" : `image/${ext}`);
+            const name = image?.name || `photo_${Date.now()}_${idx}.${ext}`;
+            if (uri) {
+              formData.append("images", { uri, name, type: mime } as any);
+            }
+          });
+        }
+        return formData;
+      };
+
+      const formData = createPostFormData({
         title: shareTitle.trim() || shareTour.tourName || "",
         content: contentToSend || "",
         hashtags: shareHashtags,
         images,
         userEmail: email,
       });
+      await forumEndpoints.createPost(formData);
       setShareOpen(false);
       navigate("/forum");
     } catch {

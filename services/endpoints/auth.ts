@@ -1,22 +1,24 @@
 import api from "../../services/api";
+import {
+  LoginRequest,
+  LogoutRequest,
+  ForgotPasswordRequestRequest,
+  ForgotPasswordResetRequest,
+} from "../../src/types/request/auth.request";
 
 export const authEndpoints = {
-  login: (payload: { email: string; password: string }) =>
-    api.post("/api/auth/login", payload),
+  login: (payload: LoginRequest) => api.post("/api/auth/login", payload),
 
-  logout: (token: string) => api.post("/api/auth/logout", { token }),
+  logout: (payload: LogoutRequest) => api.post("/api/auth/logout", payload),
 
-  forgotPasswordRequest: (payload: { email: string }) =>
+  forgotPasswordRequest: (payload: ForgotPasswordRequestRequest) =>
     api.post("/api/auth/forgot-password/request", payload),
 
   forgotPasswordVerifyOtp: () =>
     api.post("/api/auth/forgot-password/verify-otp", undefined),
 
-  forgotPasswordReset: (payload: {
-    email: string;
-    otpCode: string;
-    newPassword: string;
-  }) => api.post("/api/auth/forgot-password/reset", payload),
+  forgotPasswordReset: (payload: ForgotPasswordResetRequest) =>
+    api.post("/api/auth/forgot-password/reset", payload),
 };
 
 export default authEndpoints;

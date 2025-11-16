@@ -190,23 +190,18 @@ export default function Notifications() {
       switch (targetType?.toUpperCase()) {
         case "POST":
         case "FORUM_POST":
-          // Navigate to forum post
           goToForum(targetId);
           break;
         case "COMMENT":
-          // Navigate to forum post with comment (targetId is postId for comment)
           goToForum(targetId);
           break;
         case "BOOKING":
-          // Navigate to booking detail
-          navigate(`/tour/booking/detailHistory?bookingId=${targetId}`);
+          navigate(`/tour/historyBooking/detailHistory?bookingId=${targetId}`);
           break;
         case "TOUR":
-          // Navigate to tour detail
           navigate(`/tour/tourDetail?tourId=${targetId}`);
           break;
         default:
-          // For unknown types, try to navigate to forum if it's a forum-related notification
           if (
             notification.notificationType === "LIKE_POST" ||
             notification.notificationType === "LIKE_COMMENT" ||
