@@ -1,5 +1,5 @@
-import { StyleSheet } from "react-native";
-import { typography } from "../../../src/constants/theme";
+import { StyleSheet, Platform } from "react-native";
+import { typography } from "../../../constants/theme";
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8f9fa" },
@@ -97,6 +97,13 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 16,
   },
+  toggleHint: {
+    fontSize: 12,
+    color: "#6c757d",
+    marginTop: -8,
+    marginBottom: 12,
+    lineHeight: 16,
+  },
   radioOuter: {
     width: 18,
     height: 18,
@@ -115,13 +122,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
     color: "#666",
   },
-  updateHint: {
-    fontSize: 12,
-    color: "#FF6B6B",
-    marginTop: 4,
-    fontStyle: "italic",
-  },
-
   fieldGroup: { marginBottom: 14 },
   label: { fontSize: 14, color: "#111", marginBottom: 8, fontWeight: "600" },
   input: {
@@ -360,10 +360,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fullNameFieldGroup: {
-    flex: 2,
+    flex: Platform.OS === "ios" ? 1.8 : 2,
   },
   dobFieldGroup: {
-    flex: 1,
+    flex: Platform.OS === "ios" ? 1.2 : 1,
   },
   halfInput: {
     width: "100%",
@@ -424,38 +424,57 @@ const styles = StyleSheet.create({
     lineHeight: 36,
   },
   iosDateOverlay: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    alignItems: "center",
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
-    padding: 24,
+    alignItems: "center",
+    padding: 20,
   },
   iosDateCard: {
-    width: "100%",
     backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 20,
+    padding: 28,
+    width: "100%",
+    maxWidth: 420,
     shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
+    alignItems: "center",
   },
   iosDateTitle: {
-    fontSize: 16,
+    fontSize: 22,
     fontWeight: "700",
-    color: "#111",
-    marginBottom: 8,
+    color: "#212529",
+    marginBottom: 16,
+    textAlign: "center",
+    letterSpacing: 0.3,
+  },
+  iosDateSelected: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#007AFF",
+    marginBottom: 24,
+    textAlign: "center",
+    letterSpacing: 0.5,
+  },
+  iosDatePickerContainer: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+  },
+  iosDatePicker: {
+    width: "100%",
+    alignSelf: "center",
   },
   iosDateActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    gap: 8,
-    marginTop: 8,
+    gap: 12,
+    marginTop: 20,
+    width: "100%",
   },
   modalBackdrop: {
     flex: 1,

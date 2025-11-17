@@ -1,0 +1,160 @@
+import { StyleSheet } from "react-native";
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f8f9fa",
+  },
+  header: {
+    paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    backgroundColor: "#E3F2FD",
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  backText: {
+    fontSize: 16,
+    color: "#000",
+    marginLeft: 4,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#000",
+    marginTop: 20,
+    marginBottom: 30,
+  },
+  section: {
+    marginBottom: 30,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#000",
+    marginBottom: 15,
+  },
+  photoCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  photoContainer: {
+    position: "relative",
+    marginRight: 16,
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#f0f0f0",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addPhotoButton: {
+    position: "absolute",
+    bottom: -2,
+    right: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#000",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
+  photoInfo: {
+    flex: 1,
+  },
+  photoTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#000",
+    marginBottom: 4,
+  },
+  photoDescription: {
+    fontSize: 14,
+    color: "#666",
+    lineHeight: 20,
+  },
+  genderContainer: {
+    flexDirection: "row",
+    gap: 20,
+  },
+  genderOption: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#ccc",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
+  radioSelected: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#000",
+  },
+  genderText: {
+    fontSize: 16,
+    color: "#000",
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#000",
+    marginBottom: 8,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 25,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    fontSize: 16,
+    backgroundColor: "#fff",
+    height: 56,
+  },
+  saveButtonContainer: {},
+  saveButton: {
+    backgroundColor: "#000000",
+    borderRadius: 25,
+    paddingVertical: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+    minHeight: 56,
+    width: "100%",
+  },
+  saveButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+});
+
+export default styles;

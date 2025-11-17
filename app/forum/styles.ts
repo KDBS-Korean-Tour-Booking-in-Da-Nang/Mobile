@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
   feedContainer: {
-    paddingBottom: 100,
+    paddingBottom: 180, // Increased to ensure last post is fully visible above the button
     paddingTop: 8,
   },
   loadingContainer: {

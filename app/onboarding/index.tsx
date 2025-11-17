@@ -9,8 +9,8 @@ import {
   TouchableOpacity,
   Platform,
 } from "react-native";
-import { useNavigation } from "../../src/navigation";
-import { spacing } from "../../src/constants/theme";
+import { useNavigation } from "../../navigation/navigation";
+import { spacing } from "../../constants/theme";
 import { markOnboardingCompleted } from "../../src/utils/onboardingUtils";
 
 type Slide = {

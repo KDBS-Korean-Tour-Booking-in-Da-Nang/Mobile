@@ -6,7 +6,7 @@ import React, {
   useReducer,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import api from "../services/api";
+import api from "../../services/api";
 
 type User = {
   userId: number;
@@ -19,7 +19,6 @@ type User = {
   birthdate?: string;
   gender?: string;
   phone?: string;
-  isPremium?: boolean;
   dob?: string;
   cccd?: string;
   balance?: number;
@@ -112,16 +111,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     try {
       const token = await AsyncStorage.getItem("authToken");
       const userDataRaw = await AsyncStorage.getItem("userData");
-      let userData: User | null = userDataRaw ? JSON.parse(userDataRaw) : null;
-      if (userData && !userData.email) {
-        const anyUser: any = userData as any;
-        const fallbackEmail =
-          anyUser.userEmail || anyUser.emailAddress || anyUser.mail;
-        if (fallbackEmail && typeof fallbackEmail === "string") {
-          userData = { ...(userData as any), email: fallbackEmail } as User;
-          await AsyncStorage.setItem("userData", JSON.stringify(userData));
-        }
-      }
+      const userData: User | null = userDataRaw
+        ? JSON.parse(userDataRaw)
+        : null;
       dispatch({
         type: "SET_AUTH",
         payload: { isAuthenticated: !!token, user: userData },
@@ -145,13 +137,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         user?: User;
       };
       const token = payload?.token as string;
-      let user = payload?.user as any;
-      if (user && !user.email) {
-        const fallbackEmail = user.userEmail || user.emailAddress || user.mail;
-        if (fallbackEmail && typeof fallbackEmail === "string") {
-          user = { ...user, email: fallbackEmail };
-        }
-      }
+      const user = payload?.user as any;
       await AsyncStorage.setItem("authToken", token);
       await AsyncStorage.setItem("userData", JSON.stringify(user));
       dispatch({ type: "LOGIN_SUCCESS", payload: { token, user } });
@@ -165,7 +151,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   const logout = async () => {
     try {
-      await api.post("/api/auth/logout");
+      const token = await AsyncStorage.getItem("authToken");
+      if (token) {
+        await api.post("/api/auth/logout", { token });
+      }
     } catch (e) {
     } finally {
       await AsyncStorage.removeItem("authToken");

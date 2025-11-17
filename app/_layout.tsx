@@ -1,12 +1,13 @@
 import { Stack, useRouter } from "expo-router";
-import "../src/i18n";
+import "../localization/i18n";
 import { View } from "react-native";
 import { useEffect, useRef } from "react";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { NavigationProvider } from "../src/navigation";
+import { NavigationProvider } from "../navigation/navigation";
 import { AuthProvider, useAuthContext } from "../src/contexts/authContext";
-import { PremiumProvider } from "../src/contexts/premiumContext";
+import { NotificationProvider } from "../src/contexts/notificationContext";
+import NotificationToastManager from "../components/NotificationToastManager";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -64,11 +65,12 @@ export default function RootLayout() {
   return (
     <NavigationProvider>
       <AuthProvider>
-        <PremiumProvider>
+        <NotificationProvider>
           <View style={{ flex: 1 }}>
             <RootLayoutNav />
           </View>
-        </PremiumProvider>
+          <NotificationToastManager />
+        </NotificationProvider>
       </AuthProvider>
     </NavigationProvider>
   );

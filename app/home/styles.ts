@@ -1,5 +1,5 @@
 import { StyleSheet, Dimensions, Platform } from "react-native";
-import { colors, spacing, borderRadius } from "../../src/constants/theme";
+import { colors, spacing, borderRadius } from "../../constants/theme";
 
 const { width } = Dimensions.get("window");
 
@@ -46,9 +46,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#212529",
     letterSpacing: -0.5,
-  },
-  premiumIconContainer: {
-    padding: 4,
   },
   rightActions: {
     flexDirection: "row",
@@ -155,6 +152,36 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+  },
+  searchDropdown: {
+    position: "absolute",
+    top: 52,
+    left: 16,
+    right: 16,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 1000,
+    maxHeight: 200,
+  },
+  suggestionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f8f9fa",
+  },
+  suggestionText: {
+    marginLeft: 12,
+    color: "#212529",
+    flex: 1,
   },
   searchPlaceholder: {
     marginLeft: 12,

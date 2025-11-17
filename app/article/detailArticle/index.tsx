@@ -9,10 +9,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
-import { useNavigation } from "../../../src/navigation";
+import { useNavigation } from "../../../navigation/navigation";
 import { useTranslation } from "react-i18next";
-import ScrollableLayout from "../../../src/components/ScrollableLayout";
-import { getArticleById, Article } from "../../../src/endpoints/articles";
+import ScrollableLayout from "../../../components/ScrollableLayout";
+import { getArticleById, Article } from "../../../services/endpoints/articles";
 import styles, { contentHtmlCss } from "./style";
 import { WebView } from "react-native-webview";
 

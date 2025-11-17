@@ -11,17 +11,19 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  Dimensions,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import MainLayout from "../../../src/components/MainLayout";
-import { useNavigation } from "../../../src/navigation";
+import MainLayout from "../../../components/MainLayout";
+import { useNavigation } from "../../../navigation/navigation";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthContext } from "../../../src/contexts/authContext";
-import BookingButton from "../../../src/components/BookingButton";
+import BookingButton from "../../../components/BookingButton";
 import { useTranslation } from "react-i18next";
-import { tourEndpoints } from "../../../src/endpoints/tour";
-import { TourResponse } from "../../../src/types/tour";
+import { tourEndpoints } from "../../../services/endpoints/tour";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { TourResponse } from "../../../src/types/response/tour.response";
 import styles from "./styles";
 
 export default function BuyingTour() {
@@ -33,8 +35,12 @@ export default function BuyingTour() {
 
   const [tour, setTour] = React.useState<TourResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [booking] = React.useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
+  const [creatingBooking, setCreatingBooking] = React.useState(false);
+  const heroWidth = React.useMemo(
+    () => Dimensions.get("window").width - 24,
+    []
+  );
+  const imageScrollRef = React.useRef<ScrollView | null>(null);
 
   const [isNavVisible, setIsNavVisible] = React.useState(true);
   const lastScrollY = React.useRef(0);
@@ -59,8 +65,7 @@ export default function BuyingTour() {
         setLoading(true);
         const res = await tourEndpoints.getById(tourId);
         setTour(res.data);
-        setCurrentImageIndex(0);
-      } catch (error) {
+      } catch {
         Alert.alert(t("common.error"), t("tour.errors.loadFailed"));
       } finally {
         setLoading(false);
@@ -139,6 +144,7 @@ export default function BuyingTour() {
     phoneNumber: "",
     email: "",
     pickUpPoint: "",
+    departureDate: "",
     note: "",
   });
   const [phoneError, setPhoneError] = React.useState<string | null>(null);
@@ -174,6 +180,7 @@ export default function BuyingTour() {
         phoneNumber: user.phone || "",
         email: user.email || "",
         pickUpPoint: formData.pickUpPoint,
+        departureDate: formData.departureDate,
         note: formData.note,
       });
     }
@@ -240,6 +247,33 @@ export default function BuyingTour() {
     return age;
   };
 
+  const getMinimumDepartureDate = (): Date => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (tour?.tourDeadline && tour.tourDeadline > 0) {
+      const minDate = new Date(today);
+      minDate.setDate(today.getDate() + tour.tourDeadline + 1);
+      return minDate;
+    }
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    return tomorrow;
+  };
+
+  const getMaximumDepartureDate = (): Date | undefined => {
+    if (!tour?.tourExpirationDate) return undefined;
+
+    try {
+      const expirationDate = new Date(tour.tourExpirationDate);
+      expirationDate.setHours(23, 59, 59, 999);
+      return expirationDate;
+    } catch {
+      return undefined;
+    }
+  };
+
   const validateBeforeBooking = (): boolean => {
     if (adultCount < 1) {
       Alert.alert(t("common.error"), t("tour.booking.errors.adultMin"));
@@ -253,6 +287,68 @@ export default function BuyingTour() {
       Alert.alert(
         t("common.error"),
         t("tour.booking.errors.pickUpPointRequired")
+      );
+      return false;
+    }
+    if (!formData.departureDate || formData.departureDate.trim().length < 2) {
+      Alert.alert(
+        t("common.error"),
+        t("tour.booking.errors.departureDateRequired")
+      );
+      return false;
+    }
+
+    const departureDateObj = parseDob(formData.departureDate);
+    if (!departureDateObj) {
+      Alert.alert(
+        t("common.error"),
+        t("tour.booking.errors.departureDateInvalid")
+      );
+      return false;
+    }
+
+    const normalizeDateForComparison = (date: Date): Date => {
+      const normalized = new Date(date);
+      normalized.setHours(0, 0, 0, 0);
+      return normalized;
+    };
+
+    const departureDateNormalized =
+      normalizeDateForComparison(departureDateObj);
+    const minDate = getMinimumDepartureDate();
+    const minDateNormalized = normalizeDateForComparison(minDate);
+    const maxDate = getMaximumDepartureDate();
+    const maxDateNormalized = maxDate
+      ? normalizeDateForComparison(maxDate)
+      : null;
+
+    if (departureDateNormalized < minDateNormalized) {
+      const minDateStr = `${String(minDate.getDate()).padStart(
+        2,
+        "0"
+      )}/${String(minDate.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}/${minDate.getFullYear()}`;
+      Alert.alert(
+        t("common.error"),
+        t("tour.booking.errors.departureDateMinError", {
+          date: minDateStr,
+          days: tour?.tourDeadline || 1,
+        })
+      );
+      return false;
+    }
+
+    if (maxDateNormalized && departureDateNormalized > maxDateNormalized) {
+      const maxDateStr = tour?.tourExpirationDate
+        ? new Date(tour.tourExpirationDate).toLocaleDateString("vi-VN")
+        : maxDate
+        ? maxDate.toLocaleDateString("vi-VN")
+        : "";
+      Alert.alert(
+        t("common.error"),
+        t("tour.booking.errors.departureDateMaxError", { date: maxDateStr })
       );
       return false;
     }
@@ -430,14 +526,157 @@ export default function BuyingTour() {
         birthDate: babyDob[index] || new Date().toISOString().split("T")[0],
       })),
       pickUpPoint: formData.pickUpPoint || "",
+      departureDate: formData.departureDate || "",
       note: formData.note || "",
     };
 
-    navigate(
-      `/tour/confirm?tourId=${tour.id}&bookingData=${encodeURIComponent(
+    const normalizeDateString = (value: any) => {
+      if (!value) return null;
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+        const match = trimmed.match(/^([0-3]\d)\/([0-1]\d)\/(\d{4})$/);
+        if (match) {
+          return `${match[3]}-${match[2]}-${match[1]}`;
+        }
+      }
+      try {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) {
+          const yyyy = date.getFullYear();
+          const mm = String(date.getMonth() + 1).padStart(2, "0");
+          const dd = String(date.getDate()).padStart(2, "0");
+          return `${yyyy}-${mm}-${dd}`;
+        }
+      } catch {}
+      return null;
+    };
+
+    const ensureDepartureDate = () => {
+      const normalized = normalizeDateString(
+        formData.departureDate || bookingData.departureDate
+      );
+      if (normalized) return normalized;
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const yyyy = tomorrow.getFullYear();
+      const mm = String(tomorrow.getMonth() + 1).padStart(2, "0");
+      const dd = String(tomorrow.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
+    const mapGuests = (
+      count: number,
+      getGuest: (index: number) => any,
+      getDob: (index: number) => any,
+      type: "ADULT" | "CHILD" | "BABY"
+    ) => {
+      const list: any[] = [];
+      for (let i = 0; i < count; i++) {
+        const guest = getGuest(i) || {};
+        const dobValue = getDob(i) || guest.birthDate;
+        const normalizedDob = normalizeDateString(dobValue);
+        if (!normalizedDob) {
+          continue;
+        }
+        list.push({
+          fullName: guest.fullName?.trim() || "Guest",
+          birthDate: normalizedDob,
+          gender: (guest.gender || "OTHER").toUpperCase(),
+          idNumber: guest.idNumber || "",
+          nationality: guest.nationality || "Korea",
+          bookingGuestType: type,
+        });
+      }
+      return list;
+    };
+
+    const guestPayload = [
+      ...mapGuests(
+        adultCount,
+        (idx) => adultInfo[idx],
+        (idx) => adultDob[idx],
+        "ADULT"
+      ),
+      ...mapGuests(
+        childrenCount,
+        (idx) => childrenInfo[idx],
+        (idx) => childrenDob[idx],
+        "CHILD"
+      ),
+      ...mapGuests(
+        babyCount,
+        (idx) => babyInfo[idx],
+        (idx) => babyDob[idx],
+        "BABY"
+      ),
+    ];
+
+    if (guestPayload.length === 0) {
+      Alert.alert(t("common.error"), "At least one guest is required");
+      return;
+    }
+
+    const sanitizePhone = (value: string) => value.replace(/\D/g, "");
+    const contactPhone = sanitizePhone(formData.phoneNumber || "");
+
+    const bookingRequest = {
+      tourId: tour.id,
+      userEmail: (user.email || "").trim().toLowerCase(),
+      contactName:
+        bookingData.customerName && bookingData.customerName.trim() !== ""
+          ? bookingData.customerName
+          : "Guest User",
+      contactAddress: bookingData.customerAddress || "",
+      contactPhone: contactPhone || "0123456789",
+      contactEmail:
+        bookingData.customerEmail && bookingData.customerEmail.trim() !== ""
+          ? bookingData.customerEmail.trim()
+          : String(user.email || "").trim(),
+      pickupPoint: bookingData.pickUpPoint || "",
+      note: bookingData.note || "",
+      departureDate: ensureDepartureDate(),
+      adultsCount: adultCount,
+      childrenCount,
+      babiesCount: babyCount,
+      bookingGuestRequests: guestPayload,
+    };
+
+    try {
+      setCreatingBooking(true);
+      const response = (await tourEndpoints.createBooking(bookingRequest)).data;
+      if (!response?.bookingId) {
+        throw new Error("Missing bookingId from response");
+      }
+      const bookingId = response.bookingId;
+
+      const userEmailKey = (user.email || "").trim().toLowerCase();
+      const tourKey = String(tour.id ?? "na");
+      const pendingKey = `pendingBooking:${userEmailKey}:${tourKey}`;
+      try {
+        await AsyncStorage.setItem(
+          pendingKey,
+          JSON.stringify({ bookingId, ts: Date.now() })
+        );
+      } catch {}
+
+      const confirmUrl = `/tour/confirm?tourId=${
+        tour.id
+      }&bookingId=${bookingId}&bookingData=${encodeURIComponent(
         JSON.stringify(bookingData)
-      )}`
-    );
+      )}`;
+
+      navigate(confirmUrl);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        t("tour.booking.errors.createFailed") ||
+        "Không thể tạo booking. Vui lòng thử lại.";
+      Alert.alert(t("common.error"), message);
+    } finally {
+      setCreatingBooking(false);
+    }
   };
 
   const imageList = React.useMemo(() => {
@@ -484,38 +723,87 @@ export default function BuyingTour() {
 
   return (
     <MainLayout isNavVisible={isNavVisible}>
-      <TouchableOpacity
-        style={{ flex: 1 }}
-        activeOpacity={1}
-        onPress={closeDropdowns}
-      >
+      <View style={{ flex: 1 }}>
         <ScrollView
           style={styles.container}
           showsVerticalScrollIndicator={false}
           onScroll={handleScroll}
           scrollEventThrottle={32}
           removeClippedSubviews
+          directionalLockEnabled
         >
           <View style={styles.imageWrapper}>
-            <Image
-              source={{ uri: imageList[currentImageIndex] }}
-              style={styles.heroImage}
-            />
+            {(() => {
+              const loopData =
+                imageList.length > 1
+                  ? [
+                      imageList[imageList.length - 1],
+                      ...imageList,
+                      imageList[0],
+                    ]
+                  : imageList;
+              return (
+                <ScrollView
+                  ref={imageScrollRef}
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  style={{ width: "100%" }}
+                  nestedScrollEnabled
+                  decelerationRate="fast"
+                  snapToInterval={heroWidth}
+                  snapToAlignment="start"
+                  bounces={false}
+                  contentOffset={{
+                    x: imageList.length > 1 ? heroWidth : 0,
+                    y: 0,
+                  }}
+                  onLayout={() => {
+                    if (imageList.length > 1) {
+                      imageScrollRef.current?.scrollTo({
+                        x: heroWidth,
+                        animated: false,
+                      });
+                    }
+                  }}
+                  onMomentumScrollEnd={(e) => {
+                    try {
+                      const x = e.nativeEvent.contentOffset.x || 0;
+                      const idx = Math.max(0, Math.round(x / heroWidth));
+                      if (imageList.length > 1) {
+                        const lastIndex = loopData.length - 1;
+                        if (idx === 0) {
+                          imageScrollRef.current?.scrollTo({
+                            x: heroWidth * (lastIndex - 1),
+                            animated: false,
+                          });
+                          return;
+                        }
+                        if (idx === lastIndex) {
+                          imageScrollRef.current?.scrollTo({
+                            x: heroWidth,
+                            animated: false,
+                          });
+                          return;
+                        }
+                      }
+                    } catch {}
+                  }}
+                >
+                  {loopData.map((uri, idx) => (
+                    <Image
+                      key={`${uri}-${idx}`}
+                      source={{ uri }}
+                      style={[styles.heroImage, { width: heroWidth }]}
+                      resizeMode="cover"
+                    />
+                  ))}
+                </ScrollView>
+              );
+            })()}
             <TouchableOpacity style={styles.backBtn} onPress={goBack}>
               <View style={styles.backCircle}>
                 <Ionicons name="chevron-back" size={18} color="#000" />
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.backBtn, { left: undefined, right: 12 }]}
-              onPress={() =>
-                setCurrentImageIndex((prev) =>
-                  imageList.length ? (prev + 1) % imageList.length : 0
-                )
-              }
-            >
-              <View style={styles.backCircle}>
-                <Ionicons name="chevron-forward" size={18} color="#000" />
               </View>
             </TouchableOpacity>
             <View style={styles.imageOverlay}>
@@ -619,6 +907,11 @@ export default function BuyingTour() {
                 {t("tour.booking.usePersonalInfo")}
               </Text>
             </TouchableOpacity>
+            {usePersonalInfo && (
+              <Text style={styles.toggleHint}>
+                {t("tour.booking.guestUsePersonalInfoNote")}
+              </Text>
+            )}
 
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>{t("tour.booking.fullName")}</Text>
@@ -636,11 +929,6 @@ export default function BuyingTour() {
                 }
                 editable={!usePersonalInfo || needsUpdate("fullName")}
               />
-              {usePersonalInfo && needsUpdate("fullName") && (
-                <Text style={styles.updateHint}>
-                  {t("tour.booking.updateInfoHint")}
-                </Text>
-              )}
             </View>
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>
@@ -663,11 +951,6 @@ export default function BuyingTour() {
                 }
                 editable={!usePersonalInfo || needsUpdate("address")}
               />
-              {usePersonalInfo && needsUpdate("address") && (
-                <Text style={styles.updateHint}>
-                  {t("tour.booking.updateInfoHint")}
-                </Text>
-              )}
             </View>
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>
@@ -704,11 +987,6 @@ export default function BuyingTour() {
                   {phoneError}
                 </Text>
               )}
-              {!(formData.phoneNumber || "").trim() && (
-                <Text style={styles.updateHint}>
-                  {t("tour.booking.updateInfoHint")}
-                </Text>
-              )}
             </View>
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>{t("tour.booking.email")}</Text>
@@ -740,6 +1018,22 @@ export default function BuyingTour() {
               />
             </View>
             <View style={styles.fieldGroup}>
+              <Text style={styles.label}>
+                {t("tour.booking.departureDate")}{" "}
+                {!formData.departureDate?.trim() && (
+                  <Text style={{ color: "#FF3B30" }}> *</Text>
+                )}
+              </Text>
+              <DateField
+                value={formData.departureDate}
+                onChange={(val) =>
+                  setFormData((prev) => ({ ...prev, departureDate: val }))
+                }
+                minimumDate={getMinimumDepartureDate()}
+                maximumDate={getMaximumDepartureDate()}
+              />
+            </View>
+            <View style={styles.fieldGroup}>
               <Text style={styles.label}>{t("tour.booking.note")}</Text>
               <TextInput
                 style={[styles.input, styles.noteInput]}
@@ -757,10 +1051,10 @@ export default function BuyingTour() {
             <Text style={styles.formTitle}>
               {t("tour.booking.bookingInfo")}
             </Text>
-            <Text style={styles.sectionSubLabel}>
+            {/* <Text style={styles.sectionSubLabel}>
               {t("tour.booking.departureDate")}
-            </Text>
-            <View style={styles.dateRow}>
+            </Text> */}
+            {/* <View style={styles.dateRow}>
               <View style={styles.dateCol}>
                 <View style={styles.datePill}>
                   <View style={[styles.caretCircle, styles.caretCircleRight]}>
@@ -782,7 +1076,7 @@ export default function BuyingTour() {
                   </View>
                 </View>
               </View>
-            </View>
+            </View> */}
 
             <Text style={[styles.sectionSubLabel, { marginTop: 10 }]}>
               {t("tour.booking.totalGuests")}
@@ -896,7 +1190,6 @@ export default function BuyingTour() {
                           value={adultDob[idx]}
                           onChange={(val) => {
                             setAdultDob((prev) => ({ ...prev, [idx]: val }));
-                            // live validate adult >= 18
                             const d = parseDob(val);
                             const age = calcAgeYears(val);
                             if (!d || age == null) {
@@ -1047,62 +1340,13 @@ export default function BuyingTour() {
                                     ...prev,
                                     [idx]: {
                                       ...prev[idx],
-                                      nationality: "Vietnam",
-                                    },
-                                  }));
-                                  setShowNationalityPicker(null);
-                                }}
-                              >
-                                <Text style={styles.dropdownText}>Vietnam</Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={styles.dropdownItem}
-                                onPress={() => {
-                                  setAdultInfo((prev) => ({
-                                    ...prev,
-                                    [idx]: {
-                                      ...prev[idx],
-                                      nationality: "United Kingdom",
-                                    },
-                                  }));
-                                  setShowNationalityPicker(null);
-                                }}
-                              >
-                                <Text style={styles.dropdownText}>
-                                  United Kingdom
-                                </Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={styles.dropdownItem}
-                                onPress={() => {
-                                  setAdultInfo((prev) => ({
-                                    ...prev,
-                                    [idx]: {
-                                      ...prev[idx],
                                       nationality: "Korea",
                                     },
                                   }));
                                   setShowNationalityPicker(null);
                                 }}
                               >
-                                <Text style={styles.dropdownText}>
-                                  South Korea
-                                </Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={styles.dropdownItem}
-                                onPress={() => {
-                                  setAdultInfo((prev) => ({
-                                    ...prev,
-                                    [idx]: {
-                                      ...prev[idx],
-                                      nationality: "Other",
-                                    },
-                                  }));
-                                  setShowNationalityPicker(null);
-                                }}
-                              >
-                                <Text style={styles.dropdownText}>Other</Text>
+                                <Text style={styles.dropdownText}>Korea</Text>
                               </TouchableOpacity>
                             </View>
                           )}
@@ -1317,62 +1561,13 @@ export default function BuyingTour() {
                                     ...prev,
                                     [idx]: {
                                       ...prev[idx],
-                                      nationality: "Vietnam",
+                                      nationality: "Korea",
                                     },
                                   }));
                                   setShowNationalityPicker(null);
                                 }}
                               >
-                                <Text style={styles.dropdownText}>Vietnam</Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={styles.dropdownItem}
-                                onPress={() => {
-                                  setChildrenInfo((prev) => ({
-                                    ...prev,
-                                    [idx]: {
-                                      ...prev[idx],
-                                      nationality: "United Kingdom",
-                                    },
-                                  }));
-                                  setShowNationalityPicker(null);
-                                }}
-                              >
-                                <Text style={styles.dropdownText}>
-                                  United Kingdom
-                                </Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={styles.dropdownItem}
-                                onPress={() => {
-                                  setChildrenInfo((prev) => ({
-                                    ...prev,
-                                    [idx]: {
-                                      ...prev[idx],
-                                      nationality: "South Korea",
-                                    },
-                                  }));
-                                  setShowNationalityPicker(null);
-                                }}
-                              >
-                                <Text style={styles.dropdownText}>
-                                  South Korea
-                                </Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={styles.dropdownItem}
-                                onPress={() => {
-                                  setChildrenInfo((prev) => ({
-                                    ...prev,
-                                    [idx]: {
-                                      ...prev[idx],
-                                      nationality: "Other",
-                                    },
-                                  }));
-                                  setShowNationalityPicker(null);
-                                }}
-                              >
-                                <Text style={styles.dropdownText}>Other</Text>
+                                <Text style={styles.dropdownText}>Korea</Text>
                               </TouchableOpacity>
                             </View>
                           )}
@@ -1587,62 +1782,13 @@ export default function BuyingTour() {
                                     ...prev,
                                     [idx]: {
                                       ...prev[idx],
-                                      nationality: "Vietnam",
-                                    },
-                                  }));
-                                  setShowNationalityPicker(null);
-                                }}
-                              >
-                                <Text style={styles.dropdownText}>Vietnam</Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={styles.dropdownItem}
-                                onPress={() => {
-                                  setBabyInfo((prev) => ({
-                                    ...prev,
-                                    [idx]: {
-                                      ...prev[idx],
-                                      nationality: "United Kingdom",
-                                    },
-                                  }));
-                                  setShowNationalityPicker(null);
-                                }}
-                              >
-                                <Text style={styles.dropdownText}>
-                                  United Kingdom
-                                </Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={styles.dropdownItem}
-                                onPress={() => {
-                                  setBabyInfo((prev) => ({
-                                    ...prev,
-                                    [idx]: {
-                                      ...prev[idx],
                                       nationality: "Korea",
                                     },
                                   }));
                                   setShowNationalityPicker(null);
                                 }}
                               >
-                                <Text style={styles.dropdownText}>
-                                  South Korea
-                                </Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={styles.dropdownItem}
-                                onPress={() => {
-                                  setBabyInfo((prev) => ({
-                                    ...prev,
-                                    [idx]: {
-                                      ...prev[idx],
-                                      nationality: "Other",
-                                    },
-                                  }));
-                                  setShowNationalityPicker(null);
-                                }}
-                              >
-                                <Text style={styles.dropdownText}>Other</Text>
+                                <Text style={styles.dropdownText}>Korea</Text>
                               </TouchableOpacity>
                             </View>
                           )}
@@ -1704,17 +1850,206 @@ export default function BuyingTour() {
               </Text>
             </View>
 
-            <BookingButton onPress={handleBooking} disabled={booking} />
+            <BookingButton onPress={handleBooking} disabled={creatingBooking} />
 
             <View style={{ height: 100 }} />
           </View>
         </ScrollView>
-      </TouchableOpacity>
+      </View>
     </MainLayout>
   );
 }
 
 type DobFieldProps = { value?: string; onChange: (value: string) => void };
+
+type DateFieldProps = {
+  value?: string;
+  onChange: (value: string) => void;
+  minimumDate?: Date;
+  maximumDate?: Date;
+};
+
+const DateField: React.FC<DateFieldProps> = ({
+  value,
+  onChange,
+  minimumDate,
+  maximumDate,
+}) => {
+  const { t } = useTranslation();
+  const [showPicker, setShowPicker] = React.useState(false);
+  const [selectedDate, setSelectedDate] = React.useState<Date>(() => {
+    const minDate = minimumDate || new Date();
+    let initialDate = minDate;
+
+    if (value) {
+      try {
+        const m = String(value).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (m) {
+          const dd = Number(m[1]);
+          const mm = Number(m[2]);
+          const yyyy = Number(m[3]);
+          const d = new Date(yyyy, mm - 1, dd);
+          if (!isNaN(d.getTime())) initialDate = d;
+        } else {
+          const d2 = new Date(value);
+          if (!isNaN(d2.getTime())) initialDate = d2;
+        }
+      } catch {}
+    }
+
+    if (initialDate < minDate) {
+      initialDate = minDate;
+    }
+
+    if (maximumDate && initialDate > maximumDate) {
+      initialDate = maximumDate;
+    }
+
+    return initialDate;
+  });
+
+  const formatDate = (d: Date) => {
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
+  const handleDateChange = (event: any, selected?: Date) => {
+    try {
+      if (Platform.OS === "ios") {
+        if (event?.type === "dismissed") {
+          setShowPicker(false);
+          return;
+        }
+        if (selected) {
+          const minDate = minimumDate || new Date();
+          const maxDate = maximumDate;
+
+          const normalizeDate = (date: Date) => {
+            const normalized = new Date(date);
+            normalized.setHours(0, 0, 0, 0);
+            return normalized;
+          };
+
+          const selectedNormalized = normalizeDate(selected);
+          const minDateNormalized = normalizeDate(minDate);
+          const maxDateNormalized = maxDate ? normalizeDate(maxDate) : null;
+
+          if (selectedNormalized < minDateNormalized) {
+            return;
+          }
+
+          if (maxDateNormalized && selectedNormalized > maxDateNormalized) {
+            return;
+          }
+
+          setSelectedDate(selected);
+          onChange(formatDate(selected));
+          setTimeout(() => {
+            setShowPicker(false);
+          }, 300);
+        }
+        return;
+      }
+      if (selected) {
+        const minDate = minimumDate || new Date();
+        const maxDate = maximumDate;
+
+        const normalizeDate = (date: Date) => {
+          const normalized = new Date(date);
+          normalized.setHours(0, 0, 0, 0);
+          return normalized;
+        };
+
+        const selectedNormalized = normalizeDate(selected);
+        const minDateNormalized = normalizeDate(minDate);
+        const maxDateNormalized = maxDate ? normalizeDate(maxDate) : null;
+
+        if (selectedNormalized < minDateNormalized) {
+          return;
+        }
+
+        if (maxDateNormalized && selectedNormalized > maxDateNormalized) {
+          return;
+        }
+
+        setSelectedDate(selected);
+        onChange(formatDate(selected));
+      }
+      setShowPicker(false);
+    } catch {
+      setShowPicker(false);
+    }
+  };
+
+  const showDatePicker = () => {
+    setShowPicker(true);
+  };
+
+  return (
+    <>
+      <Pressable
+        style={[styles.input, styles.dobInput]}
+        onPress={showDatePicker}
+      >
+        <Text style={[styles.dobText, !value && { color: "#9ca3af" }]}>
+          {value || t("tour.booking.selectDate")}
+        </Text>
+      </Pressable>
+
+      {showPicker && Platform.OS !== "ios" && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+          minimumDate={minimumDate || new Date()}
+          maximumDate={maximumDate || undefined}
+        />
+      )}
+
+      {Platform.OS === "ios" && (
+        <Modal
+          transparent
+          animationType="fade"
+          visible={showPicker}
+          onRequestClose={() => setShowPicker(false)}
+        >
+          <Pressable
+            style={styles.iosDateOverlay}
+            onPress={() => setShowPicker(false)}
+          >
+            <Pressable
+              style={styles.iosDateCard}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <Text style={styles.iosDateTitle}>
+                {t("tour.booking.departureDate")}
+              </Text>
+              {value && (
+                <Text style={styles.iosDateSelected}>
+                  {formatDate(selectedDate)}
+                </Text>
+              )}
+              <View style={styles.iosDatePickerContainer}>
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display="compact"
+                  onChange={handleDateChange}
+                  minimumDate={minimumDate || new Date()}
+                  maximumDate={maximumDate || undefined}
+                  style={styles.iosDatePicker}
+                />
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      )}
+    </>
+  );
+};
 
 const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
   const { t } = useTranslation();
@@ -1744,18 +2079,29 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
   };
 
   const handleDateChange = (event: any, selected?: Date) => {
-    if (Platform.OS === "ios") {
+    try {
+      if (Platform.OS === "ios") {
+        if (event?.type === "dismissed") {
+          setShowPicker(false);
+          return;
+        }
+        if (selected) {
+          setSelectedDate(selected);
+          onChange(formatDate(selected));
+          setTimeout(() => {
+            setShowPicker(false);
+          }, 300);
+        }
+        return;
+      }
       if (selected) {
         setSelectedDate(selected);
         onChange(formatDate(selected));
       }
-      return;
+      setShowPicker(false);
+    } catch {
+      setShowPicker(false);
     }
-    if (selected) {
-      setSelectedDate(selected);
-      onChange(formatDate(selected));
-    }
-    setShowPicker(false);
   };
 
   const showDatePicker = () => {
@@ -1768,9 +2114,7 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
         style={[styles.input, styles.dobInput]}
         onPress={showDatePicker}
       >
-        <Text
-          style={[styles.dobText, !value && { color: "#9ca3af" }]}
-        >
+        <Text style={[styles.dobText, !value && { color: "#9ca3af" }]}>
           {value || t("tour.booking.dobShort")}
         </Text>
       </Pressable>
@@ -1792,34 +2136,34 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
           visible={showPicker}
           onRequestClose={() => setShowPicker(false)}
         >
-          <View style={styles.iosDateOverlay}>
-            <View style={styles.iosDateCard}>
+          <Pressable
+            style={styles.iosDateOverlay}
+            onPress={() => setShowPicker(false)}
+          >
+            <Pressable
+              style={styles.iosDateCard}
+              onPress={(e) => e.stopPropagation()}
+            >
               <Text style={styles.iosDateTitle}>
                 {t("tour.booking.dateOfBirth")}
               </Text>
-              <DateTimePicker
-                value={selectedDate}
-                mode="date"
-                display="spinner"
-                onChange={handleDateChange}
-                maximumDate={new Date()}
-                style={{ alignSelf: "stretch" }}
-              />
-              <View style={styles.iosDateActions}>
-                <TouchableOpacity onPress={() => setShowPicker(false)}>
-                  <Text>{t("common.cancel")}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => {
-                    onChange(formatDate(selectedDate));
-                    setShowPicker(false);
-                  }}
-                >
-                  <Text style={{ fontWeight: "700" }}>{t("common.ok")}</Text>
-                </TouchableOpacity>
+              {value && (
+                <Text style={styles.iosDateSelected}>
+                  {formatDate(selectedDate)}
+                </Text>
+              )}
+              <View style={styles.iosDatePickerContainer}>
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display="compact"
+                  onChange={handleDateChange}
+                  maximumDate={new Date()}
+                  style={styles.iosDatePicker}
+                />
               </View>
-            </View>
-          </View>
+            </Pressable>
+          </Pressable>
         </Modal>
       )}
     </>

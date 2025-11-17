@@ -1,0 +1,222 @@
+import { StyleSheet } from "react-native";
+import { colors } from "../../../constants/theme";
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f8f9fa",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#666",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#f8f9fa",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#000",
+    flex: 1,
+    textAlign: "center",
+  },
+  headerRight: {
+    width: 40,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: "#111",
+  },
+  filterContainer: {
+    marginVertical: 12,
+  },
+  filterScrollContent: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  filterButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  filterButtonActive: {
+    backgroundColor: "#007AFF",
+    borderColor: "#007AFF",
+  },
+  filterButtonText: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "500",
+  },
+  filterButtonTextActive: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  vouchersList: {
+    padding: 16,
+  },
+  voucherCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    marginBottom: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    position: "relative",
+    overflow: "hidden",
+  },
+  voucherCardHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 16,
+    gap: 12,
+  },
+  voucherIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#FFF5F5",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  voucherHeaderInfo: {
+    flex: 1,
+  },
+  voucherCode: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#FF6B6B",
+    marginBottom: 4,
+  },
+  voucherName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    lineHeight: 22,
+  },
+  voucherStatusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignSelf: "flex-start",
+  },
+  voucherStatusText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#fff",
+    textTransform: "uppercase",
+  },
+  voucherDetails: {
+    gap: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+  },
+  voucherDetailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  voucherDetailLabel: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "500",
+    flex: 1,
+  },
+  voucherDetailValue: {
+    fontSize: 14,
+    color: "#333",
+    fontWeight: "700",
+  },
+  voucherOutOfStock: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 16,
+  },
+  voucherOutOfStockText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#fff",
+    textTransform: "uppercase",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 60,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#333",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    lineHeight: 24,
+  },
+  bottomSpacing: {
+    height: 100,
+  },
+});
+
+export default styles;
+

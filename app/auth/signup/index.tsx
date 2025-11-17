@@ -7,10 +7,9 @@ import {
   TextInput,
   Image,
 } from "react-native";
-import { useNavigation } from "../../../src/navigation";
-import { useSignUp } from "../../../src/hooks/useAuth";
-// Hardcode English strings for this auth screen
-import i18n from "../../../src/i18n";
+import { useNavigation } from "../../../navigation/navigation";
+import { useSignUp } from "../../../hooks/useAuth";
+import i18n from "../../../localization/i18n";
 import styles from "./styles";
 
 export default function SignUp() {

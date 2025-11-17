@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { colors } from "../../src/constants/theme";
+import { colors } from "../../constants/theme";
 
 export default StyleSheet.create({
   container: {
@@ -7,7 +7,7 @@ export default StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   containerIos: {
-    paddingTop: 8,
+    paddingTop: 40,
   },
   header: {
     flexDirection: "row",

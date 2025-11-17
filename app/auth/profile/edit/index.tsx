@@ -2,323 +2,442 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   ScrollView,
   Image,
   TextInput,
   Alert,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "../../../../src/navigation";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "../../../../navigation/navigation";
 import { useAuthContext } from "../../../../src/contexts/authContext";
-import MainLayout from "../../../../src/components/MainLayout";
+import MainLayout from "../../../../components/MainLayout";
+import styles from "./styles";
 import { useTranslation } from "react-i18next";
+import { usersEndpoints } from "../../../../services/endpoints/users";
+import DateTimePicker, {
+  DateTimePickerAndroid,
+} from "@react-native-community/datetimepicker";
+import * as ImagePicker from "expo-image-picker";
 
 export default function EditProfile() {
   const { goBack } = useNavigation();
   const { user } = useAuthContext();
   const { t } = useTranslation();
-  const [selectedGender, setSelectedGender] = useState<"sir" | "mrs" | null>(
-    null
+  const insets = useSafeAreaInsets();
+  const buttonOffset = Math.max(56, insets.bottom + 60);
+  const [selectedGender, setSelectedGender] = useState<
+    "male" | "female" | "other" | null
+  >(null);
+  const [fullName, setFullName] = useState<string>(user?.username || "");
+  const [phone, setPhone] = useState<string>((user as any)?.phone || "");
+  const [birthDate, setBirthDate] = useState<string>(
+    ((user as any)?.birthDate as string) || ""
   );
-  const [firstName, setFirstName] = useState(
-    user?.username?.split(" ")[0] || ""
-  );
-  const [lastName, setLastName] = useState(
-    user?.username?.split(" ").slice(1).join(" ") || ""
-  );
+  const [address, setAddress] = useState<string>((user as any)?.address || "");
 
-  const handleSave = () => {
-    if (!firstName.trim()) {
-      Alert.alert(t("common.error"), t("profile.errors.firstNameRequired"));
+  // Final sanitizer used before save (not used in onChange anymore)
+  const sanitizeName = React.useCallback((text: string) => {
+    const s = (text || "").trim();
+    if (!s) return "";
+    return s
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(
+        (w) =>
+          w.charAt(0).toLocaleUpperCase("vi") +
+          w.slice(1).toLocaleLowerCase("vi")
+      )
+      .join(" ");
+  }, []);
+
+  const formatLiveName = React.useCallback((text: string) => {
+    const hasTrailingSpace = /\s$/.test(text || "");
+    let s = (text || "")
+      .normalize("NFC")
+      .replace(/[^\p{L} ]/gu, " ")
+      .replace(/\s+/g, " ")
+      .replace(/^\s+/, "");
+    const trimmedEnd = s.replace(/\s+$/g, "");
+    const base = trimmedEnd
+      .split(" ")
+      .filter(Boolean)
+      .map(
+        (w) =>
+          w.charAt(0).toLocaleUpperCase("vi") +
+          w.slice(1).toLocaleLowerCase("vi")
+      )
+      .join(" ");
+    return hasTrailingSpace ? `${base} ` : base;
+  }, []);
+
+  const [saving, setSaving] = useState(false);
+  const [showDobPicker, setShowDobPicker] = useState(false);
+  const [avatarPreviewUri, setAvatarPreviewUri] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<{
+    uri: string;
+    name?: string;
+    type?: string;
+  } | null>(null);
+
+  const isNameValid = React.useCallback((name: string) => {
+    const nameRegex = new RegExp(
+      /^(?:[\p{Lu}][\p{L}]*)(?: [\p{Lu}][\p{L}]*)*$/u
+    );
+    return nameRegex.test(name.trim());
+  }, []);
+
+  const sanitizePhone = React.useCallback((text: string) => {
+    const digits = (text || "").replace(/\D+/g, "");
+    return digits;
+  }, []);
+
+  const isPhoneValid = React.useCallback((text: string) => {
+    const digits = (text || "").replace(/\D+/g, "");
+    return /^\d{10}$/.test(digits);
+  }, []);
+
+  const isBirthDateValid = React.useCallback((s: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+    const [y, m, d] = s.split("-").map((x) => Number(x));
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    return (
+      dt.getUTCFullYear() === y &&
+      dt.getUTCMonth() + 1 === m &&
+      dt.getUTCDate() === d
+    );
+  }, []);
+
+  const handleSave = async () => {
+    const finalName = sanitizeName(fullName);
+
+    if (!finalName.trim() || !isNameValid(finalName)) {
+      Alert.alert(t("common.error"), t("profile.errors.fullNameInvalid"));
       return;
     }
-    if (!lastName.trim()) {
-      Alert.alert(t("common.error"), t("profile.errors.lastNameRequired"));
+    if (!isPhoneValid(phone)) {
+      Alert.alert(t("common.error"), t("profile.errors.phoneInvalid"));
+      return;
+    }
+    if (!birthDate || !isBirthDateValid(birthDate)) {
+      Alert.alert(t("common.error"), t("profile.errors.birthDateInvalid"));
       return;
     }
     if (!selectedGender) {
       Alert.alert(t("common.error"), t("profile.errors.genderRequired"));
       return;
     }
+    if (!address.trim()) {
+      Alert.alert(t("common.error"), t("profile.errors.addressRequired"));
+      return;
+    }
 
-    // TODO: Implement save profile logic
-    Alert.alert(t("common.success"), t("profile.updateSuccess"));
-    goBack();
+    try {
+      setSaving(true);
+      const email =
+        (user as any)?.email || (user as any)?.userEmail || (user as any)?.mail;
+      const username = finalName;
+      await usersEndpoints.updateUser({
+        email,
+        username,
+        phone: sanitizePhone(phone),
+        birthDate,
+        address: address.trim(),
+        gender:
+          selectedGender === "male"
+            ? "M"
+            : selectedGender === "female"
+            ? "F"
+            : "O",
+        ...(avatarFile ? { avatarImg: avatarFile } : {}),
+      } as any);
+      Alert.alert(t("common.success"), t("profile.updateSuccess"));
+      goBack();
+    } catch (e: any) {
+      const msg =
+        e?.response?.data?.message || e?.message || t("profile.updateError");
+      Alert.alert(t("common.error"), String(msg));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <MainLayout>
       <View style={styles.container}>
-        {/* Header with Back Button */}
         <View style={styles.header}>
           <TouchableOpacity onPress={goBack} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color="#000" />
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backText}>{t("common.goBack")}</Text>
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Page Title */}
-          <Text style={styles.pageTitle}>Account Info</Text>
+          <Text style={styles.pageTitle}>{t("profileEdit.title")}</Text>
 
-          {/* Profile Photo Section */}
           <View style={styles.section}>
             <View style={styles.photoCard}>
               <View style={styles.photoContainer}>
-                {user?.avatar ? (
+                {avatarPreviewUri ? (
+                  <Image
+                    source={{ uri: avatarPreviewUri }}
+                    style={styles.avatar}
+                  />
+                ) : user?.avatar ? (
                   <Image source={{ uri: user.avatar }} style={styles.avatar} />
                 ) : (
                   <View style={styles.avatar}>
                     <Ionicons name="person" size={40} color="#ccc" />
                   </View>
                 )}
-                <TouchableOpacity style={styles.addPhotoButton}>
+                <TouchableOpacity
+                  style={styles.addPhotoButton}
+                  onPress={async () => {
+                    try {
+                      const perm =
+                        await ImagePicker.requestMediaLibraryPermissionsAsync();
+                      if (perm.status !== "granted") {
+                        Alert.alert(t("common.error"), "Permission denied");
+                        return;
+                      }
+                      const result = await ImagePicker.launchImageLibraryAsync({
+                        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                        quality: 0.9,
+                        allowsMultipleSelection: false,
+                      });
+                      if (result.canceled) return;
+                      const asset = result.assets && result.assets[0];
+                      if (!asset?.uri) return;
+                      const uri = asset.uri;
+                      setAvatarPreviewUri(uri);
+                      const guessName = uri.split("/").pop() || "avatar.jpg";
+                      const ext = (
+                        guessName.split(".").pop() || "jpg"
+                      ).toLowerCase();
+                      const type =
+                        ext === "png"
+                          ? "image/png"
+                          : ext === "jpg" || ext === "jpeg"
+                          ? "image/jpeg"
+                          : "application/octet-stream";
+                      setAvatarFile({ uri, name: guessName, type });
+                    } catch {}
+                  }}
+                >
                   <Ionicons name="add" size={16} color="#fff" />
                 </TouchableOpacity>
               </View>
               <View style={styles.photoInfo}>
-                <Text style={styles.photoTitle}>Your Photo</Text>
+                <Text style={styles.photoTitle}>
+                  {t("profileEdit.photo.title")}
+                </Text>
                 <Text style={styles.photoDescription}>
-                  Adding a profile picture makes your profile more personalized.
+                  {t("profileEdit.photo.description")}
                 </Text>
               </View>
             </View>
           </View>
 
-          {/* Gender Selection */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Gender</Text>
-            <View style={styles.genderContainer}>
-              <TouchableOpacity
-                style={styles.genderOption}
-                onPress={() => setSelectedGender("sir")}
-              >
-                <View style={styles.radioButton}>
-                  {selectedGender === "sir" && (
-                    <View style={styles.radioSelected} />
+            <View style={styles.photoCard}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sectionTitle}>{t("profileEdit.info")}</Text>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>
+                    {t("profileEdit.fullName")}
+                  </Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder={t("profileEdit.fullNamePlaceholder")}
+                    placeholderTextColor="#999"
+                    value={fullName}
+                    onChangeText={(text) => setFullName(formatLiveName(text))}
+                    autoCapitalize="none"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>
+                    {t("profileEdit.gender")}
+                  </Text>
+                  <View style={styles.genderContainer}>
+                    <TouchableOpacity
+                      style={styles.genderOption}
+                      onPress={() => setSelectedGender("male")}
+                    >
+                      <View style={styles.radioButton}>
+                        {selectedGender === "male" && (
+                          <View style={styles.radioSelected} />
+                        )}
+                      </View>
+                      <Text style={styles.genderText}>
+                        {t("profileEdit.genderMale") || "Male"}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.genderOption}
+                      onPress={() => setSelectedGender("female")}
+                    >
+                      <View style={styles.radioButton}>
+                        {selectedGender === "female" && (
+                          <View style={styles.radioSelected} />
+                        )}
+                      </View>
+                      <Text style={styles.genderText}>
+                        {t("profileEdit.genderFemale") || "Female"}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.genderOption}
+                      onPress={() => setSelectedGender("other")}
+                    >
+                      <View style={styles.radioButton}>
+                        {selectedGender === "other" && (
+                          <View style={styles.radioSelected} />
+                        )}
+                      </View>
+                      <Text style={styles.genderText}>
+                        {t("profileEdit.genderOther") || "Other"}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>
+                    {t("profileEdit.phone")}
+                  </Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder={t("profileEdit.phonePlaceholder")}
+                    placeholderTextColor="#999"
+                    value={phone}
+                    keyboardType="phone-pad"
+                    onChangeText={(text) => setPhone(sanitizePhone(text))}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>
+                    {t("profileEdit.birthDate")}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (Platform.OS === "android") {
+                        DateTimePickerAndroid.open({
+                          value:
+                            birthDate && /^\d{4}-\d{2}-\d{2}$/.test(birthDate)
+                              ? new Date(birthDate)
+                              : new Date(),
+                          mode: "date",
+                          onChange: (_e, d) => {
+                            if (d) {
+                              const y = d.getFullYear();
+                              const m = `${d.getMonth() + 1}`.padStart(2, "0");
+                              const da = `${d.getDate()}`.padStart(2, "0");
+                              setBirthDate(`${y}-${m}-${da}`);
+                            }
+                          },
+                        });
+                      } else {
+                        setShowDobPicker(true);
+                      }
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View pointerEvents="none">
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder={
+                          t("profileEdit.birthDatePlaceholder") || "YYYY-MM-DD"
+                        }
+                        placeholderTextColor="#999"
+                        value={birthDate}
+                        editable={false}
+                      />
+                    </View>
+                  </TouchableOpacity>
+                  {Platform.OS === "ios" && showDobPicker && (
+                    <DateTimePicker
+                      value={
+                        birthDate && /^\d{4}-\d{2}-\d{2}$/.test(birthDate)
+                          ? new Date(birthDate)
+                          : new Date()
+                      }
+                      mode="date"
+                      display="spinner"
+                      onChange={(_e: any, d?: Date) => {
+                        if (d) {
+                          const y = d.getFullYear();
+                          const m = `${d.getMonth() + 1}`.padStart(2, "0");
+                          const da = `${d.getDate()}`.padStart(2, "0");
+                          setBirthDate(`${y}-${m}-${da}`);
+                        }
+                        setShowDobPicker(false);
+                      }}
+                    />
                   )}
                 </View>
-                <Text style={styles.genderText}>Sir</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.genderOption}
-                onPress={() => setSelectedGender("mrs")}
-              >
-                <View style={styles.radioButton}>
-                  {selectedGender === "mrs" && (
-                    <View style={styles.radioSelected} />
-                  )}
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>
+                    {t("profileEdit.address")}
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.textInput,
+                      { height: 80, paddingVertical: 12 },
+                    ]}
+                    placeholder={t("profileEdit.addressPlaceholder")}
+                    placeholderTextColor="#999"
+                    value={address}
+                    onChangeText={setAddress}
+                    multiline
+                  />
                 </View>
-                <Text style={styles.genderText}>Mrs.</Text>
-              </TouchableOpacity>
+              </View>
             </View>
           </View>
 
-          {/* Name Input Fields */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Name</Text>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>First Name</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Your first name"
-                placeholderTextColor="#999"
-                value={firstName}
-                onChangeText={setFirstName}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Last Name</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Your last name"
-                placeholderTextColor="#999"
-                value={lastName}
-                onChangeText={setLastName}
-              />
-            </View>
-          </View>
-
-          {/* Extra spacing at bottom */}
-          <View style={styles.bottomSpacing} />
+          <View style={{ height: Math.max(160, insets.bottom + 120) }} />
         </ScrollView>
 
-        {/* Save Button */}
-        <View style={styles.saveButtonContainer}>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>Save</Text>
+        <View
+          style={[
+            styles.saveButtonContainer,
+            {
+              position: "absolute",
+              left: 20,
+              right: 20,
+              bottom: buttonOffset,
+              paddingBottom: 0,
+              backgroundColor: "transparent",
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSave}
+            disabled={
+              saving ||
+              !fullName.trim() ||
+              !isNameValid(fullName) ||
+              !isPhoneValid(phone) ||
+              !birthDate ||
+              !isBirthDateValid(birthDate) ||
+              !address.trim() ||
+              !selectedGender
+            }
+          >
+            <Text style={styles.saveButtonText}>
+              {saving ? t("auth.common.sending") : t("common.save")}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
     </MainLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f9fa",
-  },
-  header: {
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    backgroundColor: "#E3F2FD",
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  backText: {
-    fontSize: 16,
-    color: "#000",
-    marginLeft: 4,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  pageTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#000",
-    marginTop: 20,
-    marginBottom: 30,
-  },
-  section: {
-    marginBottom: 30,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 15,
-  },
-  photoCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-  },
-  photoContainer: {
-    position: "relative",
-    marginRight: 16,
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#f0f0f0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  addPhotoButton: {
-    position: "absolute",
-    bottom: -2,
-    right: -2,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#000",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#fff",
-  },
-  photoInfo: {
-    flex: 1,
-  },
-  photoTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 4,
-  },
-  photoDescription: {
-    fontSize: 14,
-    color: "#666",
-    lineHeight: 20,
-  },
-  genderContainer: {
-    flexDirection: "row",
-    gap: 20,
-  },
-  genderOption: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  radioButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#ccc",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 8,
-  },
-  radioSelected: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#000",
-  },
-  genderText: {
-    fontSize: 16,
-    color: "#000",
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 8,
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 25,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    fontSize: 16,
-    backgroundColor: "#fff",
-    height: 56,
-  },
-  bottomSpacing: {
-    height: 100,
-  },
-  saveButtonContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-    paddingTop: 20,
-    backgroundColor: "#f8f9fa",
-  },
-  saveButton: {
-    backgroundColor: "#000000",
-    borderRadius: 25,
-    paddingVertical: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
-    minHeight: 56,
-    width: "100%",
-  },
-  saveButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-});

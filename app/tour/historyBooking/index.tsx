@@ -11,13 +11,13 @@ import {
 } from "react-native";
 import styles from "./styles";
 import { Ionicons } from "@expo/vector-icons";
-import MainLayout from "../../../src/components/MainLayout";
+import MainLayout from "../../../components/MainLayout";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAuthContext } from "../../../src/contexts/authContext";
-import { tourEndpoints } from "../../../src/endpoints/tour";
-import { transactionEndpoints } from "../../../src/endpoints/transactions";
-import { BookingSummaryResponse, TourResponse } from "../../../src/types/tour";
+import { tourEndpoints } from "../../../services/endpoints/tour";
+import { BookingSummaryResponse } from "../../../src/types/response/booking.response";
+import { TourResponse } from "../../../src/types/response/tour.response";
 
 export default function HistoryBooking() {
   const router = useRouter();
@@ -50,34 +50,88 @@ export default function HistoryBooking() {
       setLoading(true);
       if (!user?.email) {
         setItems([]);
+        setTourImageById({});
         return;
       }
-      const [summaries, txs] = await Promise.all([
-        tourEndpoints.getBookingSummaryByEmail(user.email).then((r) => r.data),
-        transactionEndpoints.getByUserEmail(user.email).then((r) => r.data),
-      ]);
 
-      const successTxs = (txs || []).filter(
-        (t: any) => String(t.status).toUpperCase() === "SUCCESS"
-      );
-      const successOrderInfos = new Set(
-        successTxs
-          .map((t: any) => (t.orderInfo || "").toLowerCase())
-          .filter((s: string) => !!s)
-      );
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(user.email)) {
+        setItems([]);
+        setTourImageById({});
+        return;
+      }
 
-      const successItems = (summaries || []).filter((s: any) => {
-        const name = (s.tourName || "").toLowerCase();
-        if (!name) return false;
-        for (const info of successOrderInfos) {
-          if ((info as string).includes(name)) return true;
+      let bookings: any[] = [];
+
+      try {
+        const bookingsResponse = await tourEndpoints.getBookingsByEmail(
+          user.email
+        );
+        bookings = Array.isArray(bookingsResponse.data)
+          ? bookingsResponse.data
+          : [];
+      } catch (error: any) {
+        const statusCode = error?.response?.status;
+        if (statusCode !== 400 && statusCode !== 404) {
+          console.error("Error fetching bookings:", error);
         }
-        return false;
+        bookings = [];
+      }
+
+      const allBookings = bookings.map((booking: any) => {
+        const tourName =
+          booking.tourName ||
+          booking.tour?.tourName ||
+          booking.tourName ||
+          "";
+
+        const formatDate = (dateStr: any) => {
+          if (!dateStr) return "";
+          try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return "";
+            const dd = String(date.getDate()).padStart(2, "0");
+            const mm = String(date.getMonth() + 1).padStart(2, "0");
+            const yyyy = date.getFullYear();
+            return `${dd}/${mm}/${yyyy}`;
+          } catch {
+            return "";
+          }
+        };
+
+        const adultCount = booking.adultsCount || booking.adultCount || 0;
+        const childrenCount =
+          booking.childrenCount || booking.childCount || 0;
+        const babyCount = booking.babiesCount || booking.babyCount || 0;
+        const totalGuests = adultCount + childrenCount + babyCount;
+
+        return {
+          bookingId: booking.bookingId || booking.id,
+          tourId: booking.tourId || booking.tour?.id,
+          tourName: tourName,
+          departureDate: formatDate(
+            booking.departureDate || booking.departure_date
+          ),
+          totalGuests: totalGuests,
+          status: booking.status || booking.bookingStatus,
+          createdAt: booking.createdAt || booking.created_at || new Date().toISOString(),
+        };
       });
-      setItems(successItems);
+
+      const validBookings = allBookings.filter(
+        (b: any) => b.bookingId && b.tourId
+      );
+
+      const sortedBookings = validBookings.sort((a: any, b: any) => {
+        const aTime = new Date(a.createdAt || 0).getTime();
+        const bTime = new Date(b.createdAt || 0).getTime();
+        return bTime - aTime;
+      });
+
+      setItems(sortedBookings);
 
       const ids: number[] = Array.from(
-        new Set(successItems.map((x: any) => Number(x.tourId)).filter(Boolean))
+        new Set(sortedBookings.map((x: any) => Number(x.tourId)).filter(Boolean))
       );
       if (ids.length > 0) {
         const pairs = await Promise.all(
@@ -96,8 +150,13 @@ export default function HistoryBooking() {
       } else {
         setTourImageById({});
       }
-    } catch {
-      Alert.alert(t("common.error"), t("payment.result.fetchError"));
+    } catch (error: any) {
+      const statusCode = error?.response?.status;
+      if (statusCode !== 400 && statusCode !== 404) {
+        Alert.alert(t("common.error"), t("tour.errors.bookingHistoryLoadFailed"));
+      }
+      setItems([]);
+      setTourImageById({});
     } finally {
       setLoading(false);
     }
@@ -115,7 +174,7 @@ export default function HistoryBooking() {
 
   const handleOpenBooking = (bookingId: number) => {
     router.push({
-      pathname: "/tour/booking/detailHistory",
+      pathname: "/tour/historyBooking/detailHistory",
       params: { bookingId },
     } as any);
   };

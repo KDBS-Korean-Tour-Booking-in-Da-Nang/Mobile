@@ -1,9 +1,9 @@
 import React from "react";
 import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "../../../src/navigation";
+import { useNavigation } from "../../../navigation/navigation";
 import { useAuthContext } from "../../../src/contexts/authContext";
-import MainLayout from "../../../src/components/MainLayout";
+import MainLayout from "../../../components/MainLayout";
 import styles from "./styles";
 import { useTranslation } from "react-i18next";
 
@@ -47,7 +47,7 @@ export default function Settings() {
       title: t("settings.options.notifications"),
       icon: "notifications-outline",
       onPress: () => {
-        // TODO: Navigate to notification settings
+        navigate("/home/settings/notifications");
       },
     },
     {
