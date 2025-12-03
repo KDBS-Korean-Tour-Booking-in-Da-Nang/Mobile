@@ -79,6 +79,7 @@ export default function NotificationToast({
       case "BOOKING_CONFIRMED":
         return "checkmark-circle";
       case "BOOKING_UPDATE_REQUEST":
+      case "BOOKING_UPDATED_BY_USER":
         return "refresh";
       case "TOUR_APPROVED":
         return "star";
@@ -103,6 +104,7 @@ export default function NotificationToast({
       case "BOOKING_CONFIRMED":
         return "#007AFF";
       case "BOOKING_UPDATE_REQUEST":
+      case "BOOKING_UPDATED_BY_USER":
         return "#FF9500";
       case "TOUR_APPROVED":
         return "#5856D6";

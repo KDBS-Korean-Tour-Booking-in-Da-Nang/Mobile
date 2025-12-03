@@ -201,7 +201,10 @@
     "seeLess": "Thu gọn",
     "save": "Lưu",
     "unsave": "Bỏ lưu",
-    "report": "Báo cáo"
+    "report": "Báo cáo",
+    "translate": "Dịch",
+    "hideTranslation": "Ẩn bản dịch",
+    "translateFailed": "Không thể dịch nội dung, vui lòng thử lại."
   },
   "nav": {
     "home": "Trang chủ",
@@ -308,8 +311,12 @@
       "title": "Danh sách tour",
       "searchPlaceholder": "Tìm kiếm tour...",
       "viewPurchased": "Đã mua",
+      "historyBooking": "Lịch sử đặt tour",
       "empty": "Không tìm thấy tour",
       "emptySubtitle": "Hãy thử điều chỉnh từ khóa hoặc bộ lọc."
+    },
+    "historyBooking": {
+      "loading": "Đang tải lịch sử đặt tour..."
     },
     "detail": {
       "name": "Tên tour",
@@ -414,9 +421,40 @@
       "selectDate": "Chọn ngày",
       "updateInfo": "Cập nhật thông tin",
       "waitingForUpdate": "Chờ cập nhật thông tin",
+      "waitingForCompletionConfirm": "Chờ xác nhận hoàn thành",
+      "waitingForApproved": "Chờ phê duyệt",
+      "bookingUnderComplaint": "Đang xử lý khiếu nại",
+      "bookingRejected": "Đã từ chối",
+      "bookingFailed": "Thất bại",
       "confirmUpdate": "Bạn chắc chắn cập nhật đúng thông tin chứ?",
       "updateSuccess": "Cập nhật thông tin thành công!",
-      "updateFailed": "Không thể cập nhật thông tin. Vui lòng thử lại."
+      "updateFailed": "Không thể cập nhật thông tin. Vui lòng thử lại.",
+      "confirmCompletionTitle": "Xác nhận hoàn thành tour",
+      "confirmCompletionMessage": "Bạn xác nhận tour này đã hoàn thành tốt đẹp?",
+      "confirmCompletion": "Xác nhận tour đã hoàn thành",
+      "confirmCompletionProcessing": "Đang xác nhận...",
+      "confirmCompletionSuccess": "Cảm ơn bạn đã xác nhận!",
+      "confirmCompletionFailed": "Không thể xác nhận, vui lòng thử lại.",
+      "complaint": "Khiếu nại",
+      "complaintTitle": "Khiếu nại",
+      "complaintMessage": "Nội dung khiếu nại",
+      "complaintPlaceholder": "Vui lòng mô tả chi tiết vấn đề bạn gặp phải...",
+      "complaintMessageRequired": "Vui lòng nhập nội dung khiếu nại.",
+      "complaintConfirmTitle": "Xác nhận khiếu nại",
+      "complaintConfirmMessage": "Bạn có chắc chắn muốn gửi khiếu nại này không? Sau khi gửi, trạng thái đặt tour sẽ chuyển thành 'Đang xử lý khiếu nại'.",
+      "complaintSubmitted": "Khiếu nại của bạn đã được gửi thành công. Chúng tôi sẽ xem xét và phản hồi sớm nhất.",
+      "complaintFailed": "Không thể gửi khiếu nại. Vui lòng thử lại."
+    },
+    "status": {
+      "PENDING_PAYMENT": "Chờ thanh toán",
+      "WAITING_FOR_APPROVED": "Chờ phê duyệt",
+      "WAITING_FOR_UPDATE": "Chờ cập nhật thông tin",
+      "BOOKING_SUCCESS_WAIT_FOR_CONFIRMED": "Chờ xác nhận hoàn thành",
+      "BOOKING_SUCCESS": "Đã hoàn thành",
+      "SUCCESS": "Thành công",
+      "BOOKING_UNDER_COMPLAINT": "Đang xử lý khiếu nại",
+      "BOOKING_REJECTED": "Đã từ chối",
+      "BOOKING_FAILED": "Thất bại"
     },
     "errors": {
       "notFound": "Không tìm thấy tour",
@@ -601,7 +639,10 @@
     "readOriginal": "Đọc bài gốc",
     "justNow": "Vừa xong",
     "hoursAgo": "{{hours}} giờ trước",
-    "daysAgo": "{{days}} ngày trước"
+    "daysAgo": "{{days}} ngày trước",
+    "translate": "Dịch",
+    "hideTranslation": "Ẩn bản dịch",
+    "translateFailed": "Không thể dịch nội dung bài viết, vui lòng thử lại."
   },
   "settings": {
     "title": "Cài đặt",

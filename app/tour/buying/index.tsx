@@ -25,6 +25,10 @@ import { tourEndpoints } from "../../../services/endpoints/tour";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { TourResponse } from "../../../src/types/response/tour.response";
 import styles from "./styles";
+import {
+  getTourThumbnailUrl,
+  mapContentImages,
+} from "../../../src/utils/media";
 
 export default function BuyingTour() {
   const { goBack, navigate } = useNavigation();
@@ -679,22 +683,15 @@ export default function BuyingTour() {
     }
   };
 
+  // Hero carousel: chỉ dùng ảnh bìa (thumbnails)
   const imageList = React.useMemo(() => {
-    const contentImages = (tour?.contents || [])
-      .flatMap((c: any) => (Array.isArray(c.images) ? c.images : []))
-      .map((u: any) => (typeof u === "string" ? u.trim() : ""))
-      .filter((u: any) => u && /^https?:\/\//i.test(u));
-    const cover =
-      tour?.tourImgPath && /^https?:\/\//i.test((tour.tourImgPath || "").trim())
-        ? [tour!.tourImgPath.trim()]
-        : [];
-    const all = [...cover, ...contentImages];
-    return all.length > 0
-      ? all
+    const cover = getTourThumbnailUrl(tour?.tourImgPath);
+    return cover
+      ? [cover]
       : [
           "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
         ];
-  }, [tour]);
+  }, [tour?.tourImgPath]);
 
   if (loading) {
     return (

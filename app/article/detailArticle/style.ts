@@ -150,6 +150,22 @@ export default StyleSheet.create({
   articleBody: {
     marginBottom: 20,
   },
+  translateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#007AFF",
+    marginLeft: 8,
+  },
+  translateButtonText: {
+    marginLeft: 4,
+    fontSize: 12,
+    color: "#007AFF",
+    fontWeight: "500",
+  },
   contentImage: {
     width: "100%",
     height: 200,

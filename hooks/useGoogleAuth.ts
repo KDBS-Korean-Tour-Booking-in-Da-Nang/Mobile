@@ -13,38 +13,92 @@ export const useGoogleAuth = () => {
   const handleCallback = useCallback(
     async (url: string) => {
       try {
-        const urlObj = new URL(url);
+        console.log("[Google Auth] Handling callback URL:", url);
+
+        // Handle both deep links (mobilefe://) and HTTP URLs
+        let urlObj: URL;
+        try {
+          urlObj = new URL(url);
+        } catch {
+          // If URL is relative or malformed, try to construct full URL
+          const baseUrl = api.defaults.baseURL || "http://localhost:8080";
+          urlObj = new URL(url, baseUrl);
+        }
+
         const params = urlObj.searchParams;
         const errorParam = params.get("error");
-        if (errorParam) throw new Error(decodeURIComponent(errorParam));
 
+        if (errorParam) {
+          console.error("[Google Auth] Error in callback:", errorParam);
+          throw new Error(decodeURIComponent(errorParam));
+        }
+
+        // Check if this is a direct callback with token (from backend redirect)
         const token = params.get("token");
         const userId = params.get("userId");
         const email = params.get("email");
         const username = params.get("username");
         const role = params.get("role");
         const avatar = params.get("avatar");
+        const balance = params.get("balance");
 
-        if (!token || !userId || !email)
-          throw new Error("Invalid callback data");
+        console.log("[Google Auth] Callback params:", {
+          hasToken: !!token,
+          hasUserId: !!userId,
+          hasEmail: !!email,
+          hasUsername: !!username,
+          hasRole: !!role,
+          hasAvatar: !!avatar,
+          hasBalance: !!balance,
+        });
 
-        const user = {
-          userId: parseInt(userId),
-          username:
-            username || (email.includes("@") ? email.split("@")[0] : "user"),
-          email: decodeURIComponent(email),
-          role: decodeURIComponent(role || "USER"),
-          status: "ACTIVE",
-          avatar: avatar ? decodeURIComponent(avatar) : undefined,
-        };
+        // If we have token, userId, email - this is a direct callback from backend
+        if (token && userId && email) {
+          console.log("[Google Auth] Direct callback with auth data");
 
-        await AsyncStorage.setItem("authToken", token);
-        await AsyncStorage.setItem("userData", JSON.stringify(user));
+          const user = {
+            userId: parseInt(userId),
+            username:
+              username || (email.includes("@") ? email.split("@")[0] : "user"),
+            email: decodeURIComponent(email),
+            role: decodeURIComponent(role || "USER"),
+            status: "ACTIVE",
+            avatar: avatar ? decodeURIComponent(avatar) : undefined,
+            balance: balance ? parseFloat(balance) : 0,
+          };
 
-        setLoading(false);
-        setError(null);
-        router.replace("/(tabs)");
+          console.log("[Google Auth] User data prepared:", {
+            userId: user.userId,
+            email: user.email,
+            username: user.username,
+            role: user.role,
+          });
+
+          await AsyncStorage.setItem("authToken", token);
+          await AsyncStorage.setItem("userData", JSON.stringify(user));
+
+          console.log("[Google Auth] Auth data saved to AsyncStorage");
+          console.log("[Google Auth] Redirecting to tabs...");
+
+          setLoading(false);
+          setError(null);
+          router.replace("/(tabs)");
+          return;
+        }
+
+        // Otherwise, this might be an OAuth callback with code that needs to be processed
+        // But for now, we expect backend to handle it and redirect with token
+        console.error(
+          "[Google Auth] Missing required callback data (token, userId, email)"
+        );
+        throw new Error(
+          "Invalid callback data - missing authentication tokens"
+        );
       } catch (err: any) {
+        console.error("[Google Auth] Callback error:", {
+          message: err.message,
+          stack: err.stack,
+        });
         setLoading(false);
         setError(err.message || "Google login failed");
       }
@@ -54,26 +108,87 @@ export const useGoogleAuth = () => {
 
   useEffect(() => {
     const subscription = addEventListener("url", ({ url }) => {
+      console.log("[Google Auth] URL received:", url);
+
+      // Handle URL from backend redirect (server URL with token params)
+      // Format: http://server.com/google/callback?token=...&userId=...
+      // Similar to how Toss payment handles transaction-result URL
       if (url.includes("google/callback")) {
+        console.log("[Google Auth] Processing callback URL...");
+
+        try {
+          const urlObj = new URL(url);
+          const params = urlObj.searchParams;
+
+          // Extract all params similar to Toss payment
+          const token = params.get("token");
+          const userId = params.get("userId");
+          const email = params.get("email");
+          const username = params.get("username");
+          const role = params.get("role");
+          const avatar = params.get("avatar");
+          const balance = params.get("balance");
+          const error = params.get("error");
+
+          // Navigate to google/callback screen with params (similar to transactionResult)
+          router.replace({
+            pathname: "/google/callback" as any,
+            params: {
+              token: token || "",
+              userId: userId || "",
+              email: email || "",
+              username: username || "",
+              role: role || "",
+              avatar: avatar || "",
+              balance: balance || "",
+              error: error || "",
+            },
+          });
+
+          return;
+        } catch (err) {
+          console.error("[Google Auth] Error parsing URL:", err);
+          // Fallback: try to handle directly
+          handleCallback(url);
+        }
+      }
+
+      // Handle OAuth callback with code parameter (if Google redirects directly)
+      if (url.includes("code=") && url.includes("scope=")) {
+        console.log("[Google Auth] Processing OAuth callback with code...");
         handleCallback(url);
       }
     });
     return () => {
       subscription.remove();
     };
-  }, [handleCallback]);
+  }, [handleCallback, router]);
 
   const loginWithGoogle = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
+      console.log("[Google Auth] Starting Google login flow");
+      console.log("[Google Auth] API Base URL:", api.defaults.baseURL);
+
       // Try getting auth URL from backend (proxied via api baseURL)
+      console.log("[Google Auth] Fetching auth URL from backend...");
       const res = await api.get<{ code?: number; result?: string }>(
         "/api/auth/google/login"
       );
+      console.log("[Google Auth] Backend response:", {
+        code: res.data?.code,
+        hasResult: !!res.data?.result,
+      });
+
       const rawAuthUrl = res.data?.result;
-      if (!rawAuthUrl) throw new Error("Cannot get Google authorization URL");
+      if (!rawAuthUrl) {
+        console.error("[Google Auth] No auth URL received from backend");
+        throw new Error("Cannot get Google authorization URL");
+      }
+
+      console.log("[Google Auth] Raw auth URL:", rawAuthUrl);
 
       const updated = new URL(rawAuthUrl);
       const params = updated.searchParams;
@@ -83,32 +198,125 @@ export const useGoogleAuth = () => {
           /\/$/,
           ""
         )}/api/auth/google/callback`;
+
+      console.log("[Google Auth] Redirect API:", redirectApi);
+
       params.set("redirect_uri", redirectApi);
       params.set("prompt", "select_account");
       updated.search = params.toString();
       const authUrl = updated.toString();
 
+      console.log("[Google Auth] Final auth URL:", authUrl);
+
+      // Use deep link scheme for app redirect (required by WebBrowser.openAuthSessionAsync)
+      // The backend will redirect to HTTP URL, but we need deep link for WebBrowser to work
       const appRedirect =
         (process.env as any)?.EXPO_PUBLIC_GOOGLE_REDIRECT_APP ||
-        `${(api.defaults.baseURL || "").replace(/\/$/, "")}/google/callback`;
+        "mobilefe://google/callback";
+
+      console.log("[Google Auth] App redirect URI (deep link):", appRedirect);
+      console.log("[Google Auth] Opening WebBrowser...");
+
       const result = await WebBrowser.openAuthSessionAsync(
         authUrl,
         appRedirect
       );
 
+      console.log("[Google Auth] WebBrowser result:", {
+        type: result.type,
+        hasUrl: !!(result.type === "success" && result.url),
+      });
+
+      // Complete the auth session to allow redirect handling
+      WebBrowser.maybeCompleteAuthSession();
+
       if (result.type === "success" && result.url) {
+        console.log("[Google Auth] Success! URL received:", result.url);
+
+        // Handle URL directly from result (similar to Toss payment onShouldStartLoadWithRequest)
+        // URL can be either deep link (mobilefe://google/callback) or HTTP URL (http://localhost:3000/google/callback)
+        if (
+          result.url.includes("google/callback") ||
+          result.url.includes("mobilefe://")
+        ) {
+          console.log("[Google Auth] Processing callback URL from result...");
+
+          try {
+            // Handle both deep link and HTTP URL
+            let urlObj: URL;
+            try {
+              urlObj = new URL(result.url);
+            } catch {
+              // If URL is malformed, try to construct from deep link
+              if (result.url.startsWith("mobilefe://")) {
+                urlObj = new URL(result.url.replace("mobilefe://", "http://"));
+              } else {
+                throw new Error("Invalid URL format");
+              }
+            }
+
+            const params = urlObj.searchParams;
+
+            // Extract all params similar to Toss payment
+            const token = params.get("token");
+            const userId = params.get("userId");
+            const email = params.get("email");
+            const username = params.get("username");
+            const role = params.get("role");
+            const avatar = params.get("avatar");
+            const balance = params.get("balance");
+            const error = params.get("error");
+
+            // Navigate to google/callback screen with params (similar to transactionResult)
+            router.replace({
+              pathname: "/google/callback" as any,
+              params: {
+                token: token || "",
+                userId: userId || "",
+                email: email || "",
+                username: username || "",
+                role: role || "",
+                avatar: avatar || "",
+                balance: balance || "",
+                error: error || "",
+              },
+            });
+
+            setLoading(false);
+            return;
+          } catch (err) {
+            console.error("[Google Auth] Error parsing URL from result:", err);
+            // Fallback: try to handle directly
+            await handleCallback(result.url);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // If URL doesn't contain google/callback, try to handle it anyway
+        console.log(
+          "[Google Auth] URL doesn't contain google/callback, trying handleCallback..."
+        );
         await handleCallback(result.url);
+        setLoading(false);
       } else if (result.type === "cancel") {
+        console.log("[Google Auth] User cancelled");
         setLoading(false);
       } else {
+        console.warn("[Google Auth] Unexpected result type:", result.type);
         setLoading(false);
         setError("Google login was not completed");
       }
     } catch (err: any) {
+      console.error("[Google Auth] Error:", {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+      });
       setLoading(false);
       setError(err.message || "Failed to start Google OAuth");
     }
-  }, [handleCallback]);
+  }, []);
 
   return {
     loginWithGoogle,

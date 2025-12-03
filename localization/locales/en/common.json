@@ -193,7 +193,10 @@
     "seeLess": "See Less",
     "save": "Save",
     "unsave": "Unsave",
-    "report": "Report"
+    "report": "Report",
+    "translate": "Translate",
+    "hideTranslation": "Hide translation",
+    "translateFailed": "Unable to translate this content. Please try again."
   },
   "nav": {
     "home": "Home",
@@ -300,8 +303,12 @@
       "title": "Tour List",
       "searchPlaceholder": "Search tours...",
       "viewPurchased": "Purchased",
+      "historyBooking": "History Booking",
       "empty": "No tours found",
       "emptySubtitle": "Try adjusting your search or filters."
+    },
+    "historyBooking": {
+      "loading": "Loading booking history..."
     },
     "detail": {
       "name": "Tour Name",
@@ -406,9 +413,40 @@
       "success": "Tour booked successfully!",
       "updateInfo": "Update Information",
       "waitingForUpdate": "Waiting for Update",
+      "waitingForCompletionConfirm": "Waiting for completion confirmation",
+      "waitingForApproved": "Waiting for approval",
+      "bookingUnderComplaint": "Under complaint",
+      "bookingRejected": "Rejected",
+      "bookingFailed": "Failed",
       "confirmUpdate": "Are you sure you want to update the information correctly?",
       "updateSuccess": "Information updated successfully!",
-      "updateFailed": "Failed to update information. Please try again."
+      "updateFailed": "Failed to update information. Please try again.",
+      "confirmCompletionTitle": "Confirm tour completion",
+      "confirmCompletionMessage": "Do you confirm that this tour has been successfully completed?",
+      "confirmCompletion": "Confirm tour completed",
+      "confirmCompletionProcessing": "Confirming...",
+      "confirmCompletionSuccess": "Thank you for confirming!",
+      "confirmCompletionFailed": "Unable to confirm, please try again.",
+      "complaint": "Complaint",
+      "complaintTitle": "Complaint",
+      "complaintMessage": "Complaint Message",
+      "complaintPlaceholder": "Please describe in detail the issue you encountered...",
+      "complaintMessageRequired": "Please enter the complaint message.",
+      "complaintConfirmTitle": "Confirm Complaint",
+      "complaintConfirmMessage": "Are you sure you want to submit this complaint? After submitting, the booking status will change to 'Under Complaint'.",
+      "complaintSubmitted": "Your complaint has been submitted successfully. We will review and respond as soon as possible.",
+      "complaintFailed": "Unable to submit complaint. Please try again."
+    },
+    "status": {
+      "PENDING_PAYMENT": "Pending payment",
+      "WAITING_FOR_APPROVED": "Waiting for approval",
+      "WAITING_FOR_UPDATE": "Waiting for update",
+      "BOOKING_SUCCESS_WAIT_FOR_CONFIRMED": "Awaiting completion confirmation",
+      "BOOKING_SUCCESS": "Completed",
+      "SUCCESS": "Completed",
+      "BOOKING_UNDER_COMPLAINT": "Under complaint",
+      "BOOKING_REJECTED": "Rejected",
+      "BOOKING_FAILED": "Failed"
     },
     "errors": {
       "notFound": "No tours found",
@@ -592,7 +630,10 @@
     "readOriginal": "Read Original",
     "justNow": "Just now",
     "hoursAgo": "{{hours}} hours ago",
-    "daysAgo": "{{days}} days ago"
+    "daysAgo": "{{days}} days ago",
+    "translate": "Translate",
+    "hideTranslation": "Hide translation",
+    "translateFailed": "Unable to translate this article. Please try again."
   },
   "settings": {
     "title": "Settings",

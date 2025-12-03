@@ -29,6 +29,10 @@ import styles from "./styles";
 import forumEndpoints from "../../../services/endpoints/forum";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  getContentImageUrl,
+  getTourThumbnailUrl,
+} from "../../../src/utils/media";
 
 export default function TourList() {
   const { navigate, goBack } = useNavigation();
@@ -60,7 +64,7 @@ export default function TourList() {
   const loadTours = useCallback(async () => {
     try {
       setLoading(true);
-      const toursData = (await tourEndpoints.getAll()).data;
+      const toursData = (await tourEndpoints.getAllPublic()).data;
       setTours(Array.isArray(toursData) ? toursData : []);
     } catch {
       Alert.alert(t("common.error"), t("tour.errors.loadFailed"));
@@ -248,15 +252,10 @@ export default function TourList() {
   };
 
   const resolveTourCardImage = (t: any): string => {
-    const isHttp = (u?: string) =>
-      !!u && /^https?:\/\//i.test((u || "").trim());
-    if (isHttp(t?.tourImgPath)) return (t.tourImgPath as string).trim();
-    const first = ((t?.contents || []) as any[])
-      .flatMap((c) => (Array.isArray(c?.images) ? c.images : []))
-      .map((u) => (typeof u === "string" ? u.trim() : ""))
-      .find((u) => u && isHttp(u));
+    // Card cover: chỉ dùng tour_img_path (thumbnails)
+    const cover = getTourThumbnailUrl(t?.tourImgPath);
     return (
-      first ||
+      cover ||
       "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=250&fit=crop"
     );
   };
@@ -335,7 +334,7 @@ export default function TourList() {
           >
             <Ionicons name="receipt-outline" size={18} color="#007AFF" />
             <Text style={styles.purchasedButtonText}>
-              {t("tour.list.viewPurchased")}
+              {t("tour.list.historyBooking")}
             </Text>
           </TouchableOpacity>
         </View>

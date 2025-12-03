@@ -150,6 +150,9 @@ const styles = StyleSheet.create({
     height: 44,
     marginHorizontal: spacing.md,
   },
+  socialButtonDisabled: {
+    opacity: 0.5,
+  },
   socialIcon: {
     width: 24,
     height: 24,

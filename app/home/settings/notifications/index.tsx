@@ -8,6 +8,7 @@ import {
   Alert,
   Image,
   Modal,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../../../navigation/navigation";
@@ -16,14 +17,12 @@ import styles from "./styles";
 import {
   getNotifications,
   markNotificationAsRead,
-  markAllNotificationsAsRead,
   deleteNotification,
   NotificationResponse,
 } from "../../../../services/endpoints/notifications";
 import { useTranslation } from "react-i18next";
 import api from "../../../../services/api";
 import { useNotificationContext } from "../../../../src/contexts/notificationContext";
-import { useWebSocketNotifications } from "../../../../hooks/useWebSocketNotifications";
 
 type TabType = "all" | "unread";
 
@@ -31,12 +30,9 @@ export default function Notifications() {
   const { goBack, goToForum, navigate } = useNavigation();
   const { t } = useTranslation();
   const {
-    connected,
     unreadCount: contextUnreadCount,
     notifications: contextNotifications,
-    refreshNotifications,
-    markAsRead: contextMarkAsRead,
-    markAllAsRead: contextMarkAllAsRead,
+    refreshNotifications: refreshContextNotifications,
   } = useNotificationContext();
   const [activeTab, setActiveTab] = useState<TabType>("all");
   const [notifications, setNotifications] = useState<NotificationResponse[]>(
@@ -45,6 +41,7 @@ export default function Notifications() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [selectedNotificationId, setSelectedNotificationId] = useState<
@@ -121,6 +118,24 @@ export default function Notifications() {
     [activeTab, t]
   );
 
+  // Refresh context notifications when entering the page
+  useEffect(() => {
+    refreshContextNotifications();
+  }, [refreshContextNotifications]);
+
+  // Handle pull to refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refreshContextNotifications(),
+        loadNotifications(0, true),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshContextNotifications, loadNotifications]);
+
   useEffect(() => {
     loadNotifications(0, true);
   }, [activeTab, loadNotifications]);
@@ -151,28 +166,27 @@ export default function Notifications() {
     [t]
   );
 
-  // Handle new notification from websocket
-  const handleNewNotification = useCallback(
-    (notification: NotificationResponse) => {
-      // Check if notification already exists (avoid duplicates)
+  // Refresh notifications when context updates
+  useEffect(() => {
+    if (contextNotifications.length > 0) {
+      // Sync with context notifications
       setNotifications((prev) => {
-        const exists = prev.some(
-          (n) => n.notificationId === notification.notificationId
+        const merged = [...prev];
+        contextNotifications.forEach((contextNotif) => {
+          const existingIndex = merged.findIndex(
+            (n) => n.notificationId === contextNotif.notificationId
         );
-        if (exists) {
-          return prev;
-        }
-        // Add new notification to the top of the list
-        return [notification, ...prev];
+          if (existingIndex >= 0) {
+            merged[existingIndex] = contextNotif;
+          } else {
+            merged.unshift(contextNotif);
+          }
+        });
+        return merged;
       });
-      // Update unread count
-      setUnreadCount((prev) => prev + 1);
-    },
-    []
-  );
-
-  // Setup websocket connection
-  useWebSocketNotifications(handleNewNotification);
+    }
+    setUnreadCount(contextUnreadCount);
+  }, [contextNotifications, contextUnreadCount]);
 
   // Handle navigation when clicking on notification
   const handleNotificationClick = useCallback(
@@ -202,7 +216,18 @@ export default function Notifications() {
           navigate(`/tour/tourDetail?tourId=${targetId}`);
           break;
         default:
+          // Handle booking-related notification types
           if (
+            notification.notificationType === "NEW_BOOKING" ||
+            notification.notificationType === "BOOKING_CONFIRMED" ||
+            notification.notificationType === "BOOKING_UPDATE_REQUEST" ||
+            notification.notificationType === "BOOKING_UPDATED_BY_USER" ||
+            notification.notificationType === "BOOKING_REJECTED"
+          ) {
+            navigate(
+              `/tour/historyBooking/detailHistory?bookingId=${targetId}`
+            );
+          } else if (
             notification.notificationType === "LIKE_POST" ||
             notification.notificationType === "LIKE_COMMENT" ||
             notification.notificationType === "COMMENT_POST" ||
@@ -258,7 +283,11 @@ export default function Notifications() {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await markAllNotificationsAsRead();
+      // Mark all unread notifications as read
+      const unreadNotifications = notifications.filter((n) => !n.isRead);
+      await Promise.all(
+        unreadNotifications.map((n) => markNotificationAsRead(n.notificationId))
+      );
       setNotifications((prev) =>
         prev.map((notif) => ({ ...notif, isRead: true }))
       );
@@ -292,6 +321,7 @@ export default function Notifications() {
       case "BOOKING_CONFIRMED":
         return "checkmark-circle";
       case "BOOKING_UPDATE_REQUEST":
+      case "BOOKING_UPDATED_BY_USER":
         return "refresh";
       case "TOUR_APPROVED":
         return "star";
@@ -316,6 +346,7 @@ export default function Notifications() {
       case "BOOKING_CONFIRMED":
         return "#007AFF";
       case "BOOKING_UPDATE_REQUEST":
+      case "BOOKING_UPDATED_BY_USER":
         return "#FF9500";
       case "TOUR_APPROVED":
         return "#5856D6";
@@ -456,6 +487,9 @@ export default function Notifications() {
         ) : (
           <ScrollView
             style={styles.content}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
             onScroll={({ nativeEvent }) => {
               const { layoutMeasurement, contentOffset, contentSize } =
                 nativeEvent;

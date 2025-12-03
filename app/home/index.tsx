@@ -29,6 +29,7 @@ import {
 import ChatBubble from "../../components/ChatBubble";
 import { useFocusEffect } from "@react-navigation/native";
 import styles from "./styles";
+import { getContentImageUrl, getTourThumbnailUrl } from "../../src/utils/media";
 
 const LanguageDropdown = ({
   currentLanguage,
@@ -193,7 +194,7 @@ export default function Home() {
     const loadTours = async () => {
       try {
         setToursLoading(true);
-        const toursRes = await tourEndpoints.getAll();
+        const toursRes = await tourEndpoints.getAllPublic();
         const tours = toursRes.data;
 
         if (
@@ -235,34 +236,19 @@ export default function Home() {
     const urls: Record<number, string> = {};
 
     featuredTours.forEach((tour) => {
-      const isHttp = (u?: string) =>
-        !!u && /^https?:\/\//i.test((u || "").trim());
-
-      if (isHttp(tour?.tourImgPath)) {
-        urls[tour.id] = (tour.tourImgPath as string).trim();
-        return;
-      }
-
-      const firstContent = tour?.contents?.[0];
-      if (
-        firstContent?.images &&
-        Array.isArray(firstContent.images) &&
-        firstContent.images.length > 0
-      ) {
-        const firstImage = firstContent.images[0];
-        if (typeof firstImage === "string" && isHttp(firstImage)) {
-          urls[tour.id] = firstImage.trim();
-          return;
-        }
-      }
-      urls[tour.id] = "";
+      // Card cover: chỉ dùng ảnh bìa (thumbnails)
+      const cover = getTourThumbnailUrl(tour?.tourImgPath);
+      urls[tour.id] = cover || "";
     });
 
     return urls;
   }, [featuredTours]);
 
   const resolveTourCardImage = (t: any): string => {
-    return tourImageUrls[t.id];
+    return (
+      tourImageUrls[t.id] ||
+      "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop"
+    );
   };
 
   const renderTourCards = () => {

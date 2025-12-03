@@ -16,6 +16,7 @@ export interface NotificationResponse {
     | "NEW_BOOKING"
     | "BOOKING_CONFIRMED"
     | "BOOKING_UPDATE_REQUEST"
+    | "BOOKING_UPDATED_BY_USER"
     | "TOUR_APPROVED"
     | "NEW_RATING"
     | "BOOKING_REJECTED";
@@ -51,28 +52,28 @@ export interface GetNotificationsParams {
 export async function getNotifications(
   params?: GetNotificationsParams
 ): Promise<NotificationSummaryResponse> {
-  const response = await api.get<{ result: NotificationSummaryResponse }>(
+  const response = await api.get<NotificationSummaryResponse>(
     "/api/notifications",
     {
       params: {
-        isRead: params?.isRead,
         page: params?.page ?? 0,
         size: params?.size ?? 20,
         sort: params?.sort ?? "createdAt,desc",
       },
     }
   );
-  return response.data.result;
+  return response.data;
 }
 
 export async function markNotificationAsRead(
   notificationId: number
 ): Promise<void> {
-  await api.put(`/api/notifications/${notificationId}/read`);
+  await api.patch(`/api/notifications/${notificationId}/read`);
 }
 
-export async function markAllNotificationsAsRead(): Promise<void> {
-  await api.put("/api/notifications/read-all");
+export async function getUnreadCount(): Promise<number> {
+  const response = await api.get<number>("/api/notifications/unread-count");
+  return response.data;
 }
 
 export async function deleteNotification(

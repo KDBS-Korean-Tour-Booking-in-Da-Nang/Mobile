@@ -21,6 +21,7 @@ import { useAuthContext } from "../src/contexts/authContext";
 import CommentSection from "./CommentSection";
 import { useTranslation } from "react-i18next";
 import { useNavigation } from "../navigation/navigation";
+import geminiEndpoints from "../services/endpoints/gemini";
 
 interface PostCardProps {
   post: PostResponse;
@@ -56,6 +57,11 @@ const PostCard: React.FC<PostCardProps> = ({
   const [hasReported, setHasReported] = useState(false);
   const [showFullContent, setShowFullContent] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translatedContent, setTranslatedContent] = useState<string | null>(
+    null
+  );
+  const [isShowingTranslated, setIsShowingTranslated] = useState(false);
 
   useEffect(() => {
     if (
@@ -338,6 +344,28 @@ const PostCard: React.FC<PostCardProps> = ({
       .trim();
   };
 
+  const handleTranslate = async () => {
+    try {
+      const baseContent = stripTourLinks(post.content || "");
+      if (!baseContent) {
+        return;
+      }
+      setIsTranslating(true);
+      const response = await geminiEndpoints.translate({ text: baseContent });
+      const text =
+        typeof response.data === "string" ? response.data.trim() : "";
+      if (!text) {
+        return;
+      }
+      setTranslatedContent(text);
+      setIsShowingTranslated(true);
+    } catch {
+      Alert.alert(t("common.error"), t("forum.translateFailed"));
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   const renderImages = (urls: string[]) => {
     const total = urls.length;
     const containerWidth = width - 64;
@@ -488,6 +516,14 @@ const PostCard: React.FC<PostCardProps> = ({
     return words.slice(0, maxWords).join(" ") + "...";
   };
 
+  const toggleShowTranslated = () => {
+    if (translatedContent) {
+      setIsShowingTranslated((prev) => !prev);
+    } else {
+      handleTranslate();
+    }
+  };
+
   return (
     <TouchableWithoutFeedback onPress={() => setShowMenu(false)}>
       <View style={styles.container}>
@@ -508,6 +544,26 @@ const PostCard: React.FC<PostCardProps> = ({
                 <Text style={styles.timestamp}>
                   • {formatDate(post.createdAt)}
                 </Text>
+                {post.content && post.content.trim().length > 0 && (
+                  <TouchableOpacity
+                    style={styles.translateChip}
+                    onPress={toggleShowTranslated}
+                    disabled={isTranslating}
+                  >
+                    <Ionicons
+                      name="language-outline"
+                      size={14}
+                      color="#007AFF"
+                    />
+                    <Text style={styles.translateChipText}>
+                      {isTranslating
+                        ? t("common.loading")
+                        : isShowingTranslated
+                        ? t("forum.hideTranslation")
+                        : t("forum.translate")}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
               <Text style={styles.title}>{post.title}</Text>
             </View>
@@ -524,13 +580,22 @@ const PostCard: React.FC<PostCardProps> = ({
 
         <View style={styles.content}>
           {(() => {
-            const contentToShow = stripTourLinks(post.content || "");
+            const rawContent = stripTourLinks(post.content || "");
             return (
+              <>
               <Text style={styles.body}>
                 {showFullContent
-                  ? contentToShow
-                  : getTruncatedContent(contentToShow)}
+                    ? rawContent
+                    : getTruncatedContent(rawContent)}
               </Text>
+                {isShowingTranslated && translatedContent && (
+                  <Text style={styles.translatedBody}>
+                    {showFullContent
+                      ? translatedContent
+                      : getTruncatedContent(translatedContent)}
+                  </Text>
+                )}
+              </>
             );
           })()}
           {stripTourLinks(post.content || "").length > 100 &&
@@ -1051,6 +1116,29 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
     marginLeft: 4,
+  },
+  translatedBody: {
+    fontSize: 14,
+    color: "#444",
+    lineHeight: 20,
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  translateChip: {
+    marginLeft: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#007AFF",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  translateChipText: {
+    marginLeft: 4,
+    fontSize: 11,
+    color: "#007AFF",
+    fontWeight: "500",
   },
 });
 

@@ -6,7 +6,7 @@ import {
 } from "../../src/types/request/booking.request";
 
 export const tourEndpoints = {
-  getAll: () => api.get("/api/tour"),
+  getAllPublic: () => api.get("/api/tour/public"),
   getById: (id: number) => api.get(`/api/tour/${id}`),
   create: (formData: FormData) =>
     api.post("/api/tour/create", formData, {
@@ -40,6 +40,10 @@ export const tourEndpoints = {
     api.get(`/api/booking/summary/email/${encodeURIComponent(email)}`),
   calculateBookingTotal: (bookingId: number) =>
     api.get(`/api/booking/id/${bookingId}/total`),
+  confirmBookingCompletion: (bookingId: number) =>
+    api.put(`/api/booking/${bookingId}/user-confirm-completion`),
+  createComplaint: (bookingId: number, message: string) =>
+    api.post(`/api/booking/${bookingId}/complaint`, { message }),
   createBookingPayment: (payload: BookingPaymentRequest) =>
     api.post("/api/booking/payment", payload),
   sendBookingEmail: (bookingId: number) =>

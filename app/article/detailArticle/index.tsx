@@ -11,10 +11,37 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
 import { useNavigation } from "../../../navigation/navigation";
 import { useTranslation } from "react-i18next";
+import i18n from "../../../localization/i18n";
 import ScrollableLayout from "../../../components/ScrollableLayout";
 import { getArticleById, Article } from "../../../services/endpoints/articles";
 import styles, { contentHtmlCss } from "./style";
 import { WebView } from "react-native-webview";
+
+// Helper function to get article fields based on current language
+const getArticleFields = (article: Article, lang: string) => {
+  const currentLang = lang as "vi" | "en" | "ko";
+
+  if (currentLang === "en") {
+    return {
+      title: article.articleTitleEN || article.articleTitle,
+      description: article.articleDescriptionEN || article.articleDescription,
+      content: article.articleContentEN || article.articleContent,
+    };
+  } else if (currentLang === "ko") {
+    return {
+      title: article.articleTitleKR || article.articleTitle,
+      description: article.articleDescriptionKR || article.articleDescription,
+      content: article.articleContentKR || article.articleContent,
+    };
+  } else {
+    // Vietnamese (default)
+    return {
+      title: article.articleTitle,
+      description: article.articleDescription,
+      content: article.articleContent,
+    };
+  }
+};
 
 export default function ArticleDetail() {
   const { navigate } = useNavigation();
@@ -24,6 +51,7 @@ export default function ArticleDetail() {
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [contentHeight, setContentHeight] = useState(0);
+  const [currentLang, setCurrentLang] = useState(i18n.language);
 
   useEffect(() => {
     setArticle(null);
@@ -76,9 +104,28 @@ export default function ArticleDetail() {
     }
   }, [id, loadArticle]);
 
+  // Track language changes
+  useEffect(() => {
+    const handleLanguageChange = (lng: string) => {
+      setCurrentLang(lng);
+    };
+    i18n.on("languageChanged", handleLanguageChange);
+    return () => {
+      i18n.off("languageChanged", handleLanguageChange);
+    };
+  }, []);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("vi-VN", {
+    // Map language to locale
+    const localeMap: Record<string, string> = {
+      vi: "vi-VN",
+      en: "en-US",
+      ko: "ko-KR",
+    };
+    const locale = localeMap[currentLang] || "vi-VN";
+
+    return date.toLocaleDateString(locale, {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -86,8 +133,6 @@ export default function ArticleDetail() {
       minute: "2-digit",
     });
   };
-
-  // Source link button removed in current layout
 
   if (loading) {
     return (
@@ -143,7 +188,7 @@ export default function ArticleDetail() {
                   style={[styles.articleTitle, { flex: 1 }]}
                   numberOfLines={2}
                 >
-                  {article.articleTitle}
+                  {getArticleFields(article, currentLang).title}
                 </Text>
               </View>
 
@@ -156,7 +201,11 @@ export default function ArticleDetail() {
               <View style={styles.articleBody}>
                 <WebView
                   originWhitelist={["*"]}
-                  source={{ html: buildHtmlContent(article.articleContent) }}
+                  source={{
+                    html: buildHtmlContent(
+                      getArticleFields(article, currentLang).content
+                    ),
+                  }}
                   onMessage={(e) => {
                     const nextHeight = Number(e.nativeEvent.data) || 0;
                     if (!Number.isNaN(nextHeight)) {

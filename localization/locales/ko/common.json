@@ -194,7 +194,10 @@
     "seeLess": "접기",
     "save": "저장",
     "unsave": "저장 취소",
-    "report": "신고"
+    "report": "신고",
+    "translate": "번역",
+    "hideTranslation": "번역 숨기기",
+    "translateFailed": "이 내용을 번역할 수 없습니다. 다시 시도해주세요."
   },
   "nav": {
     "home": "홈",
@@ -300,9 +303,13 @@
     "list": {
       "title": "투어 목록",
       "viewPurchased": "구매함",
+      "historyBooking": "예약 내역",
       "searchPlaceholder": "투어 검색...",
       "empty": "투어를 찾을 수 없습니다",
       "emptySubtitle": "검색어 또는 필터를 조정해 보세요."
+    },
+    "historyBooking": {
+      "loading": "예약 내역을 불러오는 중..."
     },
     "detail": {
       "description": "설명",
@@ -395,9 +402,40 @@
       "bookingDeadlineNote": "{{days}}일 전 예약 필요",
       "updateInfo": "정보 업데이트",
       "waitingForUpdate": "정보 업데이트 대기 중",
+      "waitingForCompletionConfirm": "완료 확인 대기 중",
+      "waitingForApproved": "승인 대기 중",
+      "bookingUnderComplaint": "불만 처리 중",
+      "bookingRejected": "거부됨",
+      "bookingFailed": "실패",
       "confirmUpdate": "정보를 올바르게 업데이트하시겠습니까?",
       "updateSuccess": "정보가 성공적으로 업데이트되었습니다!",
-      "updateFailed": "정보를 업데이트할 수 없습니다. 다시 시도해주세요."
+      "updateFailed": "정보를 업데이트할 수 없습니다. 다시 시도해주세요.",
+      "confirmCompletionTitle": "투어 완료 확인",
+      "confirmCompletionMessage": "이 투어가 성공적으로 완료되었습니까?",
+      "confirmCompletion": "투어 완료 확인",
+      "confirmCompletionProcessing": "확인 중...",
+      "confirmCompletionSuccess": "확인해 주셔서 감사합니다!",
+      "confirmCompletionFailed": "확인할 수 없습니다. 다시 시도해주세요.",
+      "complaint": "불만",
+      "complaintTitle": "불만",
+      "complaintMessage": "불만 내용",
+      "complaintPlaceholder": "발생한 문제를 자세히 설명해 주세요...",
+      "complaintMessageRequired": "불만 내용을 입력해 주세요.",
+      "complaintConfirmTitle": "불만 확인",
+      "complaintConfirmMessage": "이 불만을 제출하시겠습니까? 제출 후 예약 상태가 '불만 처리 중'으로 변경됩니다.",
+      "complaintSubmitted": "불만이 성공적으로 제출되었습니다. 검토 후 최대한 빨리 답변드리겠습니다.",
+      "complaintFailed": "불만을 제출할 수 없습니다. 다시 시도해 주세요."
+    },
+    "status": {
+      "PENDING_PAYMENT": "결제 대기",
+      "WAITING_FOR_APPROVED": "승인 대기 중",
+      "WAITING_FOR_UPDATE": "정보 업데이트 대기 중",
+      "BOOKING_SUCCESS_WAIT_FOR_CONFIRMED": "완료 확인 대기 중",
+      "BOOKING_SUCCESS": "완료됨",
+      "SUCCESS": "성공",
+      "BOOKING_UNDER_COMPLAINT": "불만 처리 중",
+      "BOOKING_REJECTED": "거부됨",
+      "BOOKING_FAILED": "실패"
     },
     "errors": {
       "notFound": "투어를 찾을 수 없습니다",
@@ -581,7 +619,10 @@
     "readOriginal": "원문 읽기",
     "justNow": "방금 전",
     "hoursAgo": "{{hours}}시간 전",
-    "daysAgo": "{{days}}일 전"
+    "daysAgo": "{{days}}일 전",
+    "translate": "번역",
+    "hideTranslation": "번역 숨기기",
+    "translateFailed": "이 기사를 번역할 수 없습니다. 다시 시도해주세요."
   },
   "settings": {
     "title": "설정",
