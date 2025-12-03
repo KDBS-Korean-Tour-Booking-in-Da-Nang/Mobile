@@ -38,6 +38,7 @@ function RootLayoutNav() {
       <Stack.Screen name="article" />
       <Stack.Screen name="payment" />
       <Stack.Screen name="transactionResult" />
+      <Stack.Screen name="google" />
       <Stack.Screen name="(tabs)" />
     </Stack>
   );

@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../navigation/navigation";
 import { useTranslation } from "react-i18next";
+import i18n from "../../localization/i18n";
 import { colors } from "../../constants/theme";
 import ScrollableLayout from "../../components/ScrollableLayout";
 import {
@@ -20,12 +21,39 @@ import {
 } from "../../services/endpoints/articles";
 import styles from "./styles";
 
+// Helper function to get article fields based on current language
+const getArticleFields = (article: Article, lang: string) => {
+  const currentLang = lang as "vi" | "en" | "ko";
+
+  if (currentLang === "en") {
+    return {
+      title: article.articleTitleEN || article.articleTitle,
+      description: article.articleDescriptionEN || article.articleDescription,
+      content: article.articleContentEN || article.articleContent,
+    };
+  } else if (currentLang === "ko") {
+    return {
+      title: article.articleTitleKR || article.articleTitle,
+      description: article.articleDescriptionKR || article.articleDescription,
+      content: article.articleContentKR || article.articleContent,
+    };
+  } else {
+    // Vietnamese (default)
+    return {
+      title: article.articleTitle,
+      description: article.articleDescription,
+      content: article.articleContent,
+    };
+  }
+};
+
 export default function ArticleList() {
   const { navigate } = useNavigation();
   const { t } = useTranslation();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentLang, setCurrentLang] = useState(i18n.language);
 
   const loadArticles = useCallback(async () => {
     try {
@@ -48,6 +76,17 @@ export default function ArticleList() {
   useEffect(() => {
     loadArticles();
   }, [loadArticles]);
+
+  // Track language changes
+  useEffect(() => {
+    const handleLanguageChange = (lng: string) => {
+      setCurrentLang(lng);
+    };
+    i18n.on("languageChanged", handleLanguageChange);
+    return () => {
+      i18n.off("languageChanged", handleLanguageChange);
+    };
+  }, []);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -83,7 +122,10 @@ export default function ArticleList() {
       <View style={styles.articleImageContainer}>
         <Image
           source={{
-            uri: extractFirstImageSrc(article.articleContent) || "",
+            uri:
+              extractFirstImageSrc(
+                getArticleFields(article, currentLang).content
+              ) || "",
             cache: "force-cache",
           }}
           style={styles.articleImage}
@@ -93,10 +135,10 @@ export default function ArticleList() {
       </View>
       <View style={styles.articleContent}>
         <Text style={styles.articleTitle} numberOfLines={2}>
-          {article.articleTitle}
+          {getArticleFields(article, currentLang).title}
         </Text>
         <Text style={styles.articleSummary} numberOfLines={3}>
-          {article.articleDescription}
+          {getArticleFields(article, currentLang).description}
         </Text>
         <View style={styles.articleMeta}>
           <Text style={styles.articleDate}>

@@ -40,6 +40,12 @@ export default function BookingDetail() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [updateData, setUpdateData] = useState<any>(null);
+  const [confirmingCompletion, setConfirmingCompletion] = useState(false);
+  const [showComplaintModal, setShowComplaintModal] = useState(false);
+  const [showComplaintConfirmModal, setShowComplaintConfirmModal] =
+    useState(false);
+  const [complaintMessage, setComplaintMessage] = useState("");
+  const [submittingComplaint, setSubmittingComplaint] = useState(false);
 
   const loadBooking = useCallback(async () => {
     try {
@@ -117,27 +123,30 @@ export default function BookingDetail() {
     bookingStatus === BookingStatus.WAITING_FOR_UPDATE ||
     bookingStatus === "WAITING_FOR_UPDATE";
 
-  const getStatusText = () => {
-    if (isPendingPayment) {
-      return t("payment.result.pendingPayment");
+  const isAwaitingCompletion =
+    bookingStatus === BookingStatus.BOOKING_SUCCESS_WAIT_FOR_CONFIRMED ||
+    bookingStatus === "BOOKING_SUCCESS_WAIT_FOR_CONFIRMED";
+
+  const translateBookingStatus = (status?: string) => {
+    const normalized = String(status || "").toUpperCase();
+    if (!normalized) {
+      return t("common.na");
     }
-    if (isWaitingForUpdate) {
-      return t("tour.booking.waitingForUpdate") || "Chờ cập nhật thông tin";
-    }
-    if (
-      bookingStatus === BookingStatus.BOOKING_SUCCESS ||
-      bookingStatus === "BOOKING_SUCCESS"
-    ) {
-      return t("payment.result.success");
-    }
-    return bookingStatus || t("common.na");
+    const key = `tour.booking.status.${normalized}`;
+    const translated = t(key);
+    return translated === key ? normalized : translated;
   };
+
+  const getStatusText = () => translateBookingStatus(bookingStatus);
 
   const getStatusColor = () => {
     if (isPendingPayment) {
       return "#FF9500";
     }
     if (isWaitingForUpdate) {
+      return "#FF9500";
+    }
+    if (isAwaitingCompletion) {
       return "#FF9500";
     }
     if (
@@ -263,6 +272,112 @@ export default function BookingDetail() {
     }
   };
 
+  const handleConfirmCompletion = () => {
+    if (!booking?.bookingId || confirmingCompletion) {
+      return;
+    }
+    Alert.alert(
+      t("tour.booking.confirmCompletionTitle") || "Xác nhận hoàn thành tour",
+      t("tour.booking.confirmCompletionMessage") ||
+        "Bạn đã hoàn thành tour này? Sau khi xác nhận sẽ không thể hoàn tác.",
+      [
+        {
+          text: t("common.cancel") || "Hủy",
+          style: "cancel",
+        },
+        {
+          text: t("common.confirm") || "Xác nhận",
+          onPress: async () => {
+            try {
+              setConfirmingCompletion(true);
+              await tourEndpoints.confirmBookingCompletion(booking.bookingId);
+              setBooking((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      bookingStatus: BookingStatus.BOOKING_SUCCESS,
+                    }
+                  : prev
+              );
+              await loadBooking();
+              Alert.alert(
+                t("common.success") || "Thành công",
+                t("tour.booking.confirmCompletionSuccess") ||
+                  "Cảm ơn bạn đã xác nhận!"
+              );
+            } catch (error: any) {
+              Alert.alert(
+                t("common.error") || "Lỗi",
+                error?.response?.data?.message ||
+                  t("tour.booking.confirmCompletionFailed") ||
+                  "Không thể xác nhận, vui lòng thử lại."
+              );
+            } finally {
+              setConfirmingCompletion(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleOpenComplaint = () => {
+    setComplaintMessage("");
+    setShowComplaintModal(true);
+  };
+
+  const handleComplaintSubmit = () => {
+    if (!complaintMessage.trim()) {
+      Alert.alert(
+        t("common.error") || "Lỗi",
+        t("tour.booking.complaintMessageRequired") ||
+          "Vui lòng nhập nội dung khiếu nại."
+      );
+      return;
+    }
+    setShowComplaintModal(false);
+    setShowComplaintConfirmModal(true);
+  };
+
+  const handleConfirmComplaint = async () => {
+    if (!booking?.bookingId || !complaintMessage.trim()) {
+      return;
+    }
+
+    try {
+      setSubmittingComplaint(true);
+      setShowComplaintConfirmModal(false);
+      await tourEndpoints.createComplaint(
+        booking.bookingId,
+        complaintMessage.trim()
+      );
+      setBooking((prev) =>
+        prev
+          ? {
+              ...prev,
+              bookingStatus: BookingStatus.BOOKING_UNDER_COMPLAINT,
+            }
+          : prev
+      );
+      setComplaintMessage("");
+      await loadBooking();
+      Alert.alert(
+        t("common.success") || "Thành công",
+        t("tour.booking.complaintSubmitted") ||
+          "Khiếu nại của bạn đã được gửi thành công. Chúng tôi sẽ xem xét và phản hồi sớm nhất."
+      );
+    } catch (error: any) {
+      Alert.alert(
+        t("common.error") || "Lỗi",
+        error?.response?.data?.message ||
+          t("tour.booking.complaintFailed") ||
+          "Không thể gửi khiếu nại. Vui lòng thử lại."
+      );
+    } finally {
+      setSubmittingComplaint(false);
+    }
+  };
+
   return (
     <MainLayout>
       <ScrollView style={styles.scrollView}>
@@ -380,6 +495,44 @@ export default function BookingDetail() {
               </Text>
             </TouchableOpacity>
           )}
+
+          {isAwaitingCompletion && (
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity
+                style={styles.confirmCompletionButton}
+                onPress={handleConfirmCompletion}
+                disabled={confirmingCompletion}
+              >
+                {confirmingCompletion ? (
+                  <>
+                    <ActivityIndicator size="small" color="#fff" />
+                    <Text style={styles.confirmCompletionButtonText}>
+                      {t("tour.booking.confirmCompletionProcessing") ||
+                        "Đang xác nhận..."}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons name="checkmark-done" size={18} color="#fff" />
+                    <Text style={styles.confirmCompletionButtonText}>
+                      {t("tour.booking.confirmCompletion") ||
+                        "Xác nhận tour đã hoàn thành"}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.complaintButton}
+                onPress={handleOpenComplaint}
+                disabled={submittingComplaint}
+              >
+                <Ionicons name="alert-circle-outline" size={18} color="#fff" />
+                <Text style={styles.complaintButtonText}>
+                  {t("tour.booking.complaint") || "Khiếu nại"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -417,7 +570,10 @@ export default function BookingDetail() {
                         {t("tour.booking.fullName")}
                       </Text>
                       <TextInput
-                        style={[styles.modalInput, isWaitingForUpdate && styles.modalInputDisabled]}
+                        style={[
+                          styles.modalInput,
+                          isWaitingForUpdate && styles.modalInputDisabled,
+                        ]}
                         value={updateData.contactName}
                         onChangeText={(text) =>
                           setUpdateData({ ...updateData, contactName: text })
@@ -445,7 +601,10 @@ export default function BookingDetail() {
                         {t("tour.booking.email")}
                       </Text>
                       <TextInput
-                        style={[styles.modalInput, isWaitingForUpdate && styles.modalInputDisabled]}
+                        style={[
+                          styles.modalInput,
+                          isWaitingForUpdate && styles.modalInputDisabled,
+                        ]}
                         value={updateData.contactEmail}
                         onChangeText={(text) =>
                           setUpdateData({ ...updateData, contactEmail: text })
@@ -708,6 +867,110 @@ export default function BookingDetail() {
                 disabled={updating}
               >
                 {updating ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.confirmModalConfirmText}>
+                    {t("common.confirm")}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Complaint Modal */}
+      <Modal
+        visible={showComplaintModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowComplaintModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {t("tour.booking.complaintTitle") || "Khiếu nại"}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowComplaintModal(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalScrollView}>
+              <View style={styles.modalField}>
+                <Text style={styles.modalLabel}>
+                  {t("tour.booking.complaintMessage") || "Nội dung khiếu nại"}
+                </Text>
+                <TextInput
+                  style={[styles.modalInput, styles.modalTextArea]}
+                  value={complaintMessage}
+                  onChangeText={setComplaintMessage}
+                  placeholder={
+                    t("tour.booking.complaintPlaceholder") ||
+                    "Vui lòng mô tả chi tiết vấn đề bạn gặp phải..."
+                  }
+                  multiline
+                  numberOfLines={6}
+                  textAlignVertical="top"
+                />
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => setShowComplaintModal(false)}
+              >
+                <Text style={styles.modalCancelText}>{t("common.cancel")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalSubmitButton}
+                onPress={handleComplaintSubmit}
+              >
+                <Text style={styles.modalSubmitText}>
+                  {t("common.continue") || "Tiếp tục"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Complaint Confirm Modal */}
+      <Modal
+        visible={showComplaintConfirmModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowComplaintConfirmModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.confirmModalContent}>
+            <Text style={styles.confirmModalTitle}>
+              {t("tour.booking.complaintConfirmTitle") || "Xác nhận khiếu nại"}
+            </Text>
+            <Text style={styles.confirmModalMessage}>
+              {t("tour.booking.complaintConfirmMessage") ||
+                "Bạn có chắc chắn muốn gửi khiếu nại này không? Sau khi gửi, trạng thái đặt tour sẽ chuyển thành 'Đang xử lý khiếu nại'."}
+            </Text>
+            <View style={styles.confirmModalButtons}>
+              <TouchableOpacity
+                style={styles.confirmModalCancelButton}
+                onPress={() => setShowComplaintConfirmModal(false)}
+              >
+                <Text style={styles.confirmModalCancelText}>
+                  {t("common.cancel")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.confirmModalConfirmButton}
+                onPress={handleConfirmComplaint}
+                disabled={submittingComplaint}
+              >
+                {submittingComplaint ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
                   <Text style={styles.confirmModalConfirmText}>

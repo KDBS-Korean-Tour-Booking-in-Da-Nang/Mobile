@@ -425,10 +425,7 @@ export default function ConfirmTour() {
               }
             }
           } catch (err: any) {
-            const statusCode = err?.response?.status;
-            if (statusCode !== 400 && statusCode !== 404) {
-              console.error("Error loading bookings from database:", err);
-            }
+            // Silently handle errors
           }
         } catch (err) {}
       }

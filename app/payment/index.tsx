@@ -72,15 +72,6 @@ export default function TossPaymentScreen() {
         const txId = data.transactionId || data.transaction_id || data.id || null;
         transactionIdRef.current = txId ? Number(txId) : null;
         
-        if (transactionIdRef.current) {
-          console.log("TransactionId from createBookingPayment response:", transactionIdRef.current);
-        } else {
-          console.log("No transactionId in createBookingPayment response, will try to get from orderId later");
-        }
-        if (orderIdRef.current) {
-          console.log("OrderId saved:", orderIdRef.current);
-        }
-
         const amountValue =
           typeof data.amount === "string" ? data.amount : String(data.amount);
         const html = `
@@ -246,33 +237,13 @@ export default function TossPaymentScreen() {
           try {
             if (orderIdRef.current) {
               try {
-                console.log("Updating transaction status for orderId:", orderIdRef.current, "to FAILED");
-                const response = await transactionEndpoints.changeTransactionStatus(
+                await transactionEndpoints.changeTransactionStatus(
                   orderIdRef.current,
                   "FAILED"
                 );
-                console.log("Transaction status updated successfully:", response?.data);
-                console.log("Response status:", response?.status);
               } catch (error: any) {
-                console.error("========== ERROR UPDATING TRANSACTION STATUS ==========");
-                console.error("Error:", error);
-                console.error("Error message:", error?.message);
-                console.error("Error code:", error?.code);
-                if (error?.response) {
-                  console.error("Error response data:", JSON.stringify(error?.response?.data, null, 2));
-                  console.error("Error response status:", error?.response?.status);
-                  console.error("Error response headers:", error?.response?.headers);
-                } else {
-                  console.error("No response from server - possible network error");
-                }
-                console.error("Request URL:", error?.config?.url);
-                console.error("Request method:", error?.config?.method);
-                console.error("Request data:", error?.config?.data);
-                console.error("OrderId used:", orderIdRef.current);
-                console.error("========================================================");
+                // Silently handle errors
               }
-            } else {
-              console.warn("No orderId found, cannot update transaction status");
             }
 
             if (bookingId) {
@@ -285,8 +256,7 @@ export default function TossPaymentScreen() {
                   }
                 );
               } catch (error: any) {
-                console.error("Error updating booking status:", error);
-                console.error("Error response:", error?.response?.data);
+                // Silently handle errors
               }
             }
 

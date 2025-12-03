@@ -1,11 +1,17 @@
 import { StyleSheet } from "react-native";
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create<any>({
   centeredContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#f8f9fa",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#333",
+    fontWeight: "500",
   },
   scroll: {
     flex: 1,
@@ -50,12 +56,199 @@ const styles = StyleSheet.create({
   cardRow: { flexDirection: "row", alignItems: "center" },
   cardImage: { width: 80, height: 60, borderRadius: 8, marginRight: 12 },
   cardBody: { flex: 1 },
-  cardTitle: { fontSize: 16, fontWeight: "600", color: "#111" },
+  cardHeaderRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  cardTitle: { fontSize: 16, fontWeight: "600", color: "#111", flex: 1 },
+  cardStatusBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    alignSelf: "flex-start",
+  },
+  cardStatusText: { color: "#fff", fontSize: 12, fontWeight: "600" },
   rowIconText: { flexDirection: "row", alignItems: "center", marginTop: 6 },
   rowGapSmall: { marginTop: 4 },
   rowText: { marginLeft: 6, color: "#6c757d" },
+  cardActionButtonsContainer: {
+    marginTop: 12,
+    flexDirection: "row",
+    gap: 8,
+  },
+  cardActionButton: {
+    flex: 1,
+  },
+  cardConfirmButton: {
+    backgroundColor: "#34C759",
+    borderRadius: 10,
+    paddingVertical: 10,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
+  cardConfirmButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  cardComplaintButton: {
+    backgroundColor: "#FF9500",
+    borderRadius: 10,
+    paddingVertical: 10,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
+  cardComplaintButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  // Modal styles (copied from detailHistory)
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    width: "90%",
+    maxHeight: "80%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#000",
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalScrollView: {
+    maxHeight: 400,
+    padding: 20,
+  },
+  modalField: {
+    marginBottom: 16,
+  },
+  modalLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#666",
+    marginBottom: 8,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: "#000",
+    backgroundColor: "#fff",
+  },
+  modalTextArea: {
+    height: 100,
+    textAlignVertical: "top",
+  },
+  modalFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#e9ecef",
+    gap: 12,
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: "#f8f9fa",
+    alignItems: "center",
+  },
+  modalCancelText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#666",
+  },
+  modalSubmitButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: "#007AFF",
+    alignItems: "center",
+  },
+  modalSubmitText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
+  },
+  confirmModalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 24,
+    margin: 20,
+    maxWidth: "90%",
+    alignSelf: "center",
+  },
+  confirmModalTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000",
+    textAlign: "center",
+    marginBottom: 12,
+    lineHeight: 22,
+  },
+  confirmModalMessage: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  confirmModalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  confirmModalCancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: "#f8f9fa",
+    alignItems: "center",
+  },
+  confirmModalCancelText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#666",
+  },
+  confirmModalConfirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: "#34C759",
+    alignItems: "center",
+  },
+  confirmModalConfirmText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
+  },
 });
 
 export default styles;
-
-

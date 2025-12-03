@@ -1,21 +1,18 @@
 import React, {
   createContext,
   useContext,
-  useEffect,
   useMemo,
   useRef,
   useState,
   ReactNode,
   useCallback,
 } from "react";
-import { Client, IMessage } from "@stomp/stompjs";
-import SockJS from "sockjs-client";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_BASE } from "../../services/api";
 import {
   NotificationResponse,
   getNotifications,
+  getUnreadCount,
 } from "../../services/endpoints/notifications";
+import { usePollingNotifications } from "../../hooks/usePollingNotifications";
 
 interface NotificationContextType {
   connected: boolean;
@@ -35,20 +32,10 @@ const NotificationContext = createContext<NotificationContextType | undefined>(
   undefined
 );
 
-function toHttpBase(httpBase?: string): string | undefined {
-  if (!httpBase) return undefined;
-  try {
-    const u = new URL(httpBase);
-    return `${u.protocol}//${u.host}`;
-  } catch {
-    return undefined;
-  }
-}
-
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [connected, setConnected] = useState(false);
+  const [connected] = useState(true); // Always "connected" when using polling
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationResponse[]>(
     []
@@ -56,13 +43,9 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
   const [currentToast, setCurrentToast] = useState<NotificationResponse | null>(
     null
   );
-  const clientRef = useRef<Client | null>(null);
-  const subscriptionRef = useRef<any>(null);
   const callbacksRef = useRef<
     Set<(notification: NotificationResponse) => void>
   >(new Set());
-
-  const httpBase = useMemo(() => toHttpBase(API_BASE), []);
 
   // Function to register/unregister callbacks
   const registerCallback = (
@@ -74,41 +57,9 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
     };
   };
 
-  // Setup WebSocket connection
-  useEffect(() => {
-    const setupClient = async () => {
-      try {
-        const token = await AsyncStorage.getItem("authToken");
-        const userData = await AsyncStorage.getItem("userData");
-        const user = userData ? JSON.parse(userData) : {};
-        const email =
-          user?.email || user?.userEmail || user?.emailAddress || user?.mail;
-
-        if (!httpBase || !token || !email) {
-          return;
-        }
-
-        const client = new Client({
-          brokerURL: undefined,
-          webSocketFactory: () => new SockJS(`${httpBase}/ws`),
-          reconnectDelay: 3000,
-          debug: () => {},
-          connectHeaders: {
-            Authorization: `Bearer ${token}`,
-            "User-Email": email,
-          },
-          heartbeatIncoming: 10000,
-          heartbeatOutgoing: 10000,
-          onConnect: () => {
-            setConnected(true);
-            // Subscribe to notifications topic
-            const subscription = client.subscribe(
-              "/user/queue/notifications",
-              (msg: IMessage) => {
-                try {
-                  const notification: NotificationResponse = JSON.parse(
-                    msg.body
-                  );
+  // Handle new notification from polling
+  const handleNewNotification = useCallback(
+    (notification: NotificationResponse) => {
                   // Add to notifications list
                   setNotifications((prev) => {
                     const exists = prev.some(
@@ -127,63 +78,37 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
                   callbacksRef.current.forEach((callback) => {
                     callback(notification);
                   });
-                } catch {
-                  // Silently handle parsing errors
-                }
-              }
-            );
-            subscriptionRef.current = subscription;
-          },
-          onStompError: () => {
-            setConnected(false);
-          },
-          onWebSocketClose: () => {
-            setConnected(false);
-          },
-          onWebSocketError: () => {
-            setConnected(false);
-          },
-        });
-        clientRef.current = client;
-        client.activate();
-      } catch {
-        // Silently handle setup errors
-      }
-    };
+    },
+    []
+  );
 
-    setupClient();
-    return () => {
-      setConnected(false);
-      if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe();
-        subscriptionRef.current = null;
-      }
-      if (clientRef.current) {
-        clientRef.current.deactivate();
-        clientRef.current = null;
-      }
-    };
-  }, [httpBase]);
+  // Use polling only for app state changes (when app comes to foreground)
+  usePollingNotifications({
+    onNewNotification: handleNewNotification,
+    enabled: true,
+  });
 
-  // Load initial notifications
+  // Load initial notifications and unread count
+  // Only called manually when user opens notifications page
   const refreshNotifications = useCallback(async () => {
     try {
-      const response = await getNotifications({
+      const [notificationsResponse, unreadCountResponse] = await Promise.all([
+        getNotifications({
         page: 0,
         size: 20,
         sort: "createdAt,desc",
-      });
-      setNotifications(response.notifications.content);
-      setUnreadCount(response.unreadCount);
+        }),
+        getUnreadCount(),
+      ]);
+      setNotifications(notificationsResponse.notifications.content);
+      setUnreadCount(unreadCountResponse);
     } catch {
       // Silently handle errors
+      // Set empty state on error
+      setNotifications([]);
+      setUnreadCount(0);
     }
   }, []);
-
-  // Load notifications on mount
-  useEffect(() => {
-    refreshNotifications();
-  }, [refreshNotifications]);
 
   const markAsRead = useCallback(async (notificationId: number) => {
     try {
@@ -204,16 +129,22 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
 
   const markAllAsRead = useCallback(async () => {
     try {
-      const { markAllNotificationsAsRead } = await import(
-        "../../services/endpoints/notifications"
+      // Mark all notifications as read by updating each one
+      const unreadNotifications = notifications.filter((n) => !n.isRead);
+      await Promise.all(
+        unreadNotifications.map((n) =>
+          import("../../services/endpoints/notifications").then(
+            ({ markNotificationAsRead }) =>
+              markNotificationAsRead(n.notificationId)
+          )
+        )
       );
-      await markAllNotificationsAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch {
       // Silently handle errors
     }
-  }, []);
+  }, [notifications]);
 
   const value = useMemo(
     () => ({

@@ -29,6 +29,10 @@ import { VoucherDiscountType } from "../../../src/types/response/voucher.respons
 import { voucherEndpoints } from "../../../services/endpoints/voucher";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import styles from "./styles";
+import {
+  getTourThumbnailUrl,
+  normalizeHtmlImageSrc,
+} from "../../../src/utils/media";
 
 type VoucherPreviewItem = {
   id: number;
@@ -39,6 +43,9 @@ type VoucherPreviewItem = {
   minOrderValue: number;
   endDate?: string;
 };
+
+const DEFAULT_TOUR_IMAGE =
+  "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop";
 
 export default function TourDetail() {
   const { goBack, navigate } = useNavigation();
@@ -141,7 +148,8 @@ export default function TourDetail() {
       setVoucherLoading(true);
       setVoucherError(null);
       try {
-        const response = await voucherEndpoints.previewAllAvailable(tour.id);
+        // Lấy danh sách voucher áp dụng theo tourId
+        const response = await voucherEndpoints.getByTourId(tour.id);
         const data = Array.isArray(response.data) ? response.data : [];
         const normalized = data
           .map((raw: any) => {
@@ -178,11 +186,11 @@ export default function TourDetail() {
 
         if (!active) return;
         setAvailableVouchers(normalized);
-      } catch (error: any) {
+      } catch (err: any) {
         if (!active) return;
         const message =
-          error?.response?.data?.message ||
-          error?.message ||
+          err?.response?.data?.message ||
+          err?.message ||
           t("tour.detail.voucherLoadFailed", {
             defaultValue: "Không thể tải voucher khả dụng.",
           });
@@ -232,16 +240,15 @@ export default function TourDetail() {
         }
 
         const hasSuccessfulBooking = tourBookings.some((booking: any) => {
-          const status = String(booking.status || booking.bookingStatus || "").toUpperCase();
+          const status = String(
+            booking.status || booking.bookingStatus || ""
+          ).toUpperCase();
           return status === "BOOKING_SUCCESS" || status === "SUCCESS";
         });
 
         setHasBookedTour(hasSuccessfulBooking);
-      } catch (error: any) {
-        const statusCode = error?.response?.status;
-        if (statusCode !== 400 && statusCode !== 404) {
-          console.error("Error checking booking:", error);
-        }
+      } catch {
+        // Silently handle errors
         setHasBookedTour(false);
       } finally {
         setCheckingBooking(false);
@@ -251,18 +258,11 @@ export default function TourDetail() {
     checkUserBooking();
   }, [user?.email, tour?.id]);
 
+  // Hero carousel: ONLY use main cover image (thumbnails), not content images
   const imageList = useMemo(() => {
-    const contentImages = (tour?.contents || [])
-      .flatMap((c: any) => (Array.isArray(c.images) ? c.images : []))
-      .map((u: any) => (typeof u === "string" ? u.trim() : ""))
-      .filter((u: any) => u && /^https?:\/\//i.test(u));
-    const cover =
-      tour?.tourImgPath && /^https?:\/\//i.test((tour.tourImgPath || "").trim())
-        ? [tour!.tourImgPath.trim()]
-        : [];
-    const all = [...cover, ...contentImages];
-    return all.length > 0 ? all : [""];
-  }, [tour]);
+    const cover = getTourThumbnailUrl(tour?.tourImgPath);
+    return cover ? [cover] : [DEFAULT_TOUR_IMAGE];
+  }, [tour?.tourImgPath]);
 
   if (loading) {
     return (
@@ -690,87 +690,89 @@ export default function TourDetail() {
                   if (!html || typeof html !== "string") return null;
 
                   try {
-                    const items: {
-                      label?: string;
-                      text?: string;
-                      img?: string;
-                    }[] = [];
-                    const liRegex = /<li[^>]*>([\s\S]*?)<\/li>/gi;
-                    let liMatch: RegExpExecArray | null;
-                    while ((liMatch = liRegex.exec(html))) {
-                      const liInner = liMatch[1] || "";
-                      const labelMatch =
-                        /<strong[^>]*>([\s\S]*?)<\/strong>/i.exec(liInner);
-                      const imgMatch =
-                        /<img[^>]*src=["']([^"']+)["'][^>]*>/i.exec(liInner);
-                      const liTextRaw = liInner
-                        .replace(/<strong[^>]*>[\s\S]*?<\/strong>/i, "")
-                        .replace(/<[^>]+>/g, " ")
-                        .replace(/\s+/g, " ")
-                        .trim();
-                      items.push({
-                        label: labelMatch
-                          ? String(labelMatch[1]).trim()
-                          : undefined,
-                        text: liTextRaw,
-                        img: imgMatch ? imgMatch[1] : undefined,
-                      });
+                    // Tách danh sách ảnh từ toàn bộ HTML
+                    const imgRegex = /<img[^>]*src=["']([^"']+)["'][^>]*>/gi;
+                    const images: string[] = [];
+                    let workingHtml = html;
+                    let imgMatch: RegExpExecArray | null;
+
+                    while ((imgMatch = imgRegex.exec(html))) {
+                      const rawSrc = imgMatch[1];
+                      const resolved = normalizeHtmlImageSrc(rawSrc);
+                      if (resolved) images.push(resolved);
                     }
 
-                    if (items.length === 0) {
-                      const fallback = html
+                    // Loại bỏ thẻ <img> khỏi phần text
+                    workingHtml = workingHtml.replace(
+                      /<img[^>]*src=["'][^"']+["'][^>]*>/gi,
+                      ""
+                    );
+
+                    // Giữ xuống dòng từ các block tag
+                    workingHtml = workingHtml
+                      .replace(/<\/p>/gi, "\n\n")
+                      .replace(/<br\s*\/?>/gi, "\n")
+                      .replace(/<\/li>/gi, "\n")
+                      .replace(/<\/div>/gi, "\n");
+
+                    // Chia nhỏ text theo thẻ <strong> để biết đoạn nào in đậm
+                    type Seg = { text: string; bold: boolean };
+                    const segments: Seg[] = [];
+                    const strongRegex = /<strong[^>]*>([\s\S]*?)<\/strong>/gi;
+                    let lastIndex = 0;
+                    let m: RegExpExecArray | null;
+
+                    const pushPlain = (raw: string, bold: boolean) => {
+                      if (!raw) return;
+                      let txt = raw
                         .replace(/<[^>]+>/g, " ")
-                        .replace(/\s+/g, " ")
+                        .replace(/\s+\n/g, "\n")
+                        .replace(/\n\s+/g, "\n")
+                        .replace(/\s{2,}/g, " ")
+                        .replace(/\n{3,}/g, "\n\n")
                         .trim();
-                      return (
-                        <Text style={styles.contentDescription}>
-                          {fallback}
-                        </Text>
-                      );
+                      if (!txt) return;
+                      segments.push({ text: txt, bold });
+                    };
+
+                    while ((m = strongRegex.exec(workingHtml))) {
+                      const before = workingHtml.slice(lastIndex, m.index);
+                      pushPlain(before, false);
+                      const strongText = m[1] || "";
+                      pushPlain(strongText, true);
+                      lastIndex = strongRegex.lastIndex;
                     }
+
+                    const rest = workingHtml.slice(lastIndex);
+                    pushPlain(rest, false);
 
                     return (
                       <View style={{ gap: 10 }}>
-                        {items.map((it, i) => (
-                          <View
-                            key={i}
+                        {segments.length > 0 && (
+                          <Text style={styles.contentDescription}>
+                            {segments.map((seg, i) => (
+                              <Text
+                                key={`${seg.bold ? "b" : "n"}-${i}`}
+                                style={seg.bold ? { fontWeight: "700" } : null}
+                              >
+                                {seg.text}
+                              </Text>
+                            ))}
+                          </Text>
+                        )}
+                        {images.map((uri, i) => (
+                          <Image
+                            key={`${uri}-${i}`}
+                            source={{ uri }}
                             style={{
-                              flexDirection: "row",
-                              alignItems: "flex-start",
-                              gap: 8,
+                              width: "100%",
+                              height: 220,
+                              borderRadius: 8,
+                              marginTop: 8,
+                              backgroundColor: "#f8f9fa",
                             }}
-                          >
-                            <Text style={{ marginTop: 2 }}>•</Text>
-                            <View style={{ flex: 1 }}>
-                              {!!it.label && (
-                                <Text style={{ fontWeight: "700" }}>
-                                  {it.label}
-                                </Text>
-                              )}
-                              {!!it.text && (
-                                <Text
-                                  style={[
-                                    styles.contentDescription,
-                                    { marginTop: 2 },
-                                  ]}
-                                >
-                                  {it.text}
-                                </Text>
-                              )}
-                              {!!it.img && (
-                                <Image
-                                  source={{ uri: it.img }}
-                                  style={{
-                                    width: "100%",
-                                    height: 180,
-                                    borderRadius: 8,
-                                    marginTop: 8,
-                                  }}
-                                  resizeMode="cover"
-                                />
-                              )}
-                            </View>
-                          </View>
+                            resizeMode="contain"
+                          />
                         ))}
                       </View>
                     );

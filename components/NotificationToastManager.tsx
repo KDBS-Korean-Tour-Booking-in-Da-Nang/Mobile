@@ -20,6 +20,7 @@ export default function NotificationToastManager() {
       notificationType === "NEW_BOOKING" ||
       notificationType === "BOOKING_CONFIRMED" ||
       notificationType === "BOOKING_UPDATE_REQUEST" ||
+      notificationType === "BOOKING_UPDATED_BY_USER" ||
       notificationType === "BOOKING_REJECTED"
     ) {
       navigate(`/tour/historyBooking/detailHistory?bookingId=${targetId}`);

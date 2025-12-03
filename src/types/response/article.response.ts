@@ -7,6 +7,14 @@ export interface Article {
   articleLink: string;
   articleStatus: "PENDING" | "APPROVED" | "UNAPPROVED";
   articleCreatedDate: string;
+  // English translations
+  articleTitleEN?: string;
+  articleDescriptionEN?: string;
+  articleContentEN?: string;
+  // Korean translations
+  articleTitleKR?: string;
+  articleDescriptionKR?: string;
+  articleContentKR?: string;
 }
 
 export interface ArticleResponse {

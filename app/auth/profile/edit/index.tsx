@@ -114,23 +114,23 @@ export default function EditProfile() {
     const finalName = sanitizeName(fullName);
 
     if (!finalName.trim() || !isNameValid(finalName)) {
-      Alert.alert(t("common.error"), t("profile.errors.fullNameInvalid"));
+      Alert.alert("Error", "Full name is invalid");
       return;
     }
     if (!isPhoneValid(phone)) {
-      Alert.alert(t("common.error"), t("profile.errors.phoneInvalid"));
+      Alert.alert("Error", "Phone number is invalid");
       return;
     }
     if (!birthDate || !isBirthDateValid(birthDate)) {
-      Alert.alert(t("common.error"), t("profile.errors.birthDateInvalid"));
+      Alert.alert("Error", "Birth date is invalid");
       return;
     }
     if (!selectedGender) {
-      Alert.alert(t("common.error"), t("profile.errors.genderRequired"));
+      Alert.alert("Error", "Gender is required");
       return;
     }
     if (!address.trim()) {
-      Alert.alert(t("common.error"), t("profile.errors.addressRequired"));
+      Alert.alert("Error", "Address is required");
       return;
     }
 
@@ -153,12 +153,14 @@ export default function EditProfile() {
             : "O",
         ...(avatarFile ? { avatarImg: avatarFile } : {}),
       } as any);
-      Alert.alert(t("common.success"), t("profile.updateSuccess"));
+      Alert.alert("Success", "Profile updated successfully");
       goBack();
     } catch (e: any) {
       const msg =
-        e?.response?.data?.message || e?.message || t("profile.updateError");
-      Alert.alert(t("common.error"), String(msg));
+        e?.response?.data?.message ||
+        e?.message ||
+        "Failed to update profile. Please try again.";
+      Alert.alert("Error", String(msg));
     } finally {
       setSaving(false);
     }
@@ -199,7 +201,7 @@ export default function EditProfile() {
                       const perm =
                         await ImagePicker.requestMediaLibraryPermissionsAsync();
                       if (perm.status !== "granted") {
-                        Alert.alert(t("common.error"), "Permission denied");
+                        Alert.alert("Error", "Permission denied");
                         return;
                       }
                       const result = await ImagePicker.launchImageLibraryAsync({
