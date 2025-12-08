@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Platform, StatusBar } from "react-native";
 
 const styles = StyleSheet.create({
   container: {
@@ -177,20 +177,26 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
+    justifyContent: "flex-start",
+    paddingTop:
+      Platform.OS === "ios" ? 50 : (StatusBar.currentHeight || 0) + 10,
+    paddingHorizontal: 0,
+    paddingBottom: 0,
   },
   modalContent: {
     backgroundColor: "#fff",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: "90%",
-    paddingBottom: 20,
+    maxHeight: "85%",
+    width: "100%",
+    flexDirection: "column",
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: 20,
+    paddingTop: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#e9ecef",
   },
@@ -203,8 +209,8 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   modalScrollView: {
-    maxHeight: 500,
     padding: 20,
+    flexGrow: 0,
   },
   modalSection: {
     marginBottom: 24,
@@ -259,6 +265,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     padding: 20,
+    paddingBottom: Platform.OS === "ios" ? 34 : 20,
     borderTopWidth: 1,
     borderTopColor: "#e9ecef",
     gap: 12,
@@ -289,7 +296,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: "#007AFF",
+    backgroundColor: "#34C759",
     alignItems: "center",
   },
   modalSubmitButtonText: {
@@ -297,12 +304,19 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#fff",
   },
+  confirmModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
   confirmModalContent: {
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 24,
-    margin: 20,
-    maxWidth: "90%",
+    width: "100%",
+    maxWidth: 400,
     alignSelf: "center",
   },
   confirmModalTitle: {
@@ -348,6 +362,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#fff",
+  },
+  complaintModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  complaintModalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    maxHeight: "80%",
+    width: "100%",
+    maxWidth: 500,
   },
 });
 

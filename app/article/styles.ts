@@ -71,10 +71,13 @@ export default StyleSheet.create({
     padding: 16,
     paddingBottom: 20,
   },
+  articleCardWrapper: {
+    marginBottom: 16,
+  },
   articleCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    marginBottom: 16,
+    marginHorizontal: 0,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -114,7 +117,7 @@ export default StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginTop: 8,
   },
   articleAuthor: {
     flexDirection: "row",
@@ -126,6 +129,15 @@ export default StyleSheet.create({
     marginLeft: 4,
   },
   articleDate: {
+    fontSize: 12,
+    color: colors.text.secondary,
+  },
+  articleMetaRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  articleCommentCount: {
     fontSize: 12,
     color: colors.text.secondary,
   },
@@ -143,5 +155,101 @@ export default StyleSheet.create({
     borderRadius: 12,
     marginRight: 8,
     marginBottom: 4,
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    backgroundColor: "#FFFFFF",
+  },
+  searchInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "#E5E5E5",
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: "#212529",
+    paddingVertical: 0,
+  },
+  clearSearchButton: {
+    marginLeft: 8,
+    padding: 4,
+  },
+  articleCommentsPreview: {
+    backgroundColor: "#FFFFFF",
+    marginHorizontal: 0,
+    marginTop: 8,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#F0F0F0",
+  },
+  commentPreviewItem: {
+    flexDirection: "row",
+    marginBottom: 12,
+  },
+  commentPreviewAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#E5E5E5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+    marginTop: 2,
+    overflow: "hidden",
+  },
+  commentPreviewAvatarImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  commentPreviewContent: {
+    flex: 1,
+  },
+  commentPreviewUserName: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#212529",
+    marginBottom: 2,
+  },
+  commentPreviewText: {
+    fontSize: 13,
+    color: "#495057",
+    lineHeight: 18,
+    marginBottom: 4,
+  },
+  commentPreviewDate: {
+    fontSize: 11,
+    color: colors.text.secondary,
+  },
+  viewAllCommentsButton: {
+    marginTop: 4,
+    paddingVertical: 8,
+  },
+  viewAllCommentsText: {
+    fontSize: 13,
+    color: "#007AFF",
+    fontWeight: "500",
   },
 });

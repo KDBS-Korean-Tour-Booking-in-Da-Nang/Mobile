@@ -45,6 +45,7 @@ export const useGoogleAuth = () => {
         console.log("[Google Auth] Callback params:", {
           hasToken: !!token,
           hasUserId: !!userId,
+          userIdValue: userId,
           hasEmail: !!email,
           hasUsername: !!username,
           hasRole: !!role,
@@ -54,10 +55,30 @@ export const useGoogleAuth = () => {
 
         // If we have token, userId, email - this is a direct callback from backend
         if (token && userId && email) {
+          // Validate userId is a valid number
+          let decodedUserId: string = userId;
+          try {
+            decodedUserId = decodeURIComponent(userId);
+          } catch {
+            decodedUserId = userId;
+          }
+
+          const parsedUserId = parseInt(decodedUserId, 10);
+          if (isNaN(parsedUserId) || parsedUserId <= 0) {
+            console.error("[Google Auth] Invalid userId in callback:", {
+              original: userId,
+              decoded: decodedUserId,
+              parsed: parsedUserId,
+            });
+            throw new Error(
+              "Invalid user ID received from authentication server"
+            );
+          }
+
           console.log("[Google Auth] Direct callback with auth data");
 
           const user = {
-            userId: parseInt(userId),
+            userId: parsedUserId,
             username:
               username || (email.includes("@") ? email.split("@")[0] : "user"),
             email: decodeURIComponent(email),
@@ -110,17 +131,22 @@ export const useGoogleAuth = () => {
     const subscription = addEventListener("url", ({ url }) => {
       console.log("[Google Auth] URL received:", url);
 
-      // Handle URL from backend redirect (server URL with token params)
-      // Format: http://server.com/google/callback?token=...&userId=...
-      // Similar to how Toss payment handles transaction-result URL
       if (url.includes("google/callback")) {
         console.log("[Google Auth] Processing callback URL...");
 
         try {
-          const urlObj = new URL(url);
+          let urlObj: URL;
+          try {
+            urlObj = new URL(url);
+          } catch {
+            if (url.startsWith("mobilefe://")) {
+              urlObj = new URL(url.replace("mobilefe://", "http://"));
+            } else {
+              throw new Error("Invalid URL format");
+            }
+          }
           const params = urlObj.searchParams;
 
-          // Extract all params similar to Toss payment
           const token = params.get("token");
           const userId = params.get("userId");
           const email = params.get("email");
@@ -130,12 +156,45 @@ export const useGoogleAuth = () => {
           const balance = params.get("balance");
           const error = params.get("error");
 
+          // Validate userId is a valid number before passing to router
+          let validatedUserId = userId || "";
+          if (userId) {
+            try {
+              // Try to decode in case it's encoded
+              const decoded = decodeURIComponent(userId);
+              const parsed = parseInt(decoded, 10);
+              if (isNaN(parsed) || parsed <= 0) {
+                console.error("[Google Auth] Invalid userId in URL params:", {
+                  original: userId,
+                  decoded,
+                  parsed,
+                });
+                // Don't pass invalid userId - let callback handler deal with it
+                validatedUserId = "";
+              } else {
+                validatedUserId = String(parsed);
+              }
+            } catch {
+              // If decode fails, try parsing directly
+              const parsed = parseInt(userId, 10);
+              if (isNaN(parsed) || parsed <= 0) {
+                console.error(
+                  "[Google Auth] Invalid userId in URL params:",
+                  userId
+                );
+                validatedUserId = "";
+              } else {
+                validatedUserId = String(parsed);
+              }
+            }
+          }
+
           // Navigate to google/callback screen with params (similar to transactionResult)
           router.replace({
             pathname: "/google/callback" as any,
             params: {
               token: token || "",
-              userId: userId || "",
+              userId: validatedUserId,
               email: email || "",
               username: username || "",
               role: role || "",
@@ -173,9 +232,15 @@ export const useGoogleAuth = () => {
       console.log("[Google Auth] API Base URL:", api.defaults.baseURL);
 
       // Try getting auth URL from backend (proxied via api baseURL)
+      // Pass platform=mobile so backend knows to redirect to deep link
       console.log("[Google Auth] Fetching auth URL from backend...");
       const res = await api.get<{ code?: number; result?: string }>(
-        "/api/auth/google/login"
+        "/api/auth/google/login",
+        {
+          params: {
+            platform: "mobile",
+          },
+        }
       );
       console.log("[Google Auth] Backend response:", {
         code: res.data?.code,
@@ -192,24 +257,38 @@ export const useGoogleAuth = () => {
 
       const updated = new URL(rawAuthUrl);
       const params = updated.searchParams;
-      const redirectApi =
-        (process.env as any)?.EXPO_PUBLIC_GOOGLE_REDIRECT_API ||
-        `${(api.defaults.baseURL || "").replace(
+
+      // Build redirect_uri - must match exactly what's registered in Google OAuth Console
+      // Do NOT add query params to redirect_uri as Google will reject it
+      let baseRedirectApi: string;
+      const envRedirectApi = (process.env as any)
+        ?.EXPO_PUBLIC_GOOGLE_REDIRECT_API;
+      if (envRedirectApi) {
+        // If env variable is set, use it but ensure it has the callback path
+        baseRedirectApi = envRedirectApi.endsWith("/api/auth/google/callback")
+          ? envRedirectApi
+          : `${envRedirectApi.replace(/\/$/, "")}/api/auth/google/callback`;
+      } else {
+        // Default: use API base URL
+        baseRedirectApi = `${(api.defaults.baseURL || "").replace(
           /\/$/,
           ""
         )}/api/auth/google/callback`;
+      }
 
-      console.log("[Google Auth] Redirect API:", redirectApi);
+      console.log("[Google Auth] Redirect API:", baseRedirectApi);
 
-      params.set("redirect_uri", redirectApi);
+      // Set redirect_uri without query params (must match Google Console exactly)
+      params.set("redirect_uri", baseRedirectApi);
+
+      // Use state parameter to pass platform info (Google will return it in callback)
+      params.set("state", "platform=mobile");
       params.set("prompt", "select_account");
       updated.search = params.toString();
       const authUrl = updated.toString();
 
       console.log("[Google Auth] Final auth URL:", authUrl);
 
-      // Use deep link scheme for app redirect (required by WebBrowser.openAuthSessionAsync)
-      // The backend will redirect to HTTP URL, but we need deep link for WebBrowser to work
       const appRedirect =
         (process.env as any)?.EXPO_PUBLIC_GOOGLE_REDIRECT_APP ||
         "mobilefe://google/callback";
@@ -227,14 +306,11 @@ export const useGoogleAuth = () => {
         hasUrl: !!(result.type === "success" && result.url),
       });
 
-      // Complete the auth session to allow redirect handling
       WebBrowser.maybeCompleteAuthSession();
 
       if (result.type === "success" && result.url) {
         console.log("[Google Auth] Success! URL received:", result.url);
 
-        // Handle URL directly from result (similar to Toss payment onShouldStartLoadWithRequest)
-        // URL can be either deep link (mobilefe://google/callback) or HTTP URL (http://localhost:3000/google/callback)
         if (
           result.url.includes("google/callback") ||
           result.url.includes("mobilefe://")
@@ -267,12 +343,45 @@ export const useGoogleAuth = () => {
             const balance = params.get("balance");
             const error = params.get("error");
 
+            // Validate userId is a valid number before passing to router
+            let validatedUserId = userId || "";
+            if (userId) {
+              try {
+                // Try to decode in case it's encoded
+                const decoded = decodeURIComponent(userId);
+                const parsed = parseInt(decoded, 10);
+                if (isNaN(parsed) || parsed <= 0) {
+                  console.error("[Google Auth] Invalid userId in URL params:", {
+                    original: userId,
+                    decoded,
+                    parsed,
+                  });
+                  // Don't pass invalid userId - let callback handler deal with it
+                  validatedUserId = "";
+                } else {
+                  validatedUserId = String(parsed);
+                }
+              } catch {
+                // If decode fails, try parsing directly
+                const parsed = parseInt(userId, 10);
+                if (isNaN(parsed) || parsed <= 0) {
+                  console.error(
+                    "[Google Auth] Invalid userId in URL params:",
+                    userId
+                  );
+                  validatedUserId = "";
+                } else {
+                  validatedUserId = String(parsed);
+                }
+              }
+            }
+
             // Navigate to google/callback screen with params (similar to transactionResult)
             router.replace({
               pathname: "/google/callback" as any,
               params: {
                 token: token || "",
-                userId: userId || "",
+                userId: validatedUserId,
                 email: email || "",
                 username: username || "",
                 role: role || "",

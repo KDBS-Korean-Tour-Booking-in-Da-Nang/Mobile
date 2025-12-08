@@ -77,6 +77,24 @@ export default function TourDetail() {
       try {
         setLoading(true);
         const res = await tourEndpoints.getById(tourId);
+        console.log("[TourDetail] Tour data loaded:", {
+          tourId,
+          tour: res.data,
+          description: res.data?.description,
+          contents: res.data?.contents,
+          contentsLength: res.data?.contents?.length,
+        });
+        if (res.data?.contents) {
+          res.data.contents.forEach((content: any, idx: number) => {
+            console.log(`[TourDetail] Content ${idx}:`, {
+              id: content.id,
+              title: content.title,
+              description: content.description,
+              descriptionLength: content.description?.length,
+              descriptionPreview: content.description?.substring(0, 200),
+            });
+          });
+        }
         setTour(res.data);
         setCurrentImageIndex(0);
       } catch {
@@ -690,17 +708,49 @@ export default function TourDetail() {
                   if (!html || typeof html !== "string") return null;
 
                   try {
+                    console.log(
+                      `[TourDetail] renderHtmlDescription - Content ${idx}:`,
+                      {
+                        htmlLength: html.length,
+                        htmlPreview: html.substring(0, 500),
+                      }
+                    );
+
                     // Tách danh sách ảnh từ toàn bộ HTML
                     const imgRegex = /<img[^>]*src=["']([^"']+)["'][^>]*>/gi;
                     const images: string[] = [];
                     let workingHtml = html;
                     let imgMatch: RegExpExecArray | null;
+                    let imgCount = 0;
 
                     while ((imgMatch = imgRegex.exec(html))) {
                       const rawSrc = imgMatch[1];
+                      console.log(
+                        `[TourDetail] Found image ${imgCount} in content ${idx}:`,
+                        {
+                          rawSrc,
+                          fullMatch: imgMatch[0],
+                        }
+                      );
                       const resolved = normalizeHtmlImageSrc(rawSrc);
+                      console.log(
+                        `[TourDetail] Resolved image ${imgCount} in content ${idx}:`,
+                        {
+                          rawSrc,
+                          resolved,
+                        }
+                      );
                       if (resolved) images.push(resolved);
+                      imgCount++;
                     }
+
+                    console.log(
+                      `[TourDetail] Total images found in content ${idx}:`,
+                      {
+                        count: images.length,
+                        images,
+                      }
+                    );
 
                     // Loại bỏ thẻ <img> khỏi phần text
                     workingHtml = workingHtml.replace(

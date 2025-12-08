@@ -5,6 +5,9 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  TextInput,
+  Image,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,6 +17,9 @@ import { useTranslation } from "react-i18next";
 import i18n from "../../../localization/i18n";
 import ScrollableLayout from "../../../components/ScrollableLayout";
 import { getArticleById, Article } from "../../../services/endpoints/articles";
+import { articleCommentEndpoints } from "../../../services/endpoints/articleComments";
+import { ArticleCommentResponse } from "../../../src/types/response/articleComment.response";
+import { useAuthContext } from "../../../src/contexts/authContext";
 import styles, { contentHtmlCss } from "./style";
 import { WebView } from "react-native-webview";
 
@@ -52,6 +58,35 @@ export default function ArticleDetail() {
   const [loading, setLoading] = useState(true);
   const [contentHeight, setContentHeight] = useState(0);
   const [currentLang, setCurrentLang] = useState(i18n.language);
+  const [comments, setComments] = useState<ArticleCommentResponse[]>([]);
+  const [commentText, setCommentText] = useState("");
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const { user } = useAuthContext();
+
+  // Load comments from API (only comments, no replies)
+  const loadComments = useCallback(async () => {
+    if (!id || isNaN(Number(id))) {
+      return;
+    }
+
+    setLoadingComments(true);
+    try {
+      const response = await articleCommentEndpoints.getCommentsByArticleId(
+        Number(id)
+      );
+      // Filter to only show comments (no replies - parentCommentId is null)
+      const commentsOnly = (response.data || []).filter(
+        (comment) => !comment.parentCommentId
+      );
+      setComments(commentsOnly);
+    } catch (error) {
+      console.error("Error loading comments:", error);
+      setComments([]);
+    } finally {
+      setLoadingComments(false);
+    }
+  }, [id]);
 
   useEffect(() => {
     setArticle(null);
@@ -101,8 +136,9 @@ export default function ArticleDetail() {
   useEffect(() => {
     if (id) {
       loadArticle();
+      loadComments();
     }
-  }, [id, loadArticle]);
+  }, [id, loadArticle, loadComments]);
 
   // Track language changes
   useEffect(() => {
@@ -132,6 +168,95 @@ export default function ArticleDetail() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const formatCommentDate = (dateString: string) => {
+    if (!dateString) {
+      return t("article.comment.justNow") || "Vừa xong";
+    }
+
+    try {
+      // Handle LocalDateTime format from backend (e.g., "2025-12-06T16:52:20")
+      // If no timezone is specified, parse as local time
+      let date: Date;
+      if (dateString.includes("T") && !dateString.includes("Z") && !dateString.includes("+") && !dateString.match(/[+-]\d{2}:\d{2}$/)) {
+        // Parse LocalDateTime as local time
+        const parts = dateString.split("T");
+        if (parts.length === 2) {
+          const [year, month, day] = parts[0].split("-").map(Number);
+          const timePart = parts[1].split(".")[0]; // Remove milliseconds if present
+          const [hour, minute, second] = timePart.split(":").map(Number);
+          date = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0);
+        } else {
+          date = new Date(dateString);
+        }
+      } else {
+        date = new Date(dateString);
+      }
+
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return t("article.comment.justNow") || "Vừa xong";
+      }
+
+      const now = new Date();
+      const diffInMs = now.getTime() - date.getTime();
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+
+      if (diffInMinutes < 1) {
+        return t("article.comment.justNow") || "Vừa xong";
+      } else if (diffInHours < 1) {
+        return `${diffInMinutes} phút trước`;
+      } else if (diffInHours < 24) {
+        return t("article.comment.hoursAgo", { hours: diffInHours }) || `${diffInHours} giờ trước`;
+      } else {
+        const diffInDays = Math.floor(diffInHours / 24);
+        return t("article.comment.daysAgo", { days: diffInDays }) || `${diffInDays} ngày trước`;
+      }
+    } catch (error) {
+      console.error("Error formatting comment date:", error);
+      return t("article.comment.justNow") || "Vừa xong";
+    }
+  };
+
+  const handleSubmitComment = async () => {
+    if (!commentText.trim()) {
+      return;
+    }
+
+    if (!user?.email) {
+      Alert.alert(
+        t("common.error") || "Lỗi",
+        "Vui lòng đăng nhập để bình luận"
+      );
+      return;
+    }
+
+    if (!article) {
+      return;
+    }
+
+    setSubmittingComment(true);
+    try {
+      await articleCommentEndpoints.createComment({
+        userEmail: user.email,
+        articleId: article.articleId,
+        content: commentText.trim(),
+      });
+
+      setCommentText("");
+      // Reload comments after successful submit
+      await loadComments();
+    } catch (error: any) {
+      Alert.alert(
+        t("common.error") || "Lỗi",
+        error?.response?.data?.message ||
+          "Không thể gửi bình luận. Vui lòng thử lại."
+      );
+    } finally {
+      setSubmittingComment(false);
+    }
   };
 
   if (loading) {
@@ -172,6 +297,7 @@ export default function ArticleDetail() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <ScrollView
           style={styles.scrollView}
+          contentContainerStyle={styles.scrollViewContent}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.articleContainer}>
@@ -221,6 +347,111 @@ export default function ArticleDetail() {
                   scrollEnabled={false}
                 />
               </View>
+            </View>
+
+            {/* Comments Section */}
+            <View style={styles.commentsSection}>
+              <View style={styles.commentsHeader}>
+                <Text style={styles.commentsTitle}>
+                  {t("article.comment.title") || "Bình luận"} ({comments.length})
+                </Text>
+              </View>
+
+              {/* Comment Input */}
+              <View style={styles.commentInputContainer}>
+                <View style={styles.commentInputWrapper}>
+                  <TextInput
+                    style={styles.commentInput}
+                    placeholder={t("article.comment.placeholder") || "Viết bình luận..."}
+                    value={commentText}
+                    onChangeText={setCommentText}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.commentSubmitButton,
+                    (!commentText.trim() || submittingComment) &&
+                      styles.commentSubmitButtonDisabled,
+                  ]}
+                  onPress={handleSubmitComment}
+                  disabled={!commentText.trim() || submittingComment}
+                >
+                  {submittingComment ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text
+                      style={[
+                        styles.commentSubmitButtonText,
+                        !commentText.trim() &&
+                          styles.commentSubmitButtonTextDisabled,
+                      ]}
+                    >
+                      {t("article.comment.submit") || "Gửi"}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              {/* Comments List */}
+              {loadingComments ? (
+                <View style={styles.commentsLoadingContainer}>
+                  <ActivityIndicator size="small" color="#007AFF" />
+                </View>
+              ) : comments.length === 0 ? (
+                <View style={styles.noCommentsContainer}>
+                  <Ionicons
+                    name="chatbubble-outline"
+                    size={48}
+                    color="#C0C0C0"
+                  />
+                  <Text style={styles.noCommentsText}>
+                    {t("article.comment.noComments") ||
+                      "Chưa có bình luận nào. Hãy là người đầu tiên bình luận!"}
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.commentsList}>
+                  {comments.map((comment) => (
+                    <View
+                      key={comment.articleCommentId}
+                      style={styles.commentItem}
+                    >
+                      <View style={styles.commentAvatarContainer}>
+                        {comment.userAvatar ? (
+                          <Image
+                            source={{ uri: comment.userAvatar }}
+                            style={styles.commentAvatar}
+                          />
+                        ) : (
+                          <View style={styles.commentAvatarPlaceholder}>
+                            <Ionicons
+                              name="person"
+                              size={20}
+                              color="#666"
+                            />
+                          </View>
+                        )}
+                      </View>
+                      <View style={styles.commentContent}>
+                        <View style={styles.commentHeader}>
+                          <Text style={styles.commentUserName}>
+                            {comment.username || "Người dùng"}
+                          </Text>
+                          <Text style={styles.commentDate}>
+                            {formatCommentDate(comment.createdAt)}
+                          </Text>
+                        </View>
+                        <Text style={styles.commentText}>
+                          {comment.content}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
           </View>
         </ScrollView>

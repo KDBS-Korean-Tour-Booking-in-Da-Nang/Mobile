@@ -61,6 +61,10 @@
       "oauthErrorNaver": "Could not connect to Naver. Please try again.",
       "successMessage": "Login successful!"
     },
+    "oauth": {
+      "missingInfo": "Missing authentication information. Please try again.",
+      "failed": "OAuth login failed: {{message}}"
+    },
     "register": {
       "title": "Create an account",
       "username": "Username",
@@ -615,7 +619,18 @@
     "article": "Articles",
     "edit": "Edit",
     "delete": "Delete",
-    "close": "Close"
+    "close": "Close",
+    "continue": "Continue",
+    "tourTypes": {
+      "resort": "Resort",
+      "culture": "Culture",
+      "adventure": "Adventure",
+      "teamBuilding": "Team Building",
+      "food": "Food",
+      "photography": "Photography",
+      "religious": "Religious",
+      "other": "Other"
+    }
   },
   "article": {
     "title": "Article",
@@ -623,6 +638,9 @@
     "loading": "Loading articles...",
     "noArticles": "No articles available",
     "noArticlesDescription": "There are currently no approved articles. Please check back later!",
+    "searchPlaceholder": "Search articles...",
+    "noSearchResults": "No results found",
+    "noSearchResultsDescription": "Try searching with different keywords",
     "notFound": "Article not found",
     "notFoundDescription": "The article you're looking for doesn't exist or has been removed.",
     "backToArticles": "Back to Articles",
@@ -633,7 +651,19 @@
     "daysAgo": "{{days}} days ago",
     "translate": "Translate",
     "hideTranslation": "Hide translation",
-    "translateFailed": "Unable to translate this article. Please try again."
+    "translateFailed": "Unable to translate this article. Please try again.",
+    "comment": {
+      "title": "Comments",
+      "placeholder": "Write a comment...",
+      "submit": "Submit",
+      "noComments": "No comments yet. Be the first to comment!",
+      "justNow": "Just now",
+      "hoursAgo": "{{hours}} hours ago",
+      "daysAgo": "{{days}} days ago",
+      "notAvailable": "Feature Under Development",
+      "notAvailableMessage": "The comment feature is currently under development. Please check back later!",
+      "viewAll": "View all {{count}} comments"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -645,7 +675,25 @@
     "options": {
       "language": "Language",
       "notifications": "Notifications",
-      "transactions": "Transactions"
+      "transactions": "Transactions",
+      "ticket": "Ticket"
+    }
+  },
+  "ticket": {
+    "title": "Send Feedback",
+    "messageLabel": "Content",
+    "messagePlaceholder": "Describe your feedback in detail...",
+    "messageRequired": "Please enter content",
+    "reasonRequired": "Please select at least one reason",
+    "submit": "Submit",
+    "submitSuccess": "Thank you for your feedback! We will review and respond as soon as possible.",
+    "submitError": "Unable to submit feedback. Please try again later.",
+    "reason": {
+      "label": "Reason",
+      "multiple": "Multiple selection allowed",
+      "improvement": "Need Improvement",
+      "feedback": "Feedback",
+      "other": "Other"
     }
   },
   "notifications": {

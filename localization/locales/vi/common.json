@@ -71,6 +71,10 @@
       "oauthErrorNaver": "Không thể kết nối với Naver. Vui lòng thử lại.",
       "successMessage": "Đăng nhập thành công!"
     },
+    "oauth": {
+      "missingInfo": "Thiếu thông tin xác thực. Vui lòng thử lại.",
+      "failed": "Đăng nhập OAuth thất bại: {{message}}"
+    },
     "register": {
       "title": "Đăng ký tài khoản",
       "username": "Tên người dùng",
@@ -335,10 +339,10 @@
       "bookingNow": "Đặt tour ngay"
     },
     "types": {
-      "DOMESTIC": "Nội địa",
+      "DOMESTIC": "Resort",
       "INTERNATIONAL": "Quốc tế",
       "openTrip": "Tour mở",
-      "Nội địa": "Nội địa",
+      "Nội địa": "Resort",
       "Quốc tế": "Quốc tế"
     },
     "vehicles": {
@@ -366,7 +370,7 @@
       "title": "Đặt tour",
       "contactInfo": "Thông tin liên hệ",
       "usePersonalInfo": "Sử dụng thông tin cá nhân",
-      "guestUsePersonalInfoNote": "Nếu đặt hộ khách, vui lòng nhập lại thông tin tại Booking Information.",
+      "guestUsePersonalInfoNote": "Nếu bạn là khách đi tour, vui lòng nhập lại thông tin tại Booking Information.",
       "fullName": "Họ tên",
       "address": "Địa chỉ",
       "phoneNumber": "Số điện thoại",
@@ -624,7 +628,18 @@
     "article": "Bài viết",
     "edit": "Chỉnh sửa",
     "delete": "Xóa",
-    "close": "Đóng"
+    "close": "Đóng",
+    "continue": "Tiếp tục",
+    "tourTypes": {
+      "resort": "Nghỉ dưỡng",
+      "culture": "Văn hóa",
+      "adventure": "Mạo hiểm",
+      "teamBuilding": "Team Building",
+      "food": "Ẩm thực",
+      "photography": "Nhiếp ảnh",
+      "religious": "Tâm linh",
+      "other": "Khác"
+    }
   },
   "article": {
     "title": "Bài viết",
@@ -632,6 +647,9 @@
     "loading": "Đang tải bài viết...",
     "noArticles": "Không có bài viết nào",
     "noArticlesDescription": "Hiện tại chưa có bài viết nào được phê duyệt. Vui lòng quay lại sau!",
+    "searchPlaceholder": "Tìm kiếm bài viết...",
+    "noSearchResults": "Không tìm thấy kết quả",
+    "noSearchResultsDescription": "Thử tìm kiếm với từ khóa khác",
     "notFound": "Không tìm thấy bài viết",
     "notFoundDescription": "Bài viết bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.",
     "backToArticles": "Quay lại danh sách bài viết",
@@ -642,7 +660,19 @@
     "daysAgo": "{{days}} ngày trước",
     "translate": "Dịch",
     "hideTranslation": "Ẩn bản dịch",
-    "translateFailed": "Không thể dịch nội dung bài viết, vui lòng thử lại."
+    "translateFailed": "Không thể dịch nội dung bài viết, vui lòng thử lại.",
+    "comment": {
+      "title": "Bình luận",
+      "placeholder": "Viết bình luận...",
+      "submit": "Gửi",
+      "noComments": "Chưa có bình luận nào. Hãy là người đầu tiên bình luận!",
+      "justNow": "Vừa xong",
+      "hoursAgo": "{{hours}} giờ trước",
+      "daysAgo": "{{days}} ngày trước",
+      "notAvailable": "Tính năng đang phát triển",
+      "notAvailableMessage": "Chức năng bình luận đang được phát triển. Vui lòng quay lại sau!",
+      "viewAll": "Xem tất cả {{count}} bình luận"
+    }
   },
   "settings": {
     "title": "Cài đặt",
@@ -654,7 +684,25 @@
     "options": {
       "language": "Ngôn ngữ",
       "notifications": "Thông báo",
-      "transactions": "Giao dịch"
+      "transactions": "Giao dịch",
+      "ticket": "Ticket"
+    }
+  },
+  "ticket": {
+    "title": "Gửi ý kiến đóng góp",
+    "messageLabel": "Nội dung",
+    "messagePlaceholder": "Mô tả chi tiết ý kiến của bạn...",
+    "messageRequired": "Vui lòng nhập nội dung",
+    "reasonRequired": "Vui lòng chọn ít nhất một lý do",
+    "submit": "Gửi",
+    "submitSuccess": "Cảm ơn bạn đã gửi ý kiến! Chúng tôi sẽ xem xét và phản hồi sớm nhất có thể.",
+    "submitError": "Không thể gửi ý kiến. Vui lòng thử lại sau.",
+    "reason": {
+      "label": "Lý do",
+      "multiple": "Có thể chọn nhiều",
+      "improvement": "Cần cải thiện",
+      "feedback": "Góp ý",
+      "other": "Khác"
     }
   },
   "notifications": {

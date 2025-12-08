@@ -148,6 +148,7 @@ export default function HistoryBooking() {
           status: booking.status || booking.bookingStatus,
           createdAt:
             booking.createdAt || booking.created_at || new Date().toISOString(),
+          userConfirmedCompletion: booking.userConfirmedCompletion ?? false,
         };
       });
 
@@ -306,7 +307,11 @@ export default function HistoryBooking() {
               setItems((prev) =>
                 prev.map((item) =>
                   item.bookingId === bookingId
-                    ? { ...item, status: BookingStatus.BOOKING_SUCCESS }
+                    ? {
+                        ...item,
+                        userConfirmedCompletion: true,
+                        status: BookingStatus.BOOKING_SUCCESS,
+                      }
                     : item
                 )
               );
@@ -349,6 +354,8 @@ export default function HistoryBooking() {
     <MainLayout>
       <ScrollView
         style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={true}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -376,6 +383,7 @@ export default function HistoryBooking() {
             items.map((it) => {
               const awaiting = isAwaitingCompletion(it.status);
               const isProcessing = confirmingId === it.bookingId;
+              const hasUserConfirmed = it.userConfirmedCompletion === true;
               return (
                 <View key={it.bookingId} style={styles.card}>
                   <TouchableOpacity
@@ -433,7 +441,7 @@ export default function HistoryBooking() {
                       color="#9aa0a6"
                     />
                   </TouchableOpacity>
-                  {awaiting && (
+                  {awaiting && !hasUserConfirmed && (
                     <View style={styles.cardActionButtonsContainer}>
                       <TouchableOpacity
                         style={[

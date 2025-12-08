@@ -111,14 +111,36 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     try {
       const token = await AsyncStorage.getItem("authToken");
       const userDataRaw = await AsyncStorage.getItem("userData");
-      const userData: User | null = userDataRaw
-        ? JSON.parse(userDataRaw)
-        : null;
+      let userData: User | null = userDataRaw ? JSON.parse(userDataRaw) : null;
+
+      // Validate userId is a valid number before using
+      if (userData && userData.userId) {
+        const userId =
+          typeof userData.userId === "number"
+            ? userData.userId
+            : parseInt(String(userData.userId), 10);
+
+        if (isNaN(userId) || userId <= 0) {
+          console.error("[AuthContext] Invalid userId in stored userData:", {
+            userId: userData.userId,
+            parsed: userId,
+            userData,
+          });
+          // Clear invalid userData
+          await AsyncStorage.removeItem("userData");
+          userData = null;
+        } else {
+          // Ensure userId is a number
+          userData.userId = userId;
+        }
+      }
+
       dispatch({
         type: "SET_AUTH",
         payload: { isAuthenticated: !!token, user: userData },
       });
     } catch (error) {
+      console.error("[AuthContext] Error checking auth status:", error);
       dispatch({
         type: "SET_AUTH",
         payload: { isAuthenticated: false, user: null },

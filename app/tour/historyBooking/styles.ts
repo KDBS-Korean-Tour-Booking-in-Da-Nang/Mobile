@@ -17,6 +17,10 @@ const styles = StyleSheet.create<any>({
     flex: 1,
     backgroundColor: "#f8f9fa",
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 100,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",

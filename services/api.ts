@@ -42,7 +42,51 @@ api.interceptors.request.use(
         const email: string | undefined = user?.email;
         if (email) (config.headers as any)["User-Email"] = email;
       }
-    } catch {}
+
+      const urlPath = url.split("?")[0];
+      const pathParts = urlPath.split("/").filter(Boolean);
+
+      if (pathParts.length >= 3 && pathParts[0] === "api") {
+        const endpoint = pathParts[1];
+        const pathVar = pathParts[2];
+        const nextPathVar = pathParts[3];
+
+        if (endpoint === "transactions" && pathVar) {
+          if (/[a-zA-Z]/.test(pathVar)) {
+            console.error("[API Interceptor] Invalid userId in URL path:", {
+              url,
+              endpoint,
+              pathVar,
+              pathParts,
+            });
+            return Promise.reject(
+              new Error(
+                `Invalid userId in API URL: ${pathVar}. Expected a number, got what appears to be a username.`
+              )
+            );
+          }
+        }
+
+        if (endpoint === "chat" && pathVar === "all" && nextPathVar) {
+          if (/[a-zA-Z]/.test(nextPathVar)) {
+            console.error("[API Interceptor] Invalid userId in URL path:", {
+              url,
+              endpoint,
+              pathVar,
+              nextPathVar,
+              pathParts,
+            });
+            return Promise.reject(
+              new Error(
+                `Invalid userId in API URL: ${nextPathVar}. Expected a number, got what appears to be a username.`
+              )
+            );
+          }
+        }
+      }
+    } catch (error) {
+      console.error("[API Interceptor] Error in request interceptor:", error);
+    }
     return config;
   },
   (error) => {
@@ -50,7 +94,6 @@ api.interceptors.request.use(
   }
 );
 
-// Reuse same auth/user-email interceptor for form instance
 apiForm.interceptors.request.use(
   async (config) => {
     try {

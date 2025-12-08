@@ -12,8 +12,8 @@ export function getConversation(user1: string, user2: string) {
   );
 }
 
-export function getAllConversations(username: string) {
-  return api.get(`/api/chat/all/${encodeURIComponent(username)}`);
+export function getAllConversations(userId: number) {
+  return api.get(`/api/chat/all/${userId}`);
 }
 
 export function sendMessage(body: ChatMessage) {

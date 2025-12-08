@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../../navigation/navigation";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import MainLayout from "../../../components/MainLayout";
+import TicketModal from "./ticket";
 import styles from "./styles";
 import { useTranslation } from "react-i18next";
 
@@ -11,6 +12,7 @@ export default function Settings() {
   const { goBack, navigate } = useNavigation();
   const { logout } = useAuthContext();
   const { t } = useTranslation();
+  const [showTicketModal, setShowTicketModal] = useState(false);
 
   const handleSignOut = () => {
     Alert.alert(t("settings.confirmTitle"), t("settings.confirmMessage"), [
@@ -56,6 +58,14 @@ export default function Settings() {
       icon: "card-outline",
       onPress: () => {
         // TODO: Navigate to transaction history
+      },
+    },
+    {
+      id: "ticket",
+      title: t("settings.options.ticket") || t("ticket.title") || "Ticket",
+      icon: "chatbubble-ellipses-outline",
+      onPress: () => {
+        setShowTicketModal(true);
       },
     },
   ];
@@ -118,6 +128,12 @@ export default function Settings() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Ticket Modal */}
+      <TicketModal
+        visible={showTicketModal}
+        onClose={() => setShowTicketModal(false)}
+      />
     </MainLayout>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -8,20 +8,21 @@ import {
   RefreshControl,
   Image,
   Platform,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../navigation/navigation";
 import { useTranslation } from "react-i18next";
 import i18n from "../../localization/i18n";
-import { colors } from "../../constants/theme";
 import ScrollableLayout from "../../components/ScrollableLayout";
 import {
   getApprovedArticles,
   Article,
 } from "../../services/endpoints/articles";
+import { articleCommentEndpoints } from "../../services/endpoints/articleComments";
+import { ArticleCommentResponse } from "../../src/types/response/articleComment.response";
 import styles from "./styles";
 
-// Helper function to get article fields based on current language
 const getArticleFields = (article: Article, lang: string) => {
   const currentLang = lang as "vi" | "en" | "ko";
 
@@ -54,6 +55,43 @@ export default function ArticleList() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [currentLang, setCurrentLang] = useState(i18n.language);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [articleComments, setArticleComments] = useState<
+    Record<number, ArticleCommentResponse[]>
+  >({});
+
+  const loadCommentsForArticle = useCallback(async (articleId: number) => {
+    try {
+      const response = await articleCommentEndpoints.getCommentsByArticleId(
+        articleId
+      );
+      // Filter to only show comments (no replies - parentCommentId is null)
+      const commentsOnly = (response.data || []).filter(
+        (comment) => !comment.parentCommentId
+      );
+      setArticleComments((prev) => {
+        // Only update if not already set
+        if (prev[articleId]) {
+          return prev;
+        }
+        return {
+          ...prev,
+          [articleId]: commentsOnly,
+        };
+      });
+    } catch (error) {
+      console.error(`Error loading comments for article ${articleId}:`, error);
+      setArticleComments((prev) => {
+        if (prev[articleId]) {
+          return prev;
+        }
+        return {
+          ...prev,
+          [articleId]: [],
+        };
+      });
+    }
+  }, []);
 
   const loadArticles = useCallback(async () => {
     try {
@@ -76,6 +114,16 @@ export default function ArticleList() {
   useEffect(() => {
     loadArticles();
   }, [loadArticles]);
+
+  // Load comments for all articles after articles are loaded
+  useEffect(() => {
+    if (articles.length > 0) {
+      articles.forEach((article) => {
+        loadCommentsForArticle(article.articleId);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [articles]);
 
   // Track language changes
   useEffect(() => {
@@ -111,43 +159,85 @@ export default function ArticleList() {
     return match && match[1] ? match[1] : null;
   };
 
-  const renderArticleCard = (article: Article) => (
-    <TouchableOpacity
-      key={article.articleId}
-      style={styles.articleCard}
-      onPress={() => {
-        navigate(`/article/detailArticle?id=${article.articleId}`);
-      }}
-    >
-      <View style={styles.articleImageContainer}>
-        <Image
-          source={{
-            uri:
-              extractFirstImageSrc(
-                getArticleFields(article, currentLang).content
-              ) || "",
-            cache: "force-cache",
-          }}
-          style={styles.articleImage}
-          resizeMode="cover"
-          fadeDuration={0}
-        />
-      </View>
-      <View style={styles.articleContent}>
-        <Text style={styles.articleTitle} numberOfLines={2}>
-          {getArticleFields(article, currentLang).title}
-        </Text>
-        <Text style={styles.articleSummary} numberOfLines={3}>
-          {getArticleFields(article, currentLang).description}
-        </Text>
-        <View style={styles.articleMeta}>
-          <Text style={styles.articleDate}>
-            {formatDate(article.articleCreatedDate)}
-          </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+  // Filter articles based on search query (local search)
+  const filteredArticles = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return articles;
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    return articles.filter((article) => {
+      const fields = getArticleFields(article, currentLang);
+      const title = (fields.title || "").toLowerCase();
+      const description = (fields.description || "").toLowerCase();
+
+      return title.includes(query) || description.includes(query);
+    });
+  }, [articles, searchQuery, currentLang]);
+
+  const formatCommentDate = (dateString: string) => {
+    if (!dateString) {
+      return t("article.comment.justNow") || "Vừa xong";
+    }
+
+    try {
+      let date: Date;
+      // Handle LocalDateTime format from backend
+      if (
+        dateString.includes("T") &&
+        !dateString.includes("Z") &&
+        !dateString.includes("+") &&
+        !dateString.match(/[+-]\d{2}:\d{2}$/)
+      ) {
+        const parts = dateString.split("T");
+        if (parts.length === 2) {
+          const [year, month, day] = parts[0].split("-").map(Number);
+          const timePart = parts[1].split(".")[0];
+          const [hour, minute, second] = timePart.split(":").map(Number);
+          date = new Date(
+            year,
+            month - 1,
+            day,
+            hour || 0,
+            minute || 0,
+            second || 0
+          );
+        } else {
+          date = new Date(dateString);
+        }
+      } else {
+        date = new Date(dateString);
+      }
+
+      if (isNaN(date.getTime())) {
+        return t("article.comment.justNow") || "Vừa xong";
+      }
+
+      const now = new Date();
+      const diffInMs = now.getTime() - date.getTime();
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+
+      if (diffInMinutes < 1) {
+        return t("article.comment.justNow") || "Vừa xong";
+      } else if (diffInHours < 1) {
+        return `${diffInMinutes} phút trước`;
+      } else if (diffInHours < 24) {
+        return (
+          t("article.comment.hoursAgo", { hours: diffInHours }) ||
+          `${diffInHours} giờ trước`
+        );
+      } else {
+        const diffInDays = Math.floor(diffInHours / 24);
+        return (
+          t("article.comment.daysAgo", { days: diffInDays }) ||
+          `${diffInDays} ngày trước`
+        );
+      }
+    } catch {
+      return t("article.comment.justNow") || "Vừa xong";
+    }
+  };
 
   if (loading) {
     return (
@@ -186,6 +276,37 @@ export default function ArticleList() {
           }
           showsVerticalScrollIndicator={false}
         >
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <View style={styles.searchInputContainer}>
+              <Ionicons
+                name="search"
+                size={20}
+                color="#666"
+                style={styles.searchIcon}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder={
+                  t("article.searchPlaceholder") || "Tìm kiếm bài viết..."
+                }
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                returnKeyType="search"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setSearchQuery("")}
+                  style={styles.clearSearchButton}
+                >
+                  <Ionicons name="close-circle" size={20} color="#666" />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
           {articles.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="newspaper-outline" size={64} color="#C0C0C0" />
@@ -194,9 +315,137 @@ export default function ArticleList() {
                 {t("article.noArticlesDescription")}
               </Text>
             </View>
+          ) : filteredArticles.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="search-outline" size={64} color="#C0C0C0" />
+              <Text style={styles.emptyTitle}>
+                {t("article.noSearchResults") || "Không tìm thấy kết quả"}
+              </Text>
+              <Text style={styles.emptyDescription}>
+                {t("article.noSearchResultsDescription") ||
+                  "Thử tìm kiếm với từ khóa khác"}
+              </Text>
+            </View>
           ) : (
             <View style={styles.articlesList}>
-              {articles.map(renderArticleCard)}
+              {filteredArticles.map((article) => {
+                const comments = articleComments[article.articleId] || [];
+                const commentCount = comments.length;
+                const topComments = comments.slice(0, 3);
+
+                return (
+                  <View
+                    key={article.articleId}
+                    style={styles.articleCardWrapper}
+                  >
+                    <TouchableOpacity
+                      style={styles.articleCard}
+                      onPress={() => {
+                        navigate(
+                          `/article/detailArticle?id=${article.articleId}`
+                        );
+                      }}
+                    >
+                      <View style={styles.articleImageContainer}>
+                        <Image
+                          source={{
+                            uri:
+                              extractFirstImageSrc(
+                                getArticleFields(article, currentLang).content
+                              ) || "",
+                            cache: "force-cache",
+                          }}
+                          style={styles.articleImage}
+                          resizeMode="cover"
+                          fadeDuration={0}
+                        />
+                      </View>
+                      <View style={styles.articleContent}>
+                        <Text style={styles.articleTitle} numberOfLines={2}>
+                          {getArticleFields(article, currentLang).title}
+                        </Text>
+                        <Text style={styles.articleSummary} numberOfLines={3}>
+                          {getArticleFields(article, currentLang).description}
+                        </Text>
+                        <View style={styles.articleMeta}>
+                          <Text style={styles.articleDate}>
+                            {formatDate(article.articleCreatedDate)}
+                          </Text>
+                          {commentCount > 0 && (
+                            <View style={styles.articleMetaRight}>
+                              <Ionicons
+                                name="chatbubble-outline"
+                                size={14}
+                                color="#666"
+                              />
+                              <Text style={styles.articleCommentCount}>
+                                {commentCount}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+
+                    {/* Top 3 Comments Preview */}
+                    {topComments.length > 0 && (
+                      <View style={styles.articleCommentsPreview}>
+                        {topComments.map((comment) => (
+                          <View
+                            key={comment.articleCommentId}
+                            style={styles.commentPreviewItem}
+                          >
+                            <View style={styles.commentPreviewAvatar}>
+                              {comment.userAvatar ? (
+                                <Image
+                                  source={{ uri: comment.userAvatar }}
+                                  style={styles.commentPreviewAvatarImage}
+                                />
+                              ) : (
+                                <Ionicons
+                                  name="person"
+                                  size={12}
+                                  color="#666"
+                                />
+                              )}
+                            </View>
+                            <View style={styles.commentPreviewContent}>
+                              <Text style={styles.commentPreviewUserName}>
+                                {comment.username || "Người dùng"}
+                              </Text>
+                              <Text
+                                style={styles.commentPreviewText}
+                                numberOfLines={2}
+                              >
+                                {comment.content}
+                              </Text>
+                              <Text style={styles.commentPreviewDate}>
+                                {formatCommentDate(comment.createdAt)}
+                              </Text>
+                            </View>
+                          </View>
+                        ))}
+                        {commentCount > 3 && (
+                          <TouchableOpacity
+                            style={styles.viewAllCommentsButton}
+                            onPress={() => {
+                              navigate(
+                                `/article/detailArticle?id=${article.articleId}`
+                              );
+                            }}
+                          >
+                            <Text style={styles.viewAllCommentsText}>
+                              {t("article.comment.viewAll", {
+                                count: commentCount,
+                              }) || `Xem tất cả ${commentCount} bình luận`}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
             </View>
           )}
         </ScrollView>

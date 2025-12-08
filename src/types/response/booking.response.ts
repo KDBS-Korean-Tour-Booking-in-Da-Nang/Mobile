@@ -16,6 +16,8 @@ export interface BookingResponse {
   createdAt: string;
   guests: GuestResponse[];
   bookingStatus?: BookingStatus | string;
+  userConfirmedCompletion?: boolean;
+  companyConfirmedCompletion?: boolean;
 }
 
 export interface GuestResponse {
@@ -37,6 +39,7 @@ export interface BookingSummaryResponse {
   totalAmount?: number;
   status?: string;
   createdAt: string;
+  userConfirmedCompletion?: boolean;
 }
 
 export enum BookingStatus {

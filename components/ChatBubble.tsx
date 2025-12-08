@@ -73,9 +73,10 @@ export default function ChatBubble() {
         current?.mail;
       if (username) setCurrentUsername(username);
 
-      if (username) {
+      const userId = current?.userId || current?.id || current?.user_id;
+      if (userId && typeof userId === "number" && userId > 0) {
         try {
-          const res = await chatEndpoints.getAllConversations(username);
+          const res = await chatEndpoints.getAllConversations(userId);
           const data = res?.data;
           const items = Array.isArray(data)
             ? data
@@ -162,11 +163,21 @@ export default function ChatBubble() {
     try {
       if (!currentUsername || !otherUsername) return;
 
-      await AsyncStorage.getItem("authToken");
-      await AsyncStorage.getItem("userData");
+      const userData = await AsyncStorage.getItem("userData");
+      const current = userData ? JSON.parse(userData) : {};
+
+      // Get userId - must be a valid number
+      const userId = current?.userId || current?.id || current?.user_id;
+      if (!userId || typeof userId !== "number" || userId <= 0) {
+        console.error(
+          "[ChatBubble] Invalid userId for getAllConversations:",
+          userId
+        );
+        return;
+      }
 
       try {
-        const allRes = await chatEndpoints.getAllConversations(currentUsername);
+        const allRes = await chatEndpoints.getAllConversations(userId);
 
         const data = allRes?.data;
         const items = Array.isArray(data)

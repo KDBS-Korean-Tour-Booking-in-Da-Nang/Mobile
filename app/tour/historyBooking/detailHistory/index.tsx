@@ -295,6 +295,7 @@ export default function BookingDetail() {
                 prev
                   ? {
                       ...prev,
+                      userConfirmedCompletion: true,
                       bookingStatus: BookingStatus.BOOKING_SUCCESS,
                     }
                   : prev
@@ -496,7 +497,7 @@ export default function BookingDetail() {
             </TouchableOpacity>
           )}
 
-          {isAwaitingCompletion && (
+          {isAwaitingCompletion && !booking?.userConfirmedCompletion && (
             <View style={styles.actionButtonsContainer}>
               <TouchableOpacity
                 style={styles.confirmCompletionButton}
@@ -846,7 +847,7 @@ export default function BookingDetail() {
         transparent={true}
         onRequestClose={() => setShowConfirmModal(false)}
       >
-        <View style={styles.modalOverlay}>
+        <View style={styles.confirmModalOverlay}>
           <View style={styles.confirmModalContent}>
             <Text style={styles.confirmModalTitle}>
               {t("tour.booking.confirmUpdate") ||
@@ -882,12 +883,12 @@ export default function BookingDetail() {
       {/* Complaint Modal */}
       <Modal
         visible={showComplaintModal}
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         onRequestClose={() => setShowComplaintModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <View style={styles.complaintModalOverlay}>
+          <View style={styles.complaintModalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
                 {t("tour.booking.complaintTitle") || "Khiếu nại"}

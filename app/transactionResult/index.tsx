@@ -11,7 +11,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as MailComposer from "expo-mail-composer";
-import { transactionEndpoints } from "../../services/endpoints/transactions";
 import { tourEndpoints } from "../../services/endpoints/tour";
 import styles from "./style";
 
@@ -22,32 +21,18 @@ interface TransactionResultParams {
   bookingId?: string;
 }
 
-interface TransactionDetails {
-  id: number;
-  orderId: string;
-  amount: number;
-  status: string;
-  paymentMethod: string;
-  createdTime: string;
-}
-
 export default function TransactionResult() {
   const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams();
 
-  const [transaction, setTransaction] = useState<TransactionDetails | null>(
-    null
-  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const { orderId, status, paymentMethod, bookingId } =
     params as unknown as TransactionResultParams;
 
-  const [fetchedStatus, setFetchedStatus] = useState<string | null>(null);
-
-  const finalStatus = status || fetchedStatus || "";
+  const finalStatus = status || "";
   const statusUpper = finalStatus?.toUpperCase() || "";
 
   const isSuccess = statusUpper === "SUCCESS";
@@ -64,25 +49,13 @@ export default function TransactionResult() {
         setLoading(false);
         return;
       }
-
-      if (!status) {
-        try {
-          const response = await transactionEndpoints.getTransactionByOrderId(
-            orderId
-          );
-          const transactionData = response.data;
-          if (transactionData?.status) {
-            setFetchedStatus(transactionData.status);
-            setTransaction(transactionData);
-          }
-        } catch {}
-      }
+     
     } catch (err: any) {
       setError(err.response?.data?.message || t("payment.result.fetchError"));
     } finally {
       setLoading(false);
     }
-  }, [orderId, status, t]);
+  }, [orderId, t]);
 
   useEffect(() => {
     if (orderId) {
@@ -237,17 +210,6 @@ export default function TransactionResult() {
               {finalStatus || t("common.na")}
             </Text>
           </View>
-
-          {transaction && transaction.amount && (
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>
-                {t("payment.result.amount")}
-              </Text>
-              <Text style={styles.detailValue}>
-                {transaction.amount.toLocaleString()} VND
-              </Text>
-            </View>
-          )}
         </View>
 
         {error && (

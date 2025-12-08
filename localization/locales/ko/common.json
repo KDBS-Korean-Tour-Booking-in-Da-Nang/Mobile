@@ -61,6 +61,10 @@
       "oauthErrorNaver": "Naver에 연결할 수 없습니다. 다시 시도해주세요.",
       "successMessage": "로그인 성공!"
     },
+    "oauth": {
+      "missingInfo": "인증 정보가 누락되었습니다. 다시 시도해주세요.",
+      "failed": "OAuth 로그인 실패: {{message}}"
+    },
     "register": {
       "title": "계정 만들기",
       "username": "사용자 이름",
@@ -604,7 +608,18 @@
     "article": "기사",
     "edit": "수정",
     "delete": "삭제",
-    "close": "닫기"
+    "close": "닫기",
+    "continue": "계속",
+    "tourTypes": {
+      "resort": "리조트",
+      "culture": "문화",
+      "adventure": "모험",
+      "teamBuilding": "팀 빌딩",
+      "food": "음식",
+      "photography": "사진",
+      "religious": "종교",
+      "other": "기타"
+    }
   },
   "article": {
     "title": "기사",
@@ -612,6 +627,9 @@
     "loading": "기사를 불러오는 중...",
     "noArticles": "기사가 없습니다",
     "noArticlesDescription": "현재 승인된 기사가 없습니다. 나중에 다시 확인해주세요!",
+    "searchPlaceholder": "기사 검색...",
+    "noSearchResults": "결과를 찾을 수 없습니다",
+    "noSearchResultsDescription": "다른 키워드로 검색해보세요",
     "notFound": "기사를 찾을 수 없습니다",
     "notFoundDescription": "찾고 계신 기사가 존재하지 않거나 삭제되었습니다.",
     "backToArticles": "기사 목록으로 돌아가기",
@@ -622,7 +640,19 @@
     "daysAgo": "{{days}}일 전",
     "translate": "번역",
     "hideTranslation": "번역 숨기기",
-    "translateFailed": "이 기사를 번역할 수 없습니다. 다시 시도해주세요."
+    "translateFailed": "이 기사를 번역할 수 없습니다. 다시 시도해주세요.",
+    "comment": {
+      "title": "댓글",
+      "placeholder": "댓글을 입력하세요...",
+      "submit": "제출",
+      "noComments": "아직 댓글이 없습니다. 첫 번째 댓글을 작성해보세요!",
+      "justNow": "방금 전",
+      "hoursAgo": "{{hours}}시간 전",
+      "daysAgo": "{{days}}일 전",
+      "notAvailable": "개발 중인 기능",
+      "notAvailableMessage": "댓글 기능은 현재 개발 중입니다. 나중에 다시 확인해주세요!",
+      "viewAll": "댓글 {{count}}개 모두 보기"
+    }
   },
   "settings": {
     "title": "설정",
@@ -634,7 +664,25 @@
     "options": {
       "language": "언어",
       "notifications": "알림",
-      "transactions": "거래내역"
+      "transactions": "거래내역",
+      "ticket": "Ticket"
+    }
+  },
+  "ticket": {
+    "title": "의견 보내기",
+    "messageLabel": "내용",
+    "messagePlaceholder": "의견을 자세히 설명해주세요...",
+    "messageRequired": "내용을 입력해주세요",
+    "reasonRequired": "최소 하나의 이유를 선택해주세요",
+    "submit": "제출",
+    "submitSuccess": "의견을 보내주셔서 감사합니다! 검토 후 최대한 빨리 답변드리겠습니다.",
+    "submitError": "의견을 제출할 수 없습니다. 나중에 다시 시도해주세요.",
+    "reason": {
+      "label": "이유",
+      "multiple": "여러 개 선택 가능",
+      "improvement": "개선 필요",
+      "feedback": "의견",
+      "other": "기타"
     }
   },
   "notifications": {
