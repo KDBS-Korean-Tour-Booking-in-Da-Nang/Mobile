@@ -225,6 +225,7 @@
     "forum": "포럼",
     "tour": "투어",
     "article": "기사",
+    "message": "메시지",
     "profile": "개인"
   },
   "onboarding": {
@@ -635,10 +636,12 @@
       "loading": "거래를 불러오는 중...",
       "success": "결제 성공",
       "failed": "결제 실패",
+      "cancelled": "결제 취소",
       "pending": "결제 처리 중",
       "pendingPayment": "결제 대기",
       "successMessage": "결제가 성공적으로 완료되었습니다.",
       "failedMessage": "결제를 완료할 수 없습니다.",
+      "cancelledMessage": "결제를 취소하셨습니다. 나중에 다시 시도할 수 있습니다.",
       "pendingMessage": "결제가 처리 중입니다.",
       "details": "예약 내역",
       "orderId": "주문 ID",
@@ -821,6 +824,8 @@
     "typeMessage": "메시지 입력",
     "aiAssistant": "AI 어시스턴트",
     "aiassitant": "AI 어시스턴트",
-    "startConversation": "AI와 대화 시작하기"
+    "startConversation": "AI와 대화 시작하기",
+    "loading": "로딩 중...",
+    "userNotFound": "사용자를 찾을 수 없습니다"
   }
 }

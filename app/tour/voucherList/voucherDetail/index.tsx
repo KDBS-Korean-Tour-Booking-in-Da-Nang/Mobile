@@ -177,7 +177,7 @@ export default function VoucherDetail() {
     return (
       <MainLayout>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color="#B8D4E3" />
           <Text style={styles.loadingText}>{t("tour.loading")}</Text>
         </View>
       </MainLayout>
@@ -197,7 +197,7 @@ export default function VoucherDetail() {
           <View style={styles.headerRight} />
         </View>
         <View style={styles.emptyContainer}>
-          <Ionicons name="ticket-outline" size={64} color="#ccc" />
+          <Ionicons name="ticket-outline" size={64} color="#B8D4E3" />
           <Text style={styles.emptyTitle}>
             {loadError || t("tour.voucher.detail.notFound")}
           </Text>
@@ -222,7 +222,7 @@ export default function VoucherDetail() {
         <View style={styles.voucherCard}>
           <View style={styles.voucherCardHeader}>
             <View style={styles.voucherIconContainer}>
-              <Ionicons name="ticket" size={48} color="#FF6B6B" />
+              <Ionicons name="ticket-outline" size={48} color="#F5B8C4" />
             </View>
             <View style={styles.voucherHeaderInfo}>
               <Text style={styles.voucherCode}>{voucher.code}</Text>
@@ -236,7 +236,7 @@ export default function VoucherDetail() {
                 {t("tour.voucher.detail.discountInfo")}
               </Text>
               <View style={styles.voucherDetailRow}>
-                <Ionicons name="pricetag" size={20} color="#666" />
+                <Ionicons name="pricetag-outline" size={20} color="#7A8A99" />
                 <Text style={styles.voucherDetailLabel}>
                   {t("tour.confirm.discount")}:
                 </Text>
@@ -248,7 +248,7 @@ export default function VoucherDetail() {
               </View>
 
               <View style={styles.voucherDetailRow}>
-                <Ionicons name="cash-outline" size={20} color="#666" />
+                <Ionicons name="cash-outline" size={20} color="#7A8A99" />
                 <Text style={styles.voucherDetailLabel}>
                   {t("tour.voucher.minOrder")}:
                 </Text>
@@ -263,7 +263,7 @@ export default function VoucherDetail() {
                 {t("tour.voucher.detail.validityInfo")}
               </Text>
               <View style={styles.voucherDetailRow}>
-                <Ionicons name="calendar-outline" size={20} color="#666" />
+                <Ionicons name="calendar-outline" size={20} color="#7A8A99" />
                 <Text style={styles.voucherDetailLabel}>
                   {t("tour.voucher.validUntil")}:
                 </Text>
@@ -282,7 +282,7 @@ export default function VoucherDetail() {
                 onPress={() => setShowToursModal(true)}
                 disabled={!voucher.tourIds || voucher.tourIds.length === 0}
               >
-                <Ionicons name="location" size={20} color="#007AFF" />
+                <Ionicons name="location-outline" size={20} color="#5A6C7D" />
                 <Text style={styles.applicableTourButtonText}>
                   {voucher.tourIds && voucher.tourIds.length > 0
                     ? t("tour.voucher.viewApplicableTours")
@@ -290,7 +290,7 @@ export default function VoucherDetail() {
                       "Áp dụng cho tất cả tour đủ điều kiện"}
                 </Text>
                 {voucher.tourIds && voucher.tourIds.length > 0 && (
-                  <Ionicons name="chevron-forward" size={20} color="#007AFF" />
+                  <Ionicons name="chevron-forward-outline" size={20} color="#5A6C7D" />
                 )}
               </TouchableOpacity>
             </View>
@@ -324,12 +324,12 @@ export default function VoucherDetail() {
                 onPress={() => setShowToursModal(false)}
                 style={styles.modalCloseButton}
               >
-                <Ionicons name="close" size={24} color="#000" />
+                <Ionicons name="close-outline" size={20} color="#7A8A99" />
               </TouchableOpacity>
             </View>
             {toursLoading ? (
               <View style={styles.tourLoadingContainer}>
-                <ActivityIndicator size="small" color="#007AFF" />
+                <ActivityIndicator size="small" color="#B8D4E3" />
                 <Text style={styles.tourLoadingText}>
                   {t("tour.voucher.loadingTours") ||
                     "Đang tải danh sách tour..."}
@@ -356,7 +356,7 @@ export default function VoucherDetail() {
                   ))
                 ) : (
                   <View style={styles.tourEmptyContainer}>
-                    <Ionicons name="compass-outline" size={48} color="#ccc" />
+                    <Ionicons name="compass-outline" size={48} color="#B8D4E3" />
                     <Text style={styles.tourEmptyText}>
                       {t("tour.voucher.noSpecificTours") ||
                         "Voucher áp dụng cho tất cả tour đáp ứng điều kiện"}

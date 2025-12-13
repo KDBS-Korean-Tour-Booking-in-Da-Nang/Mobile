@@ -72,19 +72,18 @@ export default function TourDetail() {
   const [showVoucherModal, setShowVoucherModal] = useState(false);
   const [hasBookedTour, setHasBookedTour] = useState(false);
   const [checkingBooking, setCheckingBooking] = useState(false);
+  const [averageRating, setAverageRating] = useState<number | null>(null);
 
   useEffect(() => {
     const loadTour = async () => {
       try {
         setLoading(true);
-        console.log("[Tour Detail] Loading tour with ID:", tourId);
         if (!tourId || isNaN(tourId) || tourId <= 0) {
           console.error("[Tour Detail] Invalid tourId:", tourId);
           Alert.alert(t("common.error"), t("tour.errors.loadFailed"));
           return;
         }
         const res = await tourEndpoints.getById(tourId);
-        console.log("[Tour Detail] Tour loaded successfully:", res.data?.id, res.data?.tourName);
         setTour(res.data);
         setCurrentImageIndex(0);
       } catch (error: any) {
@@ -102,6 +101,36 @@ export default function TourDetail() {
 
     loadTour();
   }, [tourId, t]);
+
+  useEffect(() => {
+    const loadRatings = async () => {
+      if (!tourId || isNaN(tourId) || tourId <= 0) {
+        setAverageRating(null);
+        return;
+      }
+      try {
+        const ratingsResponse = await tourEndpoints.getTourRatings(tourId);
+        const ratings = Array.isArray(ratingsResponse.data) ? ratingsResponse.data : [];
+        
+        if (ratings.length === 0) {
+          setAverageRating(null);
+          return;
+        }
+
+        const totalStars = ratings.reduce((sum: number, rating: any) => {
+          const star = Number(rating.star) || 0;
+          return sum + star;
+        }, 0);
+
+        const average = totalStars / ratings.length;
+        setAverageRating(Math.round(average * 10) / 10); // Round to 1 decimal place
+      } catch {
+        setAverageRating(null);
+      }
+    };
+
+    loadRatings();
+  }, [tourId]);
 
   const handleScroll = useCallback((event: any) => {
     const currentScrollY = event.nativeEvent.contentOffset.y;
@@ -442,7 +471,7 @@ export default function TourDetail() {
                         styles.metaValueSm,
                     ]}
                   >
-                    4.5
+                    {averageRating !== null ? averageRating.toFixed(1) : "0.0"}
                   </Text>
                 </View>
               </View>
@@ -705,13 +734,11 @@ export default function TourDetail() {
                     const images: string[] = [];
                     let workingHtml = html;
                     let imgMatch: RegExpExecArray | null;
-                    let imgCount = 0;
 
                     while ((imgMatch = imgRegex.exec(html))) {
                       const rawSrc = imgMatch[1];
                       const resolved = normalizeHtmlImageSrc(rawSrc);
                       if (resolved) images.push(resolved);
-                      imgCount++;
                     }
 
                     // Loại bỏ thẻ <img> khỏi phần text

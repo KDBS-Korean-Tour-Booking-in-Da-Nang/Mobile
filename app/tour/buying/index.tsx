@@ -84,6 +84,36 @@ export default function BuyingTour() {
     loadTour();
   }, [tourId, t]);
 
+  React.useEffect(() => {
+    const loadRatings = async () => {
+      if (!tourId || isNaN(tourId) || tourId <= 0) {
+        setAverageRating(null);
+        return;
+      }
+      try {
+        const ratingsResponse = await tourEndpoints.getTourRatings(tourId);
+        const ratings = Array.isArray(ratingsResponse.data) ? ratingsResponse.data : [];
+        
+        if (ratings.length === 0) {
+          setAverageRating(null);
+          return;
+        }
+
+        const totalStars = ratings.reduce((sum: number, rating: any) => {
+          const star = Number(rating.star) || 0;
+          return sum + star;
+        }, 0);
+
+        const average = totalStars / ratings.length;
+        setAverageRating(Math.round(average * 10) / 10); // Round to 1 decimal place
+      } catch {
+        setAverageRating(null);
+      }
+    };
+
+    loadRatings();
+  }, [tourId]);
+
   const handleScroll = React.useCallback(
     (event: any) => {
       const now = Date.now();
@@ -182,6 +212,7 @@ export default function BuyingTour() {
   const [voucherError, setVoucherError] = React.useState<string | null>(null);
   const [showVoucherAndPrice, setShowVoucherAndPrice] = React.useState(false);
   const [loadingContinue, setLoadingContinue] = React.useState(false);
+  const [averageRating, setAverageRating] = React.useState<number | null>(null);
 
   const increment = React.useCallback((type: "adult" | "children" | "baby") => {
     if (type === "adult") setAdultCount((c) => c + 1);
@@ -631,143 +662,143 @@ export default function BuyingTour() {
     try {
       setCreatingBooking(true);
 
-      const bookingData = {
-        customerName: formData.fullName || "",
-        customerPhone: formData.phoneNumber || "",
-        customerEmail: formData.email || user.email,
-        customerAddress: formData.address || "",
-        adultCount,
-        childrenCount,
-        babyCount,
-        adultInfo: Object.values(adultInfo).map((guest, index) => ({
-          ...guest,
-          birthDate: adultDob[index] || new Date().toISOString().split("T")[0],
-        })),
-        childrenInfo: Object.values(childrenInfo).map((guest, index) => ({
-          ...guest,
-          birthDate: childrenDob[index] || new Date().toISOString().split("T")[0],
-        })),
-        babyInfo: Object.values(babyInfo).map((guest, index) => ({
-          ...guest,
-          birthDate: babyDob[index] || new Date().toISOString().split("T")[0],
-        })),
-        pickUpPoint: formData.pickUpPoint || "",
-        departureDate: formData.departureDate || "",
-        note: formData.note || "",
-      };
+    const bookingData = {
+      customerName: formData.fullName || "",
+      customerPhone: formData.phoneNumber || "",
+      customerEmail: formData.email || user.email,
+      customerAddress: formData.address || "",
+      adultCount,
+      childrenCount,
+      babyCount,
+      adultInfo: Object.values(adultInfo).map((guest, index) => ({
+        ...guest,
+        birthDate: adultDob[index] || new Date().toISOString().split("T")[0],
+      })),
+      childrenInfo: Object.values(childrenInfo).map((guest, index) => ({
+        ...guest,
+        birthDate: childrenDob[index] || new Date().toISOString().split("T")[0],
+      })),
+      babyInfo: Object.values(babyInfo).map((guest, index) => ({
+        ...guest,
+        birthDate: babyDob[index] || new Date().toISOString().split("T")[0],
+      })),
+      pickUpPoint: formData.pickUpPoint || "",
+      departureDate: formData.departureDate || "",
+      note: formData.note || "",
+    };
 
-      const normalizeDateString = (value: any) => {
-        if (!value) return null;
-        if (typeof value === "string") {
-          const trimmed = value.trim();
-          if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-          const match = trimmed.match(/^([0-3]\d)\/([0-1]\d)\/(\d{4})$/);
-          if (match) {
-            return `${match[3]}-${match[2]}-${match[1]}`;
-          }
+    const normalizeDateString = (value: any) => {
+      if (!value) return null;
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+        const match = trimmed.match(/^([0-3]\d)\/([0-1]\d)\/(\d{4})$/);
+        if (match) {
+          return `${match[3]}-${match[2]}-${match[1]}`;
         }
-        try {
-          const date = new Date(value);
-          if (!isNaN(date.getTime())) {
-            const yyyy = date.getFullYear();
-            const mm = String(date.getMonth() + 1).padStart(2, "0");
-            const dd = String(date.getDate()).padStart(2, "0");
-            return `${yyyy}-${mm}-${dd}`;
-          }
-        } catch {}
-        return null;
-      };
-
-      const ensureDepartureDate = () => {
-        const normalized = normalizeDateString(
-          formData.departureDate || bookingData.departureDate
-        );
-        if (normalized) return normalized;
-          const minDate = getMinimumDepartureDate();
-          const yyyy = minDate.getFullYear();
-          const mm = String(minDate.getMonth() + 1).padStart(2, "0");
-          const dd = String(minDate.getDate()).padStart(2, "0");
-        return `${yyyy}-${mm}-${dd}`;
-      };
-
-      const mapGuests = (
-        count: number,
-        getGuest: (index: number) => any,
-        getDob: (index: number) => any,
-        type: "ADULT" | "CHILD" | "BABY"
-      ) => {
-        const list: any[] = [];
-        for (let i = 0; i < count; i++) {
-          const guest = getGuest(i) || {};
-          const dobValue = getDob(i) || guest.birthDate;
-          const normalizedDob = normalizeDateString(dobValue);
-          if (!normalizedDob) {
-            continue;
-          }
-          list.push({
-            fullName: guest.fullName?.trim() || "Guest",
-            birthDate: normalizedDob,
-            gender: (guest.gender || "OTHER").toUpperCase(),
-            idNumber: guest.idNumber || "",
-            nationality: guest.nationality || "Korea",
-            bookingGuestType: type,
-          });
-        }
-        return list;
-      };
-
-      const guestPayload = [
-        ...mapGuests(
-          adultCount,
-          (idx) => adultInfo[idx],
-          (idx) => adultDob[idx],
-          "ADULT"
-        ),
-        ...mapGuests(
-          childrenCount,
-          (idx) => childrenInfo[idx],
-          (idx) => childrenDob[idx],
-          "CHILD"
-        ),
-        ...mapGuests(
-          babyCount,
-          (idx) => babyInfo[idx],
-          (idx) => babyDob[idx],
-          "BABY"
-        ),
-      ];
-
-      if (guestPayload.length === 0) {
-        Alert.alert(t("common.error"), "At least one guest is required");
-        return;
       }
+      try {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) {
+          const yyyy = date.getFullYear();
+          const mm = String(date.getMonth() + 1).padStart(2, "0");
+          const dd = String(date.getDate()).padStart(2, "0");
+          return `${yyyy}-${mm}-${dd}`;
+        }
+      } catch {}
+      return null;
+    };
 
-      const sanitizePhone = (value: string) => value.replace(/\D/g, "");
-      const contactPhone = sanitizePhone(formData.phoneNumber || "");
+    const ensureDepartureDate = () => {
+      const normalized = normalizeDateString(
+        formData.departureDate || bookingData.departureDate
+      );
+      if (normalized) return normalized;
+        const minDate = getMinimumDepartureDate();
+        const yyyy = minDate.getFullYear();
+        const mm = String(minDate.getMonth() + 1).padStart(2, "0");
+        const dd = String(minDate.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    };
 
-      const bookingRequest = {
-        tourId: tour.id,
-        userEmail: (user.email || "").trim().toLowerCase(),
-        contactName:
-          bookingData.customerName && bookingData.customerName.trim() !== ""
-            ? bookingData.customerName
-            : "Guest User",
-        contactAddress: bookingData.customerAddress || "",
-        contactPhone: contactPhone || "0123456789",
-        contactEmail:
-          bookingData.customerEmail && bookingData.customerEmail.trim() !== ""
-            ? bookingData.customerEmail.trim()
-            : String(user.email || "").trim(),
-        pickupPoint: bookingData.pickUpPoint || "",
-        note: bookingData.note || "",
-        departureDate: ensureDepartureDate(),
-        adultsCount: adultCount,
+    const mapGuests = (
+      count: number,
+      getGuest: (index: number) => any,
+      getDob: (index: number) => any,
+      type: "ADULT" | "CHILD" | "BABY"
+    ) => {
+      const list: any[] = [];
+      for (let i = 0; i < count; i++) {
+        const guest = getGuest(i) || {};
+        const dobValue = getDob(i) || guest.birthDate;
+        const normalizedDob = normalizeDateString(dobValue);
+        if (!normalizedDob) {
+          continue;
+        }
+        list.push({
+          fullName: guest.fullName?.trim() || "Guest",
+          birthDate: normalizedDob,
+          gender: (guest.gender || "OTHER").toUpperCase(),
+          idNumber: guest.idNumber || "",
+          nationality: guest.nationality || "Korea",
+          bookingGuestType: type,
+        });
+      }
+      return list;
+    };
+
+    const guestPayload = [
+      ...mapGuests(
+        adultCount,
+        (idx) => adultInfo[idx],
+        (idx) => adultDob[idx],
+        "ADULT"
+      ),
+      ...mapGuests(
         childrenCount,
-        babiesCount: babyCount,
-        bookingGuestRequests: guestPayload,
+        (idx) => childrenInfo[idx],
+        (idx) => childrenDob[idx],
+        "CHILD"
+      ),
+      ...mapGuests(
+        babyCount,
+        (idx) => babyInfo[idx],
+        (idx) => babyDob[idx],
+        "BABY"
+      ),
+    ];
+
+    if (guestPayload.length === 0) {
+      Alert.alert(t("common.error"), "At least one guest is required");
+      return;
+    }
+
+    const sanitizePhone = (value: string) => value.replace(/\D/g, "");
+    const contactPhone = sanitizePhone(formData.phoneNumber || "");
+
+    const bookingRequest = {
+      tourId: tour.id,
+      userEmail: (user.email || "").trim().toLowerCase(),
+      contactName:
+        bookingData.customerName && bookingData.customerName.trim() !== ""
+          ? bookingData.customerName
+          : "Guest User",
+      contactAddress: bookingData.customerAddress || "",
+      contactPhone: contactPhone || "0123456789",
+      contactEmail:
+        bookingData.customerEmail && bookingData.customerEmail.trim() !== ""
+          ? bookingData.customerEmail.trim()
+          : String(user.email || "").trim(),
+      pickupPoint: bookingData.pickUpPoint || "",
+      note: bookingData.note || "",
+      departureDate: ensureDepartureDate(),
+      adultsCount: adultCount,
+      childrenCount,
+      babiesCount: babyCount,
+      bookingGuestRequests: guestPayload,
         // Gửi voucherCode nếu đã chọn voucher
         voucherCode: selectedVoucherCode ? selectedVoucherCode.trim() : undefined,
-      };
+    };
 
       // Tạo booking với voucherCode
       const response = (await tourEndpoints.createBooking(bookingRequest)).data;
@@ -1029,7 +1060,7 @@ export default function BuyingTour() {
                       numberOfLines={1}
                       ellipsizeMode="tail"
                     >
-                      4.5
+                      {averageRating !== null ? averageRating.toFixed(1) : "0.0"}
                     </Text>
                   </View>
                 </View>
@@ -2058,58 +2089,58 @@ export default function BuyingTour() {
             {showVoucherAndPrice && (
               <>
                 <View style={styles.section}>
-                  <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>
-                      {t("tour.confirm.voucher")}
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>
+                  {t("tour.confirm.voucher")}
+                </Text>
+                <TouchableOpacity
+                  style={styles.selectVoucherButton}
+                  onPress={() => setShowVoucherModal(true)}
+                >
+                  <Text style={styles.selectVoucherButtonText}>
+                    {t("tour.confirm.selectVoucher")}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={20} color="#007AFF" />
+                </TouchableOpacity>
+              </View>
+
+              {voucher ? (
+                <View style={styles.voucherCard}>
+                  <View style={styles.voucherHeader}>
+                    <View style={styles.voucherIcon}>
+                      <Ionicons name="ticket" size={14} color="#007AFF" />
+                    </View>
+                    <Text style={styles.voucherCode}>
+                      {voucher.code.toUpperCase()}
+                    </Text>
+                    <Text style={styles.voucherDetailValue}>
+                      {voucher.discountType === VoucherDiscountType.PERCENT
+                        ? `${voucher.discountValue}%`
+                        : formatPriceKRW(voucher.discountValue)}
                     </Text>
                     <TouchableOpacity
-                      style={styles.selectVoucherButton}
-                      onPress={() => setShowVoucherModal(true)}
-                    >
-                      <Text style={styles.selectVoucherButtonText}>
-                        {t("tour.confirm.selectVoucher")}
-                      </Text>
-                      <Ionicons name="chevron-forward" size={20} color="#007AFF" />
-                    </TouchableOpacity>
-                  </View>
-
-                  {voucher ? (
-                    <View style={styles.voucherCard}>
-                      <View style={styles.voucherHeader}>
-                        <View style={styles.voucherIcon}>
-                          <Ionicons name="ticket" size={14} color="#007AFF" />
-                        </View>
-                        <Text style={styles.voucherCode}>
-                          {voucher.code.toUpperCase()}
-                        </Text>
-                        <Text style={styles.voucherDetailValue}>
-                          {voucher.discountType === VoucherDiscountType.PERCENT
-                            ? `${voucher.discountValue}%`
-                            : formatPriceKRW(voucher.discountValue)}
-                        </Text>
-                        <TouchableOpacity
                           onPress={() => {
                             setVoucher(null);
                             setSelectedVoucherPreview(null);
                             setSelectedVoucherId(null);
                           }}
-                          style={styles.removeVoucherButton}
-                        >
-                          <Ionicons name="close-circle" size={18} color="#999" />
-                        </TouchableOpacity>
-                      </View>
-                      {voucher.name && (
-                        <Text style={styles.voucherName}>{voucher.name}</Text>
-                      )}
-                    </View>
-                  ) : (
-                    <View style={styles.noVoucherCard}>
-                      <Text style={styles.noVoucherText}>
-                        {voucherError || t("tour.confirm.noVoucher")}
-                      </Text>
-                    </View>
+                      style={styles.removeVoucherButton}
+                    >
+                      <Ionicons name="close-circle" size={18} color="#999" />
+                    </TouchableOpacity>
+                  </View>
+                  {voucher.name && (
+                    <Text style={styles.voucherName}>{voucher.name}</Text>
                   )}
                 </View>
+              ) : (
+                <View style={styles.noVoucherCard}>
+                  <Text style={styles.noVoucherText}>
+                    {voucherError || t("tour.confirm.noVoucher")}
+                  </Text>
+                </View>
+              )}
+            </View>
 
             {/* Price Summary Section */}
             <View style={styles.section}>
@@ -2211,25 +2242,25 @@ export default function BuyingTour() {
 
                   if (depositAmount !== null && depositAmount > 0 && depositPercent && depositPercent < 100) {
                     return (
-                      <>
-                        <View style={styles.priceDivider} />
-                        <View style={styles.depositInfoSection}>
-                          <View style={styles.depositInfoRow}>
-                            <Text style={styles.depositInfoLabel}>
-                              {t("tour.booking.depositRequired") ||
-                                "Tiền cọc cần thanh toán"}
-                            </Text>
-                            <Text style={styles.depositInfoValue}>
+                    <>
+                      <View style={styles.priceDivider} />
+                      <View style={styles.depositInfoSection}>
+                        <View style={styles.depositInfoRow}>
+                          <Text style={styles.depositInfoLabel}>
+                            {t("tour.booking.depositRequired") ||
+                              "Tiền cọc cần thanh toán"}
+                          </Text>
+                          <Text style={styles.depositInfoValue}>
                               {formatPriceKRW(depositAmount)}
-                            </Text>
-                          </View>
-                          <Text style={styles.depositInfoNote}>
-                            {depositPercent
-                              ? `${Math.round(depositPercent)}% deposit payment required`
-                              : t("tour.booking.depositRequired")}
                           </Text>
                         </View>
-                      </>
+                        <Text style={styles.depositInfoNote}>
+                            {depositPercent
+                              ? `${Math.round(depositPercent)}% deposit payment required`
+                            : t("tour.booking.depositRequired")}
+                        </Text>
+                      </View>
+                    </>
                     );
                   }
                   return null;
@@ -2444,9 +2475,9 @@ export default function BuyingTour() {
                 {creatingBooking ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
-                  <Text style={styles.modalConfirmButtonText}>
+                <Text style={styles.modalConfirmButtonText}>
                     {selectedVoucherId ? t("tour.confirm.select") : (t("tour.confirm.skip") || "Skip")}
-                  </Text>
+                </Text>
                 )}
               </TouchableOpacity>
           </View>

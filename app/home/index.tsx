@@ -12,8 +12,6 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
-import ChatBubble from "../../components/ChatBubble";
-import GeminiChatBubble from "../../components/GeminiChatBubble";
 import ScrollableLayout from "../../components/ScrollableLayout";
 import { colors } from "../../constants/theme";
 import { useNavigation } from "../../navigation/navigation";
@@ -148,7 +146,6 @@ export default function Home() {
   const [currentLanguage, setCurrentLanguage] = useState<"en" | "ko" | "vi">(
     i18n.language as "en" | "ko" | "vi"
   );
-  const [aiChatOpen, setAiChatOpen] = useState(false);
 
   const handleLanguageSelect = (language: "en" | "ko" | "vi") => {
     setCurrentLanguage(language);
@@ -780,8 +777,6 @@ export default function Home() {
           <View style={styles.bottomSpacing} />
         </View>
       </ScrollableLayout>
-      <ChatBubble onOpenAIChat={() => setAiChatOpen(true)} />
-      <GeminiChatBubble isOpen={aiChatOpen} onClose={() => setAiChatOpen(false)} />
     </View>
   );
 }

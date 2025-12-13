@@ -86,7 +86,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
           <View style={styles.header}>
             <Text style={styles.headerTitle}>{t("forum.editTitle")}</Text>
             <TouchableOpacity onPress={onCancel} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color={colors.text.primary} />
+              <Ionicons name="close-outline" size={22} color="#7A8A99" />
             </TouchableOpacity>
           </View>
 
@@ -122,7 +122,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
                   style={styles.addHashtagButton}
                   onPress={handleAddHashtag}
                 >
-                  <Ionicons name="add" size={20} color={colors.primary.main} />
+                  <Ionicons name="add-outline" size={20} color="#B8D4E3" />
                 </TouchableOpacity>
               </View>
               <View style={styles.hashtagList}>
@@ -131,9 +131,9 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
                     <Text style={styles.hashtagText}>#{tag}</Text>
                     <TouchableOpacity onPress={() => handleRemoveHashtag(tag)}>
                       <Ionicons
-                        name="close-circle"
+                        name="close-circle-outline"
                         size={16}
-                        color={colors.primary.contrast}
+                        color="#7A8A99"
                       />
                     </TouchableOpacity>
                   </View>
@@ -174,14 +174,19 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.3)",
     justifyContent: "flex-end",
   },
   card: {
-    backgroundColor: colors.surface.primary,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
     maxHeight: "80%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 8,
   },
   header: {
     flexDirection: "row",
@@ -189,12 +194,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
+    borderBottomColor: "#F0F4F8",
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: colors.text.primary,
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#2C3E50",
+    letterSpacing: 0.3,
   },
   closeButton: {
     padding: spacing.sm,
@@ -204,14 +210,14 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: colors.border.medium,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    color: colors.text.primary,
-    backgroundColor: colors.background.secondary,
+    borderColor: "#E8EDF2",
+    borderRadius: 24,
+    paddingHorizontal: spacing.md + 4,
+    paddingVertical: spacing.sm + 4,
+    color: "#2C3E50",
+    backgroundColor: "#F8F9FA",
     marginBottom: spacing.md,
-    fontSize: 16,
+    fontSize: 15,
   },
   textarea: {
     height: 120,
@@ -223,17 +229,21 @@ const styles = StyleSheet.create({
   hashtagInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.background.secondary,
-    borderRadius: borderRadius.md,
+    backgroundColor: "#F8F9FA",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#E8EDF2",
     marginBottom: spacing.md,
+    paddingHorizontal: spacing.sm,
   },
   hashtagInput: {
     flex: 1,
     padding: spacing.md,
-    fontSize: 16,
+    fontSize: 15,
+    color: "#2C3E50",
   },
   addHashtagButton: {
-    padding: spacing.md,
+    padding: spacing.sm,
   },
   hashtagList: {
     flexDirection: "row",
@@ -242,15 +252,17 @@ const styles = StyleSheet.create({
   hashtagChip: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.primary.main,
-    borderRadius: borderRadius.lg,
-    padding: spacing.sm,
+    backgroundColor: "#D5E3ED",
+    borderRadius: 24,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm - 2,
     margin: spacing.xs,
   },
   hashtagText: {
-    color: colors.primary.contrast,
+    color: "#5A6C7D",
     marginRight: spacing.sm,
     fontWeight: "500",
+    fontSize: 13,
   },
   actions: {
     flexDirection: "row",
@@ -258,29 +270,33 @@ const styles = StyleSheet.create({
     gap: spacing.md as any,
     padding: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: colors.border.light,
+    borderTopColor: "#F0F4F8",
   },
   btn: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.lg + 4,
+    paddingVertical: spacing.sm + 4,
+    borderRadius: 24,
+    minWidth: 100,
+    alignItems: "center",
   },
   btnGhost: {
     backgroundColor: "transparent",
   },
   btnGhostText: {
-    color: colors.text.secondary,
-    fontWeight: "600",
+    color: "#7A8A99",
+    fontWeight: "500",
+    fontSize: 15,
   },
   btnPrimary: {
-    backgroundColor: colors.primary.main,
+    backgroundColor: "#B8D4E3",
   },
   btnPrimaryText: {
-    color: colors.primary.contrast,
-    fontWeight: "700",
+    color: "#2C3E50",
+    fontWeight: "600",
+    fontSize: 15,
   },
   btnDisabled: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
 });
 

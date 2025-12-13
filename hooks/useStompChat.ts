@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Client, IMessage } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_BASE } from "../services/api";
+import { API_BASE, WS_BASE } from "../services/api";
 
 export type IncomingChatMessage = {
   from: string;
@@ -21,12 +21,33 @@ function toHttpBase(httpBase?: string): string | undefined {
   }
 }
 
+function getWebSocketUrl(wsBase?: string, apiBase?: string): string | undefined {
+  // If WS_BASE is provided, use it (convert ws:// to http:// for SockJS)
+  if (wsBase) {
+    try {
+      const url = new URL(wsBase);
+      // SockJS needs http/https, not ws/wss
+      if (url.protocol === "ws:") {
+        url.protocol = "http:";
+      } else if (url.protocol === "wss:") {
+        url.protocol = "https:";
+      }
+      return url.toString().replace(/\/$/, "");
+    } catch {
+      // If URL parsing fails, try to convert ws:// to http:// manually
+      return wsBase.replace(/^ws:\/\//, "http://").replace(/^wss:\/\//, "https://").replace(/\/$/, "");
+    }
+  }
+  // Fallback to deriving from API_BASE
+  return apiBase ? toHttpBase(apiBase) : undefined;
+}
+
 export function useStompChat() {
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState<IncomingChatMessage[]>([]);
   const clientRef = useRef<Client | null>(null);
 
-  const httpBase = useMemo(() => toHttpBase(API_BASE), []);
+  const wsUrl = useMemo(() => getWebSocketUrl(WS_BASE, API_BASE), []);
 
   useEffect(() => {
     const setupClient = async () => {
@@ -39,14 +60,14 @@ export function useStompChat() {
 
         // no console logs in production
 
-        if (!httpBase) {
-          console.log("ERROR: httpBase is undefined!");
+        if (!wsUrl) {
+          console.log("ERROR: WebSocket URL is undefined!");
           return;
         }
 
         const client = new Client({
           brokerURL: undefined,
-          webSocketFactory: () => new SockJS(`${httpBase}/ws`),
+          webSocketFactory: () => new SockJS(`${wsUrl}/ws`),
           reconnectDelay: 3000,
           debug: () => {},
           connectHeaders: {
@@ -87,7 +108,7 @@ export function useStompChat() {
         clientRef.current = null;
       }
     };
-  }, [httpBase]);
+  }, [wsUrl]);
 
   const send = useCallback(
     async (toName: string, content: string) => {

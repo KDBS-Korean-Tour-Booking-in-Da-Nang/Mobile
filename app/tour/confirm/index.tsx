@@ -230,7 +230,7 @@ export default function ConfirmTour() {
         // Try to get voucher preview from booking
         // If booking has voucherCode (đã được apply khi tạo booking), it will return preview với đầy đủ thông tin
         try {
-          const res = await voucherEndpoints.previewApply(currentBookingId);
+        const res = await voucherEndpoints.previewApply(currentBookingId);
           if (res.data) {
             setVoucherPreview(res.data);
             return;
@@ -554,7 +554,7 @@ export default function ConfirmTour() {
     return (
       <MainLayout isNavVisible={isNavVisible}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color="#B8D4E3" />
           <Text style={styles.loadingText}>{t("tour.loading")}</Text>
         </View>
       </MainLayout>
@@ -601,13 +601,13 @@ export default function ConfirmTour() {
                 <Text style={styles.tourName}>{tour.tourName}</Text>
                 <View style={styles.tourMeta}>
                   <View style={styles.metaItem}>
-                    <Ionicons name="location-outline" size={16} color="#666" />
+                    <Ionicons name="location-outline" size={16} color="#7A8A99" />
                     <Text style={styles.metaText}>
                       {tour.tourDeparturePoint}
                     </Text>
                   </View>
                   <View style={styles.metaItem}>
-                    <Ionicons name="time-outline" size={16} color="#666" />
+                    <Ionicons name="time-outline" size={16} color="#7A8A99" />
                     <Text style={styles.metaText}>{tour.tourDuration}</Text>
                   </View>
                 </View>
@@ -651,13 +651,13 @@ export default function ConfirmTour() {
 
               <View style={styles.contactDetails}>
                 <View style={styles.contactItem}>
-                  <Ionicons name="mail-outline" size={16} color="#666" />
+                  <Ionicons name="mail-outline" size={16} color="#7A8A99" />
                   <Text style={styles.contactText}>
                     {bookingData.customerEmail}
                   </Text>
                 </View>
                 <View style={styles.contactItem}>
-                  <Ionicons name="location-outline" size={16} color="#666" />
+                  <Ionicons name="location-outline" size={16} color="#7A8A99" />
                   <Text style={styles.contactText}>
                     {bookingData.customerAddress}
                   </Text>
@@ -681,7 +681,7 @@ export default function ConfirmTour() {
                 {bookingData.adultInfo.map((guest: any, index: number) => (
                   <View key={index} style={styles.guestCard}>
                     <View style={styles.guestHeader}>
-                      <Ionicons name="person" size={20} color="#007AFF" />
+                      <Ionicons name="person-outline" size={20} color="#5A6C7D" />
                       <Text style={styles.guestName}>{guest.fullName}</Text>
                     </View>
                     <View style={styles.guestDetails}>
@@ -736,7 +736,7 @@ export default function ConfirmTour() {
                         <Ionicons
                           name="person-outline"
                           size={20}
-                          color="#FF9500"
+                          color="#5A6C7D"
                         />
                         <Text style={styles.guestName}>{guest.fullName}</Text>
                       </View>
@@ -790,7 +790,7 @@ export default function ConfirmTour() {
                       <Ionicons
                         name="person-outline"
                         size={20}
-                        color="#34C759"
+                        color="#5A6C7D"
                       />
                       <Text style={styles.guestName}>{guest.fullName}</Text>
                     </View>
