@@ -26,6 +26,10 @@
       "logout": "Logout",
       "loggingOut": "Logging out...",
       "role": "Role"
+    },
+    "suggestTours": {
+      "title": "Suggested Tours for You",
+      "noTours": "No suggested tours available"
     }
   },
   "auth": {
@@ -198,6 +202,19 @@
     "save": "Save",
     "unsave": "Unsave",
     "report": "Report",
+    "reportTitle": "Report Post",
+    "reportReason": "Reason:",
+    "reportReasonSpam": "Spam",
+    "reportReasonInappropriate": "Inappropriate",
+    "reportReasonViolence": "Violence",
+    "reportReasonHarassment": "Harassment",
+    "reportReasonOther": "Other",
+    "reportDescription": "Additional description (optional):",
+    "reportDescriptionPlaceholder": "Provide additional information...",
+    "reportCancel": "Cancel",
+    "reportSubmit": "Submit Report",
+    "reportSubmitting": "Submitting...",
+    "reportSelectReason": "Please select at least one reason.",
     "translate": "Translate",
     "hideTranslation": "Hide translation",
     "translateFailed": "Unable to translate this content. Please try again."
@@ -332,7 +349,15 @@
       "INTERNATIONAL": "International",
       "openTrip": "Open Trip",
       "Domestic": "Domestic",
-      "International": "International"
+      "International": "International",
+      "resort": "Resort",
+      "culture": "Culture",
+      "adventure": "Adventure",
+      "teamBuilding": "Team Building",
+      "food": "Food",
+      "photography": "Photography",
+      "religious": "Religious",
+      "other": "Other"
     },
     "vehicles": {
       "BUS": "Tour Bus",
@@ -373,6 +398,35 @@
       "children": "Children",
       "baby": "Baby",
       "atLeastOneAdult": "At least 1 adult",
+      "depositRequired": "Deposit payment required",
+      "depositPaid": "Deposit paid",
+      "totalPaid": "Total paid",
+      "depositNote": "{{percent}}% deposit payment required",
+      "remainingAmount": "Remaining amount",
+      "cancelTitle": "Cancel booking",
+      "cancelAction": "Cancel tour",
+      "cancelConfirmMessage": "Are you sure you want to cancel this booking?",
+      "cancelPreviewTitle": "Refund preview",
+      "refundAmount": "Refund amount",
+      "refundPercentage": "Refund percentage",
+      "payedAmount": "Paid amount",
+      "depositAmount": "Deposit amount",
+      "totalAmount": "Total amount",
+      "noRefund": "No refund available",
+      "cancelSuccess": "Booking cancelled successfully",
+      "cancelFailed": "Unable to cancel booking",
+      "cancelSuccessTitle": "Booking cancelled",
+      "refundCompleted": "Refund completed",
+      "refundPolicy": "Refund policy",
+      "refundNoteBeforeDeadline": "Before payment deadline: refund applies",
+      "refundNoteAfterDeadline": "After payment deadline: no refund",
+      "refundPolicy100": "Waiting for approval/update status: 100% refund of paid amount",
+      "refundPolicy80BeforeDeadline": "Before balance payment deadline: 80% refund of paid amount",
+      "refundPolicyExpired": "Balance payment deadline expired: No refund",
+      "refundPolicyByRemainingDays": "Refund based on remaining days before departure (max 80%)",
+      "viewDetails": "View details",
+      "cancelButton": "Cancel",
+      "refundFromPaid": "from paid amount",
       "total": "Total",
       "bookingNow": "Book Now",
       "fullname": "Full name",
@@ -443,14 +497,19 @@
     },
     "status": {
       "PENDING_PAYMENT": "Pending payment",
+      "PENDING_DEPOSIT_PAYMENT": "Pending deposit payment",
+      "PENDING_BALANCE_PAYMENT": "Pending balance payment",
       "WAITING_FOR_APPROVED": "Waiting for approval",
+      "BOOKING_REJECTED": "Rejected",
       "WAITING_FOR_UPDATE": "Waiting for update",
+      "BOOKING_FAILED": "Failed",
+      "BOOKING_BALANCE_SUCCESS": "Balance paid",
+      "BOOKING_SUCCESS_PENDING": "Pending processing",
       "BOOKING_SUCCESS_WAIT_FOR_CONFIRMED": "Awaiting completion confirmation",
       "BOOKING_SUCCESS": "Completed",
-      "SUCCESS": "Completed",
       "BOOKING_UNDER_COMPLAINT": "Under complaint",
-      "BOOKING_REJECTED": "Rejected",
-      "BOOKING_FAILED": "Failed"
+      "BOOKING_CANCELLED": "Cancelled",
+      "SUCCESS": "Completed"
     },
     "errors": {
       "notFound": "No tours found",
@@ -566,7 +625,11 @@
       "alreadyRated": "You have rated this tour {{star}} stars",
       "checkingBooking": "Checking...",
       "bookingRequired": "You need to book this tour before you can rate it",
-      "bookingRequiredMessage": "Please book this tour to share your review."
+      "bookingRequiredMessage": "Please book this tour to share your review.",
+      "depositRequired": "Deposit payment required",
+      "depositNote": "{{percent}}% deposit payment required",
+      "balanceRequired": "Balance payment required",
+      "balanceNote": "Remaining amount after deposit payment"
     }
   },
   "payment": {
@@ -614,6 +677,7 @@
     "save": "Save",
     "ok": "OK",
     "na": "N/A",
+    "loading": "Loading...",
     "hotTopic": "Hot Topics",
     "seeAll": "See All",
     "article": "Articles",
@@ -621,6 +685,7 @@
     "delete": "Delete",
     "close": "Close",
     "continue": "Continue",
+    "optional": "Optional",
     "tourTypes": {
       "resort": "Resort",
       "culture": "Culture",
@@ -652,6 +717,10 @@
     "translate": "Translate",
     "hideTranslation": "Hide translation",
     "translateFailed": "Unable to translate this article. Please try again.",
+    "suggestTours": {
+      "title": "Related Tours",
+      "noTours": "No suggested tours available"
+    },
     "comment": {
       "title": "Comments",
       "placeholder": "Write a comment...",
@@ -760,6 +829,9 @@
     "selectUser": "Select user to chat",
     "noUsers": "No users",
     "noMessages": "No messages",
-    "typeMessage": "Type a message"
+    "typeMessage": "Type a message",
+    "aiAssistant": "AI Assistant",
+    "aiassitant": "AI Assistant",
+    "startConversation": "Start a conversation with AI"
   }
 }

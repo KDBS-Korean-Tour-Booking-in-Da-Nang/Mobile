@@ -26,6 +26,10 @@
       "logout": "Đăng xuất",
       "loggingOut": "Đang đăng xuất...",
       "role": "Vai trò"
+    },
+    "suggestTours": {
+      "title": "Tours gợi ý cho bạn",
+      "noTours": "Chưa có tour gợi ý"
     }
   },
   "auth": {
@@ -206,6 +210,19 @@
     "save": "Lưu",
     "unsave": "Bỏ lưu",
     "report": "Báo cáo",
+    "reportTitle": "Báo cáo bài viết",
+    "reportReason": "Lý do:",
+    "reportReasonSpam": "Spam",
+    "reportReasonInappropriate": "Không phù hợp",
+    "reportReasonViolence": "Bạo lực",
+    "reportReasonHarassment": "Quấy rối",
+    "reportReasonOther": "Khác",
+    "reportDescription": "Mô tả thêm (tùy chọn):",
+    "reportDescriptionPlaceholder": "Cung cấp thêm thông tin...",
+    "reportCancel": "Hủy",
+    "reportSubmit": "Gửi báo cáo",
+    "reportSubmitting": "Đang gửi...",
+    "reportSelectReason": "Vui lòng chọn ít nhất một lý do báo cáo.",
     "translate": "Dịch",
     "hideTranslation": "Ẩn bản dịch",
     "translateFailed": "Không thể dịch nội dung, vui lòng thử lại."
@@ -343,7 +360,15 @@
       "INTERNATIONAL": "Quốc tế",
       "openTrip": "Tour mở",
       "Nội địa": "Resort",
-      "Quốc tế": "Quốc tế"
+      "Quốc tế": "Quốc tế",
+      "resort": "Resort",
+      "culture": "Văn hóa",
+      "adventure": "Mạo hiểm",
+      "teamBuilding": "Team Building",
+      "food": "Ẩm thực",
+      "photography": "Nhiếp ảnh",
+      "religious": "Tâm linh",
+      "other": "Khác"
     },
     "vehicles": {
       "BUS": "Xe du lịch",
@@ -384,6 +409,35 @@
       "children": "Trẻ em",
       "baby": "Em bé",
       "atLeastOneAdult": "Ít nhất 1 người lớn",
+      "depositRequired": "Tiền cọc cần thanh toán",
+      "depositPaid": "Đã thanh toán tiền cọc",
+      "totalPaid": "Tổng tiền đã thanh toán",
+      "depositNote": "Cần thanh toán trước {{percent}}% tiền cọc",
+      "remainingAmount": "Số tiền còn lại",
+      "cancelTitle": "Hủy đặt tour",
+      "cancelAction": "Hủy tour",
+      "cancelConfirmMessage": "Bạn có chắc chắn muốn hủy booking này?",
+      "cancelPreviewTitle": "Xem trước hoàn tiền",
+      "refundAmount": "Số tiền hoàn",
+      "refundPercentage": "Tỷ lệ hoàn",
+      "payedAmount": "Số tiền đã thanh toán",
+      "depositAmount": "Số tiền cọc",
+      "totalAmount": "Tổng số tiền",
+      "noRefund": "Không có khoản hoàn tiền",
+      "cancelSuccess": "Hủy booking thành công",
+      "cancelFailed": "Không thể hủy booking",
+      "cancelSuccessTitle": "Đã hủy booking",
+      "refundCompleted": "Hoàn tiền thành công",
+      "refundPolicy": "Chính sách hoàn tiền",
+      "refundNoteBeforeDeadline": "Trước hạn thanh toán: áp dụng hoàn tiền",
+      "refundNoteAfterDeadline": "Sau hạn thanh toán: không hoàn tiền",
+      "refundPolicy100": "Trạng thái chờ duyệt/cập nhật: Hoàn 100% tiền đã thanh toán",
+      "refundPolicy80BeforeDeadline": "Trước hạn thanh toán số dư: Hoàn 80% tiền đã thanh toán",
+      "refundPolicyExpired": "Đã hết hạn thanh toán số dư: Không hoàn tiền",
+      "refundPolicyByRemainingDays": "Hoàn tiền theo số ngày còn lại trước ngày khởi hành (tối đa 80%)",
+      "viewDetails": "Xem chi tiết",
+      "cancelButton": "Hủy",
+      "refundFromPaid": "trong tổng tiền đã thanh toán",
       "total": "Tổng cộng",
       "bookingNow": "Đặt tour ngay",
       "dob": "Ngày sinh",
@@ -422,7 +476,6 @@
       "departureDateRange": "Có thể chọn từ {{minDate}} đến {{maxDate}}",
       "departureDateMinOnly": "Có thể chọn từ {{minDate}} trở đi",
       "bookingDeadlineNote": "cần đặt trước {{days}} ngày",
-      "selectDate": "Chọn ngày",
       "updateInfo": "Cập nhật thông tin",
       "waitingForUpdate": "Chờ cập nhật thông tin",
       "waitingForCompletionConfirm": "Chờ xác nhận hoàn thành",
@@ -451,14 +504,19 @@
     },
     "status": {
       "PENDING_PAYMENT": "Chờ thanh toán",
+      "PENDING_DEPOSIT_PAYMENT": "Chờ thanh toán đặt cọc",
+      "PENDING_BALANCE_PAYMENT": "Chờ thanh toán còn lại",
       "WAITING_FOR_APPROVED": "Chờ phê duyệt",
+      "BOOKING_REJECTED": "Đã từ chối",
       "WAITING_FOR_UPDATE": "Chờ cập nhật thông tin",
+      "BOOKING_FAILED": "Thất bại",
+      "BOOKING_BALANCE_SUCCESS": "Đã thanh toán đủ",
+      "BOOKING_SUCCESS_PENDING": "Đang chờ xử lý",
       "BOOKING_SUCCESS_WAIT_FOR_CONFIRMED": "Chờ xác nhận hoàn thành",
       "BOOKING_SUCCESS": "Đã hoàn thành",
-      "SUCCESS": "Thành công",
       "BOOKING_UNDER_COMPLAINT": "Đang xử lý khiếu nại",
-      "BOOKING_REJECTED": "Đã từ chối",
-      "BOOKING_FAILED": "Thất bại"
+      "BOOKING_CANCELLED": "Đã hủy",
+      "SUCCESS": "Thành công"
     },
     "errors": {
       "notFound": "Không tìm thấy tour",
@@ -575,7 +633,11 @@
       "alreadyRated": "Bạn đã đánh giá tour này với {{star}} sao",
       "checkingBooking": "Đang kiểm tra...",
       "bookingRequired": "Bạn cần đặt tour trước khi có thể đánh giá",
-      "bookingRequiredMessage": "Vui lòng đặt tour này để có thể chia sẻ đánh giá của bạn."
+      "bookingRequiredMessage": "Vui lòng đặt tour này để có thể chia sẻ đánh giá của bạn.",
+      "depositRequired": "Tiền cọc cần thanh toán",
+      "depositNote": "Cần thanh toán {{percent}}% tiền cọc trước",
+      "balanceRequired": "Số tiền còn lại cần thanh toán",
+      "balanceNote": "Số tiền còn lại sau khi đã thanh toán cọc"
     }
   },
   "payment": {
@@ -623,6 +685,7 @@
     "save": "Lưu",
     "ok": "OK",
     "na": "Không có",
+    "loading": "Đang tải...",
     "hotTopic": "Chủ đề nóng",
     "seeAll": "Xem tất cả",
     "article": "Bài viết",
@@ -630,6 +693,7 @@
     "delete": "Xóa",
     "close": "Đóng",
     "continue": "Tiếp tục",
+    "optional": "Tùy chọn",
     "tourTypes": {
       "resort": "Nghỉ dưỡng",
       "culture": "Văn hóa",
@@ -661,6 +725,10 @@
     "translate": "Dịch",
     "hideTranslation": "Ẩn bản dịch",
     "translateFailed": "Không thể dịch nội dung bài viết, vui lòng thử lại.",
+    "suggestTours": {
+      "title": "Tours liên quan",
+      "noTours": "Chưa có tour đề xuất"
+    },
     "comment": {
       "title": "Bình luận",
       "placeholder": "Viết bình luận...",
@@ -724,26 +792,6 @@
     "networkError": "Lỗi kết nối. Vui lòng kiểm tra kết nối mạng.",
     "serverError": "Lỗi server. Vui lòng thử lại sau."
   },
-  "profile": {
-    "editProfile": "Chỉnh sửa hồ sơ",
-    "order": {
-      "title": "Đơn hàng của bạn",
-      "subtitle": "Xem đơn hàng và lịch sử giao dịch tại đây"
-    },
-    "payment": {
-      "title": "Phương thức thanh toán",
-      "subtitle": "Lưu phương thức thanh toán ưa thích để giao dịch mượt hơn"
-    },
-    "coupon": {
-      "title": "Mã giảm giá & Voucher",
-      "subtitle": "Nhận mã giảm giá và ưu đãi để giảm chi phí hoặc miễn phí vận chuyển"
-    },
-    "supportCenter": {
-      "title": "Trung tâm hỗ trợ",
-      "subtitle": "Tìm câu trả lời phù hợp cho câu hỏi của bạn"
-    },
-    "updateSuccess": "Cập nhật thành công!"
-  },
   "profileEdit": {
     "title": "Thông tin tài khoản",
     "photo": {
@@ -769,6 +817,9 @@
     "selectUser": "Chọn người chat",
     "noUsers": "Không có người dùng",
     "noMessages": "Chưa có tin nhắn",
-    "typeMessage": "Nhập tin nhắn"
+    "typeMessage": "Nhập tin nhắn",
+    "aiAssistant": "Trợ lý AI",
+    "aiassitant": "Trợ lý AI",
+    "startConversation": "Bắt đầu cuộc trò chuyện với AI"
   }
 }

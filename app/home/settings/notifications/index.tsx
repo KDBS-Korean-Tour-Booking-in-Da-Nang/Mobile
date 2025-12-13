@@ -59,14 +59,21 @@ export default function Notifications() {
           setLoadingMore(true);
         }
 
-        const isReadFilter = activeTab === "unread" ? false : undefined;
-
-        const response = await getNotifications({
-          isRead: isReadFilter,
+        // When tab is "all", don't send isRead param to get all notifications (read and unread)
+        // When tab is "unread", send isRead: false to filter only unread
+        const params: any = {
           page: pageNum,
           size: 20,
           sort: "createdAt,desc",
-        });
+        };
+        
+        // Only add isRead filter when tab is "unread"
+        if (activeTab === "unread") {
+          params.isRead = false;
+        }
+        // When "all", don't include isRead param at all to get everything
+
+        const response = await getNotifications(params);
 
         if (reset || pageNum === 0) {
           setNotifications(response.notifications.content);

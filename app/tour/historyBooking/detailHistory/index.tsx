@@ -1,25 +1,26 @@
-import React, { useEffect, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Modal,
-  TextInput,
-  Alert,
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import MainLayout from "../../../../components/MainLayout";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import MainLayout from "../../../../components/MainLayout";
 import { tourEndpoints } from "../../../../services/endpoints/tour";
 import {
   BookingResponse,
-  GuestResponse,
   BookingStatus,
+  GuestResponse,
 } from "../../../../src/types/response/booking.response";
 import { TourResponse } from "../../../../src/types/response/tour.response";
+import { formatPriceKRW } from "../../../../src/utils/currency";
 import styles from "./style";
 
 export default function BookingDetail() {
@@ -36,6 +37,8 @@ export default function BookingDetail() {
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<BookingResponse | null>(null);
   const [totalAmount, setTotalAmount] = useState<number | null>(null);
+  const [depositAmount, setDepositAmount] = useState<number | null>(null);
+  const [remainingAmount, setRemainingAmount] = useState<number | null>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -46,6 +49,15 @@ export default function BookingDetail() {
     useState(false);
   const [complaintMessage, setComplaintMessage] = useState("");
   const [submittingComplaint, setSubmittingComplaint] = useState(false);
+  const [showCancelPreview, setShowCancelPreview] = useState(false);
+  const [loadingCancelPreview, setLoadingCancelPreview] = useState(false);
+  const [cancelPreview, setCancelPreview] = useState<BookingResponse | null>(
+    null
+  );
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [showCancelSuccessModal, setShowCancelSuccessModal] = useState(false);
+  const [cancelSuccessData, setCancelSuccessData] =
+    useState<BookingResponse | null>(null);
 
   const loadBooking = useCallback(async () => {
     try {
@@ -61,13 +73,44 @@ export default function BookingDetail() {
         const tour: TourResponse = (
           await tourEndpoints.getById(data?.tourId || 0)
         ).data;
-        const total =
+        
+        // Tính original total (chưa có voucher)
+        const originalTotal =
           (tour.adultPrice || 0) * (data.adultsCount || 0) +
           (tour.childrenPrice || 0) * (data.childrenCount || 0) +
           (tour.babyPrice || 0) * (data.babiesCount || 0);
-        setTotalAmount(total);
+        
+        // Ưu tiên dùng totalDiscountAmount từ booking response (đã có voucher discount)
+        // Nếu không có, dùng originalTotal
+        const finalTotal = data?.totalDiscountAmount !== undefined && data.totalDiscountAmount > 0
+          ? Number(data.totalDiscountAmount)
+          : originalTotal;
+        
+        setTotalAmount(finalTotal);
+        
+        // Ưu tiên dùng depositDiscountAmount từ booking response (đã có voucher discount và deposit split)
+        if (data?.depositDiscountAmount !== undefined && data.depositDiscountAmount > 0) {
+          const depositValue = Number(data.depositDiscountAmount);
+          setDepositAmount(depositValue);
+          // Tính remaining amount từ finalTotal và depositValue
+          setRemainingAmount(Math.max(finalTotal - depositValue, 0));
+        } else {
+          // Fallback: tính từ depositPercentage nếu không có depositDiscountAmount
+          const dp = Number(tour.depositPercentage ?? 0);
+          if (!Number.isNaN(dp)) {
+            const depositValue =
+              dp > 0 && dp < 100 ? Math.round((finalTotal * dp) / 100) : finalTotal;
+            setDepositAmount(depositValue);
+            setRemainingAmount(Math.max(finalTotal - depositValue, 0));
+          } else {
+            setDepositAmount(null);
+            setRemainingAmount(null);
+          }
+        }
       } catch {
         setTotalAmount(null);
+        setDepositAmount(null);
+        setRemainingAmount(null);
       }
     } catch {
       setBooking(null);
@@ -108,24 +151,170 @@ export default function BookingDetail() {
     return t("common.na");
   };
 
-  const formatPrice = (price: number) =>
-    (price || 0).toLocaleString("vi-VN") + " VND";
+  const formatPrice = (price: number) => formatPriceKRW(price || 0);
 
   const bookingStatus = booking?.bookingStatus
     ? String(booking.bookingStatus).toUpperCase()
     : "";
 
+  // Payment statuses
   const isPendingPayment =
     bookingStatus === BookingStatus.PENDING_PAYMENT ||
     bookingStatus === "PENDING_PAYMENT";
 
+  const isPendingDepositPayment =
+    bookingStatus === BookingStatus.PENDING_DEPOSIT_PAYMENT ||
+    bookingStatus === "PENDING_DEPOSIT_PAYMENT";
+
+  const isPendingBalancePayment =
+    bookingStatus === BookingStatus.PENDING_BALANCE_PAYMENT ||
+    bookingStatus === "PENDING_BALANCE_PAYMENT";
+
+  // Update and processing statuses
   const isWaitingForUpdate =
     bookingStatus === BookingStatus.WAITING_FOR_UPDATE ||
     bookingStatus === "WAITING_FOR_UPDATE";
 
+  const isWaitingForApproved =
+    bookingStatus === BookingStatus.WAITING_FOR_APPROVED ||
+    bookingStatus === "WAITING_FOR_APPROVED";
+
+  // Success statuses
   const isAwaitingCompletion =
     bookingStatus === BookingStatus.BOOKING_SUCCESS_WAIT_FOR_CONFIRMED ||
     bookingStatus === "BOOKING_SUCCESS_WAIT_FOR_CONFIRMED";
+
+  const isBalanceSuccess =
+    bookingStatus === BookingStatus.BOOKING_BALANCE_SUCCESS ||
+    bookingStatus === "BOOKING_BALANCE_SUCCESS";
+
+  const isSuccessPending =
+    bookingStatus === BookingStatus.BOOKING_SUCCESS_PENDING ||
+    bookingStatus === "BOOKING_SUCCESS_PENDING";
+
+  const isBookingSuccess =
+    bookingStatus === BookingStatus.BOOKING_SUCCESS ||
+    bookingStatus === "BOOKING_SUCCESS";
+
+  // Complaint and cancellation
+  const isUnderComplaint =
+    bookingStatus === BookingStatus.BOOKING_UNDER_COMPLAINT ||
+    bookingStatus === "BOOKING_UNDER_COMPLAINT";
+
+  const isCancelled =
+    bookingStatus === BookingStatus.BOOKING_CANCELLED ||
+    bookingStatus === "BOOKING_CANCELLED";
+
+  const isRejected =
+    bookingStatus === BookingStatus.BOOKING_REJECTED ||
+    bookingStatus === "BOOKING_REJECTED";
+
+  const isFailed =
+    bookingStatus === BookingStatus.BOOKING_FAILED ||
+    bookingStatus === "BOOKING_FAILED";
+
+  const renderPaymentSummary = () => {
+    const total = totalAmount ?? 0;
+    const deposit = depositAmount ?? 0;
+    const remaining = remainingAmount ?? Math.max(total - deposit, 0);
+
+    if (isWaitingForApproved || isWaitingForUpdate || isPendingBalancePayment) {
+      return (
+        <>
+          <View style={styles.row}>
+            <Text style={styles.label}>
+              {t("tour.booking.depositPaid") || "Deposit paid"}
+            </Text>
+            <Text style={styles.valueBold}>{formatPrice(deposit)}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>
+              {t("tour.booking.remainingAmount") || "Remaining amount"}
+            </Text>
+            <Text style={styles.valueBold}>{formatPrice(remaining)}</Text>
+          </View>
+        </>
+      );
+    }
+
+    if (isPendingDepositPayment) {
+      return (
+        <View style={styles.row}>
+          <Text style={styles.label}>
+            {t("tour.booking.depositRequired") || "Deposit required"}
+          </Text>
+          <Text style={styles.valueBold}>{formatPrice(deposit)}</Text>
+        </View>
+      );
+    }
+
+    if (isBalanceSuccess || isBookingSuccess) {
+      return (
+        <View style={styles.row}>
+          <Text style={styles.label}>
+            {t("tour.booking.totalPaid") || "Total paid"}
+          </Text>
+          <Text style={styles.valueBold}>{formatPrice(total)}</Text>
+        </View>
+      );
+    }
+
+    if (typeof totalAmount === "number") {
+      return (
+        <View style={styles.row}>
+          <Text style={styles.label}>{t("tour.confirm.priceSummary")}</Text>
+          <Text style={styles.valueBold}>{formatPrice(total)}</Text>
+        </View>
+      );
+    }
+
+    return null;
+  };
+
+  const canCancel =
+    isWaitingForApproved ||
+    isWaitingForUpdate ||
+    isPendingBalancePayment ||
+    isBalanceSuccess;
+
+  const handlePreviewCancel = async () => {
+    if (!booking?.bookingId) return;
+    try {
+      setLoadingCancelPreview(true);
+      const res = await tourEndpoints.previewCancelBooking(booking.bookingId);
+      setCancelPreview(res.data || null);
+      setShowCancelPreview(true);
+    } catch (error: any) {
+      Alert.alert(
+        t("common.error"),
+        error?.response?.data?.message || t("tour.booking.cancelFailed") || "Error"
+      );
+    } finally {
+      setLoadingCancelPreview(false);
+    }
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!booking?.bookingId || confirmingCancel) return;
+    try {
+      setConfirmingCancel(true);
+      const res = await tourEndpoints.cancelBooking(booking.bookingId);
+      // Cập nhật dữ liệu hoàn tiền sau hủy và hiển thị modal thành công
+      setShowCancelPreview(false);
+      setCancelSuccessData(res.data || null);
+      setShowCancelSuccessModal(true);
+      await loadBooking();
+    } catch (error: any) {
+      Alert.alert(
+        t("common.error"),
+        error?.response?.data?.message ||
+          t("tour.booking.cancelFailed") ||
+          "Cancel failed"
+      );
+    } finally {
+      setConfirmingCancel(false);
+    }
+  };
 
   const translateBookingStatus = (status?: string) => {
     const normalized = String(status || "").toUpperCase();
@@ -140,35 +329,90 @@ export default function BookingDetail() {
   const getStatusText = () => translateBookingStatus(bookingStatus);
 
   const getStatusColor = () => {
-    if (isPendingPayment) {
+    if (
+      isPendingPayment ||
+      isPendingDepositPayment ||
+      isPendingBalancePayment
+    ) {
       return "#FF9500";
     }
-    if (isWaitingForUpdate) {
+
+    if (isWaitingForUpdate || isWaitingForApproved || isSuccessPending) {
       return "#FF9500";
     }
+
     if (isAwaitingCompletion) {
       return "#FF9500";
     }
-    if (
-      bookingStatus === BookingStatus.BOOKING_SUCCESS ||
-      bookingStatus === "BOOKING_SUCCESS"
-    ) {
+
+    if (isBookingSuccess || isBalanceSuccess) {
       return "#34C759";
     }
+
+    if (isUnderComplaint) {
+      return "#5856D6";
+    }
+
+    if (isRejected || isFailed) {
+      return "#FF3B30";
+    }
+
+    if (isCancelled) {
+      return "#8E8E93";
+    }
+
     return "#666";
   };
 
-  const handleContinuePayment = () => {
+  const handleContinuePayment = async () => {
     if (!booking?.bookingId || !booking?.tourId) {
       return;
     }
-    router.push({
-      pathname: "/tour/confirm" as any,
-      params: {
-        bookingId: String(booking.bookingId),
-        tourId: String(booking.tourId),
-      },
-    });
+
+    const normalizedStatus = String(booking.bookingStatus || "").toUpperCase();
+    
+    // Ưu tiên dùng depositDiscountAmount và totalDiscountAmount từ booking response
+    // (đã được tính đúng với voucher discount từ backend)
+    let amountToPay = 0;
+    if (normalizedStatus === "PENDING_BALANCE_PAYMENT") {
+      // Tính remaining amount từ totalDiscountAmount và depositDiscountAmount
+      const totalAfterDiscount = booking?.totalDiscountAmount ?? booking?.totalAmount ?? 0;
+      const depositAfterDiscount = booking?.depositDiscountAmount ?? 0;
+      amountToPay = Math.max(totalAfterDiscount - depositAfterDiscount, 0);
+    } else {
+      // Dùng depositDiscountAmount (đã có voucher discount)
+      amountToPay = Number(booking?.depositDiscountAmount ?? booking?.depositAmount ?? booking?.totalAmount ?? 0);
+    }
+    
+    // Lấy voucherCode từ booking response
+    const voucherCode = booking?.voucherCode || "";
+
+    if (isPendingBalancePayment) {
+      router.push({
+        pathname: "/tour/confirm" as any,
+        params: {
+          bookingId: String(booking.bookingId),
+          tourId: String(booking.tourId),
+          bookingStatus: String(booking.bookingStatus || "PENDING_BALANCE_PAYMENT"),
+          amount: amountToPay.toString(),
+          voucherCode,
+        },
+      });
+      return;
+    }
+
+    if (isPendingPayment || isPendingDepositPayment) {
+      router.push({
+        pathname: "/payment" as any,
+        params: {
+          bookingId: String(booking.bookingId),
+          userEmail: (booking.contactEmail || "").toLowerCase(),
+          bookingStatus: String(booking.bookingStatus || "PENDING_PAYMENT"),
+          amount: amountToPay.toString(),
+          voucherCode,
+        },
+      });
+    }
   };
 
   const handleOpenUpdateModal = () => {
@@ -412,14 +656,7 @@ export default function BookingDetail() {
               <Text style={styles.label}>{t("tour.booking.totalGuests")}</Text>
               <Text style={styles.value}>{booking?.totalGuests || 0}</Text>
             </View>
-            {typeof totalAmount === "number" && (
-              <View style={styles.row}>
-                <Text style={styles.label}>
-                  {t("tour.confirm.priceSummary")}
-                </Text>
-                <Text style={styles.valueBold}>{formatPrice(totalAmount)}</Text>
-              </View>
-            )}
+            {renderPaymentSummary()}
             <View style={styles.rowLast}>
               <Text style={styles.label}>{t("tour.booking.pickUpPoint")}</Text>
               <Text style={styles.value}>
@@ -485,7 +722,14 @@ export default function BookingDetail() {
             )}
           </View>
 
-          {isPendingPayment && (
+          {((isPendingPayment ||
+            isPendingDepositPayment ||
+            isPendingBalancePayment) ||
+            canCancel) && (
+            <View style={styles.paymentButtonsContainer}>
+          {(isPendingPayment ||
+            isPendingDepositPayment ||
+            isPendingBalancePayment) && (
             <TouchableOpacity
               style={styles.continuePaymentButton}
               onPress={handleContinuePayment}
@@ -495,6 +739,27 @@ export default function BookingDetail() {
                 {t("payment.continuePayment")}
               </Text>
             </TouchableOpacity>
+              )}
+
+              {canCancel && (
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={handlePreviewCancel}
+                  disabled={loadingCancelPreview}
+                >
+                  {loadingCancelPreview ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <Ionicons name="close-circle" size={18} color="#fff" />
+                      <Text style={styles.cancelButtonText}>
+                        {t("tour.booking.cancelAction")}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
           )}
 
           {isAwaitingCompletion && !booking?.userConfirmedCompletion && (
@@ -544,8 +809,8 @@ export default function BookingDetail() {
         transparent={true}
         onRequestClose={() => setShowUpdateModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <View style={styles.cancelModalOverlay}>
+          <View style={styles.cancelModalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
                 {t("tour.booking.updateInfo") || "Cập nhật thông tin"}
@@ -554,7 +819,7 @@ export default function BookingDetail() {
                 onPress={() => setShowUpdateModal(false)}
                 style={styles.modalCloseButton}
               >
-                <Ionicons name="close" size={24} color="#333" />
+                <Ionicons name="close-outline" size={20} color="#999" />
               </TouchableOpacity>
             </View>
 
@@ -897,7 +1162,7 @@ export default function BookingDetail() {
                 onPress={() => setShowComplaintModal(false)}
                 style={styles.modalCloseButton}
               >
-                <Ionicons name="close" size={24} color="#333" />
+                <Ionicons name="close-outline" size={20} color="#999" />
               </TouchableOpacity>
             </View>
 
@@ -934,6 +1199,175 @@ export default function BookingDetail() {
               >
                 <Text style={styles.modalSubmitText}>
                   {t("common.continue") || "Tiếp tục"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Cancel Preview Modal */}
+      <Modal
+        visible={showCancelPreview}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowCancelPreview(false)}
+      >
+        <View style={styles.cancelModalOverlay}>
+          <View style={styles.cancelModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {t("tour.booking.cancelPreviewTitle")}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowCancelPreview(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close-outline" size={20} color="#999" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalScrollView}>
+              {cancelPreview ? (
+                <>
+                  <View style={styles.modalField}>
+                    <Text style={styles.modalLabel}>
+                      {t("tour.booking.refundAmount")}
+                    </Text>
+                    <Text style={styles.modalInput}>
+                      {formatPrice(cancelPreview.refundAmount || 0)}
+                    </Text>
+                    <Text style={styles.modalNote}>
+                      {`${t("tour.booking.refundFromPaid")} `}
+                      {formatPrice(cancelPreview.payedAmount || 0)}
+                    </Text>
+                  </View>
+                  <View style={styles.modalField}>
+                    <Text style={styles.modalLabel}>
+                      {t("tour.booking.refundPercentage")}
+                    </Text>
+                    <Text style={styles.modalInput}>
+                      {`${cancelPreview.refundPercentage || 0}%`}
+                    </Text>
+                  </View>
+                  <View style={styles.modalField}>
+                    <Text style={styles.modalLabel}>
+                      {t("tour.booking.payedAmount")}
+                    </Text>
+                    <Text style={styles.modalInput}>
+                      {formatPrice(cancelPreview.payedAmount || 0)}
+                    </Text>
+                  </View>
+                  <View style={styles.modalField}>
+                    <Text style={styles.modalLabel}>
+                      {t("tour.booking.depositAmount")}
+                    </Text>
+                    <Text style={styles.modalInput}>
+                      {formatPrice(cancelPreview.depositAmount || 0)}
+                    </Text>
+                  </View>
+                  <View style={styles.modalField}>
+                    <Text style={styles.modalLabel}>
+                      {t("tour.booking.totalAmount")}
+                    </Text>
+                    <Text style={styles.modalInput}>
+                      {formatPrice(cancelPreview.totalAmount || 0)}
+                    </Text>
+                  </View>
+                </>
+              ) : (
+                <View style={styles.modalField}>
+                  <ActivityIndicator size="small" color="#007AFF" />
+                </View>
+              )}
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => setShowCancelPreview(false)}
+              >
+                <Text style={styles.modalCancelButtonText}>
+                  {t("common.cancel")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalSubmitButton}
+                onPress={handleConfirmCancel}
+                disabled={confirmingCancel}
+              >
+                {confirmingCancel ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.modalSubmitButtonText}>
+                    {t("tour.booking.cancelAction")}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Cancel Success Modal */}
+      <Modal
+        visible={showCancelSuccessModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowCancelSuccessModal(false)}
+      >
+        <View style={styles.cancelModalOverlay}>
+          <View style={styles.cancelModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {t("tour.booking.cancelSuccessTitle")}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowCancelSuccessModal(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close-outline" size={20} color="#999" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalScrollView}>
+              {cancelSuccessData ? (
+                <>
+                  <View style={styles.modalField}>
+                    <Text style={styles.modalLabel}>
+                      {t("tour.booking.refundAmount")}
+                    </Text>
+                    <Text style={styles.modalInput}>
+                      {formatPrice(cancelSuccessData.refundAmount || 0)}
+                    </Text>
+                    <Text style={styles.modalNote}>
+                      {`${t("tour.booking.refundFromPaid")} `}
+                      {formatPrice(cancelSuccessData.payedAmount || 0)}
+                    </Text>
+                  </View>
+                  <View style={styles.modalField}>
+                    <Text style={styles.modalLabel}>
+                      {t("tour.booking.refundPercentage")}
+                    </Text>
+                    <Text style={styles.modalInput}>
+                      {`${cancelSuccessData.refundPercentage || 0}%`}
+                    </Text>
+                  </View>
+                </>
+              ) : (
+                <View style={styles.modalField}>
+                  <ActivityIndicator size="small" color="#007AFF" />
+                </View>
+              )}
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.modalSubmitButton}
+                onPress={() => setShowCancelSuccessModal(false)}
+              >
+                <Text style={styles.modalSubmitButtonText}>
+                  {t("common.confirm") || "OK"}
                 </Text>
               </TouchableOpacity>
             </View>

@@ -18,6 +18,8 @@ export interface TourResponse {
   contents: TourContentResponse[];
   tourDeadline?: number;
   tourExpirationDate?: string;
+  depositPercentage?: number; // Phần trăm tiền cọc (0-100)
+  minAdvancedDays?: number; // Số ngày tối thiểu phải đặt trước khi khởi hành
 }
 
 export interface TourContentResponse {
@@ -34,4 +36,3 @@ export enum TourStatus {
   REJECTED = "REJECTED",
   SUSPENDED = "SUSPENDED",
 }
-

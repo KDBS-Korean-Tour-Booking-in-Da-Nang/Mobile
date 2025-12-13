@@ -19,6 +19,7 @@ import {
 } from "../../../../src/types/response/voucher.response";
 import { TourResponse } from "../../../../src/types/response/tour.response";
 import styles from "./styles";
+import { formatPriceKRW } from "../../../../src/utils/currency";
 import { voucherEndpoints } from "../../../../services/endpoints/voucher";
 import { tourEndpoints } from "../../../../services/endpoints/tour";
 
@@ -242,7 +243,7 @@ export default function VoucherDetail() {
                 <Text style={styles.voucherDetailValue}>
                   {voucher.discountType === VoucherDiscountType.PERCENT
                     ? `${voucher.discountValue}%`
-                    : `${voucher.discountValue.toLocaleString()} VND`}
+                    : formatPriceKRW(voucher.discountValue)}
                 </Text>
               </View>
 
@@ -252,7 +253,7 @@ export default function VoucherDetail() {
                   {t("tour.voucher.minOrder")}:
                 </Text>
                 <Text style={styles.voucherDetailValue}>
-                  {voucher.minOrderValue.toLocaleString()} VND
+                  {formatPriceKRW(voucher.minOrderValue)}
                 </Text>
               </View>
             </View>
@@ -345,7 +346,7 @@ export default function VoucherDetail() {
                       </Text>
                       <View style={styles.tourItemInfo}>
                         <Text style={styles.tourItemPrice}>
-                          {tour.adultPrice?.toLocaleString?.() || "-"} VND
+                          {tour.adultPrice ? formatPriceKRW(tour.adultPrice) : "-"}
                         </Text>
                         <Text style={styles.tourItemDuration}>
                           {tour.tourDuration}

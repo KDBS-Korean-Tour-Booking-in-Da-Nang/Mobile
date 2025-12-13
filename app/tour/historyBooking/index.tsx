@@ -67,18 +67,38 @@ export default function HistoryBooking() {
   const getStatusBadgeColor = useCallback((status?: string) => {
     const normalized = String(status || "").toUpperCase();
     switch (normalized) {
+      // Success statuses - Green
       case BookingStatus.BOOKING_SUCCESS:
+      case BookingStatus.BOOKING_BALANCE_SUCCESS:
       case "SUCCESS":
         return "#34C759";
+
+      // Payment pending statuses - Orange
       case BookingStatus.PENDING_PAYMENT:
+      case BookingStatus.PENDING_DEPOSIT_PAYMENT:
+      case BookingStatus.PENDING_BALANCE_PAYMENT:
+        return "#FF9500";
+
+      // Waiting/Processing statuses - Orange
       case BookingStatus.WAITING_FOR_UPDATE:
+      case BookingStatus.WAITING_FOR_APPROVED:
+      case BookingStatus.BOOKING_SUCCESS_PENDING:
       case BookingStatus.BOOKING_SUCCESS_WAIT_FOR_CONFIRMED:
         return "#FF9500";
+
+      // Rejected/Failed statuses - Red
       case BookingStatus.BOOKING_REJECTED:
       case BookingStatus.BOOKING_FAILED:
         return "#FF3B30";
+
+      // Complaint status - Purple
       case BookingStatus.BOOKING_UNDER_COMPLAINT:
-        return "#FF9500";
+        return "#5856D6";
+
+      // Cancelled status - Gray
+      case BookingStatus.BOOKING_CANCELLED:
+        return "#8E8E93";
+
       default:
         return "#9aa0a6";
     }
@@ -220,9 +240,10 @@ export default function HistoryBooking() {
 
   const isAwaitingCompletion = (status?: string) => {
     if (!status) return false;
+    const normalized = String(status).toUpperCase();
     return (
-      status === BookingStatus.BOOKING_SUCCESS_WAIT_FOR_CONFIRMED ||
-      status?.toUpperCase() === BookingStatus.BOOKING_SUCCESS_WAIT_FOR_CONFIRMED
+      normalized === BookingStatus.BOOKING_SUCCESS_WAIT_FOR_CONFIRMED ||
+      normalized === "BOOKING_SUCCESS_WAIT_FOR_CONFIRMED"
     );
   };
 
@@ -518,7 +539,7 @@ export default function HistoryBooking() {
                 onPress={() => setShowComplaintModal(false)}
                 style={styles.modalCloseButton}
               >
-                <Ionicons name="close" size={24} color="#333" />
+                <Ionicons name="close-outline" size={20} color="#999" />
               </TouchableOpacity>
             </View>
 

@@ -31,6 +31,8 @@ const ScrollableLayout: React.FC<ScrollableLayoutProps> = ({ children }) => {
         onScroll={handleScroll}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
+        nestedScrollEnabled={true}
+        style={{ flex: 1 }}
       >
         {children}
       </ScrollView>

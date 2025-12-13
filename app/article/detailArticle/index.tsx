@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
-  Image,
   Alert,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
@@ -20,6 +20,10 @@ import { getArticleById, Article } from "../../../services/endpoints/articles";
 import { articleCommentEndpoints } from "../../../services/endpoints/articleComments";
 import { ArticleCommentResponse } from "../../../src/types/response/articleComment.response";
 import { useAuthContext } from "../../../src/contexts/authContext";
+import { tourEndpoints } from "../../../services/endpoints/tour";
+import { TourResponse } from "../../../src/types/response/tour.response";
+import { formatPriceKRW } from "../../../src/utils/currency";
+import { getTourThumbnailUrl } from "../../../src/utils/media";
 import styles, { contentHtmlCss } from "./style";
 import { WebView } from "react-native-webview";
 
@@ -62,6 +66,8 @@ export default function ArticleDetail() {
   const [commentText, setCommentText] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [suggestTours, setSuggestTours] = useState<TourResponse[]>([]);
+  const [loadingSuggestTours, setLoadingSuggestTours] = useState(false);
   const { user } = useAuthContext();
 
   // Load comments from API (only comments, no replies)
@@ -133,12 +139,50 @@ export default function ArticleDetail() {
     }
   }, [id]);
 
+  const loadSuggestTours = useCallback(async () => {
+    try {
+      setLoadingSuggestTours(true);
+      const userId = (user as any)?.userId || (user as any)?.id;
+      // If no userId, don't pass it (backend accepts optional userId)
+      const response = await tourEndpoints.suggestByArticle(userId);
+      const tours = Array.isArray(response.data) ? response.data : [];
+      // Map tourId to id since backend returns Tour entity (with tourId) instead of TourResponse (with id)
+      const mappedTours = tours.map((tour: any) => ({
+        ...tour,
+        id: tour.id || tour.tourId, // Use tourId if id is not present
+      }));
+      // Log tours to debug
+      console.log("[Article Detail] Loaded suggest tours:", mappedTours.map(t => ({ id: t?.id, tourId: t?.tourId, name: t?.tourName })));
+      setSuggestTours(mappedTours);
+    } catch (error: any) {
+      // Silently handle errors - don't show error to user
+      // Timeout, network errors, or empty results are expected
+      const isTimeout = error?.code === "ECONNABORTED" || error?.message?.includes("timeout");
+      const isNetworkError = error?.code === "ERR_NETWORK" || !error?.response;
+      const isServerError = error?.response?.status >= 500;
+      
+      // Only log unexpected errors (not timeout, network, or server errors)
+      if (!isTimeout && !isNetworkError && !isServerError && error?.response?.status !== 404) {
+        console.error("Error loading suggest tours:", error);
+      }
+      setSuggestTours([]);
+    } finally {
+      setLoadingSuggestTours(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (id) {
       loadArticle();
       loadComments();
     }
   }, [id, loadArticle, loadComments]);
+
+  useEffect(() => {
+    if (id && article) {
+      loadSuggestTours();
+    }
+  }, [id, article, loadSuggestTours]);
 
   // Track language changes
   useEffect(() => {
@@ -308,7 +352,7 @@ export default function ArticleDetail() {
                   onPress={() => navigate("/article")}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="arrow-back" size={22} color="#212529" />
+                  <Ionicons name="arrow-back-outline" size={20} color="#999" />
                 </TouchableOpacity>
                 <Text
                   style={[styles.articleTitle, { flex: 1 }]}
@@ -404,8 +448,8 @@ export default function ArticleDetail() {
                 <View style={styles.noCommentsContainer}>
                   <Ionicons
                     name="chatbubble-outline"
-                    size={48}
-                    color="#C0C0C0"
+                    size={40}
+                    color="#D0D0D0"
                   />
                   <Text style={styles.noCommentsText}>
                     {t("article.comment.noComments") ||
@@ -428,9 +472,9 @@ export default function ArticleDetail() {
                         ) : (
                           <View style={styles.commentAvatarPlaceholder}>
                             <Ionicons
-                              name="person"
-                              size={20}
-                              color="#666"
+                              name="person-outline"
+                              size={18}
+                              color="#999"
                             />
                           </View>
                         )}
@@ -450,6 +494,80 @@ export default function ArticleDetail() {
                       </View>
                     </View>
                   ))}
+                </View>
+              )}
+            </View>
+
+            {/* Suggest Tours Section */}
+            <View style={styles.suggestToursSection}>
+              <View style={styles.suggestToursHeader}>
+                <Text style={styles.suggestToursTitle}>
+                  {t("article.suggestTours.title")}
+                </Text>
+              </View>
+              {loadingSuggestTours ? (
+                <View style={styles.suggestToursLoading}>
+                  <ActivityIndicator size="small" color="#007AFF" />
+                </View>
+              ) : suggestTours.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.suggestToursList}
+                >
+                  {suggestTours
+                    .filter((tour) => {
+                      if (!tour?.id) return false;
+                      const tourId = typeof tour.id === "number" ? tour.id : Number(tour.id);
+                      return !isNaN(tourId) && tourId > 0;
+                    })
+                    .map((tour, index) => {
+                      const tourId = typeof tour.id === "number" ? tour.id : Number(tour.id);
+                      return (
+                        <TouchableOpacity
+                          key={tourId || `tour-${index}`}
+                          style={styles.suggestTourCard}
+                          onPress={() => {
+                            if (tourId && !isNaN(tourId) && tourId > 0) {
+                              console.log("[Article Detail] Navigating to tour detail:", tourId);
+                              navigate(`/tour/tourDetail?id=${tourId}` as any);
+                            } else {
+                              console.error("[Article Detail] Invalid tour ID:", {
+                                originalId: tour.id,
+                                parsedId: tourId,
+                                tour: tour
+                              });
+                            }
+                          }}
+                        >
+                          <Image
+                            source={{
+                              uri: getTourThumbnailUrl(tour?.tourImgPath) || "",
+                            }}
+                            style={styles.suggestTourImage}
+                            contentFit="cover"
+                            transition={0}
+                            cachePolicy="disk"
+                          />
+                          <View style={styles.suggestTourContent}>
+                            <Text style={styles.suggestTourName} numberOfLines={2}>
+                              {tour.tourName}
+                            </Text>
+                            <Text style={styles.suggestTourPrice}>
+                              {tour.adultPrice
+                                ? formatPriceKRW(tour.adultPrice)
+                                : "N/A"}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                </ScrollView>
+              ) : (
+                <View style={styles.suggestToursEmpty}>
+                  <Text style={styles.suggestToursEmptyText}>
+                    {t("article.suggestTours.noTours")}
+                  </Text>
                 </View>
               )}
             </View>

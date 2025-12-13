@@ -1,35 +1,35 @@
-import React, { useEffect, useState, useMemo } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Platform,
-  ActivityIndicator,
-  Dimensions,
-  Linking,
-  TextInput,
-} from "react-native";
-import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "../../navigation/navigation";
+import { Image } from "expo-image";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { colors } from "../../constants/theme";
-import ScrollableLayout from "../../components/ScrollableLayout";
-import { useAuthContext } from "../../src/contexts/authContext";
-import forumEndpoints, { PostResponse } from "../../services/endpoints/forum";
-import { PostRawResponse } from "../../src/types/response/forum.response";
-import api from "../../services/api";
-import tourEndpoints from "../../services/endpoints/tour";
-import { TourResponse } from "../../src/types/response/tour.response";
 import {
-  getApprovedArticles,
-  Article,
-} from "../../services/endpoints/articles";
+    ActivityIndicator,
+    Dimensions,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from "react-native";
 import ChatBubble from "../../components/ChatBubble";
-import { useFocusEffect } from "@react-navigation/native";
+import GeminiChatBubble from "../../components/GeminiChatBubble";
+import ScrollableLayout from "../../components/ScrollableLayout";
+import { colors } from "../../constants/theme";
+import { useNavigation } from "../../navigation/navigation";
+import api from "../../services/api";
+import {
+    Article,
+    getApprovedArticles,
+} from "../../services/endpoints/articles";
+import forumEndpoints, { PostResponse } from "../../services/endpoints/forum";
+import tourEndpoints from "../../services/endpoints/tour";
+import { useAuthContext } from "../../src/contexts/authContext";
+import { PostRawResponse } from "../../src/types/response/forum.response";
+import { TourResponse } from "../../src/types/response/tour.response";
+import { formatPriceKRW } from "../../src/utils/currency";
+import { getTourThumbnailUrl } from "../../src/utils/media";
 import styles from "./styles";
-import { getContentImageUrl, getTourThumbnailUrl } from "../../src/utils/media";
 
 const LanguageDropdown = ({
   currentLanguage,
@@ -137,6 +137,8 @@ export default function Home() {
   const [toursLoading, setToursLoading] = useState(true);
   const [articles, setArticles] = useState<Article[]>([]);
   const [articlesLoading, setArticlesLoading] = useState(true);
+  const [suggestToursViaBehavior, setSuggestToursViaBehavior] = useState<TourResponse[]>([]);
+  const [loadingSuggestTours, setLoadingSuggestTours] = useState(false);
 
   // Search UI state (similar to forum)
   const [searchQuery, setSearchQuery] = useState("");
@@ -146,6 +148,7 @@ export default function Home() {
   const [currentLanguage, setCurrentLanguage] = useState<"en" | "ko" | "vi">(
     i18n.language as "en" | "ko" | "vi"
   );
+  const [aiChatOpen, setAiChatOpen] = useState(false);
 
   const handleLanguageSelect = (language: "en" | "ko" | "vi") => {
     setCurrentLanguage(language);
@@ -226,9 +229,40 @@ export default function Home() {
       }
     };
 
+    const loadSuggestTours = async () => {
+      try {
+        setLoadingSuggestTours(true);
+        const userId = (user as any)?.userId || (user as any)?.id || 0;
+        // Backend expects int userId (required = false means default 0)
+        const response = await tourEndpoints.suggestViaBehavior(userId);
+        const tours = Array.isArray(response.data) ? response.data : [];
+        // Map tourId to id since backend returns Tour entity (with tourId) instead of TourResponse (with id)
+        const mappedTours = tours.map((tour: any) => ({
+          ...tour,
+          id: tour.id || tour.tourId, // Use tourId if id is not present
+        }));
+        setSuggestToursViaBehavior(mappedTours);
+      } catch (error: any) {
+        // Silently handle errors - don't show error to user
+        // Timeout, network errors, or empty results are expected
+        const isTimeout = error?.code === "ECONNABORTED" || error?.message?.includes("timeout");
+        const isNetworkError = error?.code === "ERR_NETWORK" || !error?.response;
+        const isServerError = error?.response?.status >= 500;
+        
+        // Only log unexpected errors (not timeout, network, or server errors)
+        if (!isTimeout && !isNetworkError && !isServerError && error?.response?.status !== 404) {
+          console.error("Error loading suggest tours via behavior:", error);
+        }
+        setSuggestToursViaBehavior([]);
+      } finally {
+        setLoadingSuggestTours(false);
+      }
+    };
+
     loadTours();
     loadArticles();
-  }, []);
+    loadSuggestTours();
+  }, [user]);
 
   const tourImageUrls = useMemo(() => {
     if (!featuredTours || featuredTours.length === 0) return {};
@@ -288,9 +322,7 @@ export default function Home() {
               </Text>
             </View>
             <Text style={styles.tourPrice}>
-              {tour.adultPrice
-                ? `${tour.adultPrice.toLocaleString()} VND`
-                : "Liên hệ"}
+              {tour.adultPrice ? formatPriceKRW(tour.adultPrice) : "N/A"}
             </Text>
           </View>
         </View>
@@ -661,10 +693,95 @@ export default function Home() {
               </View>
             )}
           </View>
+
+          {/* Suggest Tours Via Behavior Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>
+                  {t("home.suggestTours.title")}
+                </Text>
+              <TouchableOpacity onPress={() => navigate("/tour/list")}>
+                <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {loadingSuggestTours ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#007AFF" />
+                <Text style={styles.loadingText}>{t("tour.loading")}</Text>
+              </View>
+            ) : suggestToursViaBehavior.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.toursContainer}
+                removeClippedSubviews={false}
+                decelerationRate="fast"
+                snapToInterval={Dimensions.get("window").width * 0.5 + 16}
+                snapToAlignment="start"
+                pagingEnabled={false}
+                bounces={false}
+                scrollEventThrottle={16}
+              >
+                {suggestToursViaBehavior.map((tour, index) => (
+                  <TouchableOpacity
+                    key={tour?.id || `suggest-tour-${index}`}
+                    style={styles.tourCard}
+                    onPress={() => navigate(`/tour/tourDetail?id=${tour.id}`)}
+                  >
+                    <View style={styles.imageContainer}>
+                      <Image
+                        source={{
+                          uri: resolveTourCardImage(tour),
+                        }}
+                        style={styles.tourImage}
+                        contentFit="cover"
+                        transition={0}
+                        cachePolicy="disk"
+                      />
+                    </View>
+                    <View style={styles.durationBadge}>
+                      <Text style={styles.durationText}>
+                        {tour.tourDuration || "3N2D"}
+                      </Text>
+                    </View>
+                    <View style={styles.tourContent}>
+                      <Text style={[styles.tourTitle]}>{tour.tourName}</Text>
+                      <View style={styles.tourRow}>
+                        <View style={styles.locationContainer}>
+                          <Ionicons
+                            name="location-outline"
+                            size={14}
+                            color={colors.text.secondary}
+                          />
+                          <Text style={styles.tourLocation}>
+                            {tour.tourDeparturePoint || "Đà Nẵng"}
+                          </Text>
+                        </View>
+                        <Text style={styles.tourPrice}>
+                          {tour.adultPrice
+                            ? formatPriceKRW(tour.adultPrice)
+                            : "N/A"}
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>
+                  {t("home.suggestTours.noTours")}
+                </Text>
+              </View>
+            )}
+          </View>
+
           <View style={styles.bottomSpacing} />
         </View>
       </ScrollableLayout>
-      <ChatBubble />
+      <ChatBubble onOpenAIChat={() => setAiChatOpen(true)} />
+      <GeminiChatBubble isOpen={aiChatOpen} onClose={() => setAiChatOpen(false)} />
     </View>
   );
 }

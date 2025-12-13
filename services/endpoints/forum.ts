@@ -124,8 +124,17 @@ export const forumEndpoints = {
       userEmail,
     }),
 
-  removeCommentReaction: (commentId: number) =>
-    api.post(`/api/reactions/COMMENT/${commentId}`),
+  removeCommentReaction: (
+    commentId: number,
+    userEmail?: string,
+    reactionType: "LIKE" | "DISLIKE" = "LIKE"
+  ) =>
+    api.post("/api/reactions/delete", {
+      targetId: commentId,
+      targetType: "COMMENT",
+      reactionType,
+      userEmail,
+    }),
 
   savePost: (postId: number) => api.post("/api/saved-posts/save", { postId }),
 

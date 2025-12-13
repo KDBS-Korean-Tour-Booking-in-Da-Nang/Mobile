@@ -9,6 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { colors, spacing } from "../constants/theme";
+import { useTranslation } from "react-i18next";
 
 const REPORT_REASONS = [
   "SPAM",
@@ -31,8 +32,26 @@ const ReportModal: React.FC<ReportModalProps> = ({
   onCancel,
   loading,
 }) => {
+  const { t } = useTranslation();
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [description, setDescription] = useState("");
+
+  const getReasonLabel = (reason: string): string => {
+    switch (reason) {
+      case "SPAM":
+        return t("forum.reportReasonSpam");
+      case "INAPPROPRIATE":
+        return t("forum.reportReasonInappropriate");
+      case "VIOLENCE":
+        return t("forum.reportReasonViolence");
+      case "HARASSMENT":
+        return t("forum.reportReasonHarassment");
+      case "OTHER":
+        return t("forum.reportReasonOther");
+      default:
+        return reason;
+    }
+  };
 
   const toggleReason = (reason: string) => {
     setSelectedReasons((prev) =>
@@ -44,7 +63,7 @@ const ReportModal: React.FC<ReportModalProps> = ({
 
   const handleSubmit = async () => {
     if (selectedReasons.length === 0) {
-      Alert.alert("Lỗi", "Vui lòng chọn ít nhất một lý do báo cáo.");
+      Alert.alert(t("forum.errorTitle"), t("forum.reportSelectReason"));
       return;
     }
     await onSubmit(selectedReasons, description.trim());
@@ -56,8 +75,8 @@ const ReportModal: React.FC<ReportModalProps> = ({
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.header}>Báo cáo bài viết</Text>
-          <Text style={styles.label}>Lý do:</Text>
+          <Text style={styles.header}>{t("forum.reportTitle")}</Text>
+          <Text style={styles.label}>{t("forum.reportReason")}</Text>
           <View style={styles.reasonsContainer}>
             {REPORT_REASONS.map((reason) => (
               <TouchableOpacity
@@ -74,15 +93,15 @@ const ReportModal: React.FC<ReportModalProps> = ({
                     selectedReasons.includes(reason) && styles.chipTextSelected,
                   ]}
                 >
-                  {reason}
+                  {getReasonLabel(reason)}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
-          <Text style={styles.label}>Mô tả thêm (tùy chọn):</Text>
+          <Text style={styles.label}>{t("forum.reportDescription")}</Text>
           <TextInput
             style={[styles.input, styles.textarea]}
-            placeholder="Cung cấp thêm thông tin..."
+            placeholder={t("forum.reportDescriptionPlaceholder")}
             value={description}
             onChangeText={setDescription}
             placeholderTextColor={colors.text.secondary}
@@ -94,7 +113,7 @@ const ReportModal: React.FC<ReportModalProps> = ({
               onPress={onCancel}
               disabled={loading}
             >
-              <Text style={styles.btnGhostText}>Hủy</Text>
+              <Text style={styles.btnGhostText}>{t("forum.reportCancel")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -106,7 +125,7 @@ const ReportModal: React.FC<ReportModalProps> = ({
               disabled={loading || selectedReasons.length === 0}
             >
               <Text style={styles.btnPrimaryText}>
-                {loading ? "Đang gửi..." : "Gửi báo cáo"}
+                {loading ? t("forum.reportSubmitting") : t("forum.reportSubmit")}
               </Text>
             </TouchableOpacity>
           </View>

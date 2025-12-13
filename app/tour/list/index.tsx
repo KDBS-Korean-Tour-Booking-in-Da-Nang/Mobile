@@ -26,13 +26,11 @@ import { useTranslation } from "react-i18next";
 import { tourEndpoints } from "../../../services/endpoints/tour";
 import { TourResponse } from "../../../src/types/response/tour.response";
 import styles from "./styles";
-import forumEndpoints from "../../../services/endpoints/forum";
+import { forumEndpoints } from "../../../services/endpoints/forum";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  getContentImageUrl,
-  getTourThumbnailUrl,
-} from "../../../src/utils/media";
+import { getTourThumbnailUrl } from "../../../src/utils/media";
+import { formatPriceKRW } from "../../../src/utils/currency";
 
 export default function TourList() {
   const { navigate, goBack } = useNavigation();
@@ -44,6 +42,11 @@ export default function TourList() {
   const [refreshing, setRefreshing] = useState(false);
   const [keyword, setKeyword] = useState("");
 
+
+  const [isNavVisible, setIsNavVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const scrollThreshold = 50;
+
   const [shareOpen, setShareOpen] = useState(false);
   const [shareTour, setShareTour] = useState<TourResponse | null>(null);
   const [shareTitle, setShareTitle] = useState("");
@@ -51,10 +54,6 @@ export default function TourList() {
   const [shareHashtagInput, setShareHashtagInput] = useState("");
   const [shareHashtags, setShareHashtags] = useState<string[]>([]);
   const [shareSubmitting, setShareSubmitting] = useState(false);
-
-  const [isNavVisible, setIsNavVisible] = useState(true);
-  const lastScrollY = useRef(0);
-  const scrollThreshold = 50;
 
   const [showGiftModal, setShowGiftModal] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -195,7 +194,9 @@ export default function TourList() {
         tourDescription: shareTour.tourDescription,
       } as any;
       const marker = `[[META:${JSON.stringify(meta)}]]`;
-      const contentToSend = `${shareContent.trim()}\n\n${marker}`;
+      // Add tour link in both web and mobile format for compatibility
+      const tourLink = `http://localhost:3000/tour/detail?id=${shareTour.id}`;
+      const contentToSend = `${shareContent.trim()}\n\n${tourLink}\n\n${marker}`;
 
       const createPostFormData = (data: {
         title: string;
@@ -243,6 +244,7 @@ export default function TourList() {
       });
       await forumEndpoints.createPost(formData);
       setShareOpen(false);
+      Alert.alert(t("forum.successTitle"), t("tour.share.success") || "Tour shared successfully!");
       navigate("/forum");
     } catch {
       Alert.alert(t("forum.errorTitle"), t("tour.share.errors.shareFailed"));
@@ -250,6 +252,7 @@ export default function TourList() {
       setShareSubmitting(false);
     }
   };
+
 
   const resolveTourCardImage = (t: any): string => {
     // Card cover: chỉ dùng tour_img_path (thumbnails)
@@ -431,8 +434,8 @@ export default function TourList() {
                       <View style={styles.priceContainer}>
                         <Text style={styles.priceText}>
                           {tour.adultPrice
-                            ? `${tour.adultPrice.toLocaleString()} Đ`
-                            : "500,000 Đ"}
+                            ? formatPriceKRW(tour.adultPrice)
+                            : "N/A"}
                         </Text>
                         <Text style={styles.priceUnit}>/person</Text>
                       </View>
@@ -455,262 +458,163 @@ export default function TourList() {
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
+      {/* Share Tour Modal */}
       <Modal
         visible={shareOpen}
-        animationType="slide"
+        transparent={true}
+        animationType="fade"
         onRequestClose={() => setShareOpen(false)}
       >
-        <View style={{ flex: 1, backgroundColor: "#f8f9fa", marginTop: 60 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              backgroundColor: "#e9ecef",
-              borderBottomWidth: 1,
-              borderBottomColor: "#dee2e6",
-            }}
-          >
-            <TouchableOpacity onPress={() => setShareOpen(false)}>
-              <Text style={{ color: "#007AFF", fontWeight: "600" }}>
-                {t("common.cancel")}
+        <View style={styles.shareModalOverlay}>
+          <View style={styles.shareModalContent}>
+            <View style={styles.shareModalHeader}>
+              <TouchableOpacity onPress={() => setShareOpen(false)}>
+                <View style={styles.shareModalCloseButton}>
+                  <Ionicons name="close-outline" size={20} color="#999" />
+                </View>
+              </TouchableOpacity>
+              <Text style={styles.shareModalTitle}>
+                {t("tour.share.modalTitle")}
               </Text>
-            </TouchableOpacity>
-            <Text style={{ fontSize: 18, fontWeight: "700" }}>
-              {t("tour.share.modalTitle")}
-            </Text>
-            <TouchableOpacity onPress={submitShare} disabled={shareSubmitting}>
-              <Text
-                style={{
-                  color: shareSubmitting ? "#ccc" : "#007AFF",
-                  fontWeight: "600",
-                }}
+              <TouchableOpacity
+                onPress={submitShare}
+                disabled={shareSubmitting}
+                style={styles.shareModalActionButton}
               >
-                {shareSubmitting ? t("tour.share.posting") : t("forum.post")}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={{ flex: 1 }}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-          >
-            <ScrollView
-              style={{ flex: 1, padding: 16 }}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingBottom: 100 }}
+                <Text
+                  style={
+                    shareSubmitting
+                      ? styles.shareModalActionTextDisabled
+                      : styles.shareModalActionText
+                  }
+                >
+                  {shareSubmitting ? t("tour.share.posting") : t("forum.post")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              style={{ flex: 1 }}
+              keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
             >
-              <View style={{ marginBottom: 16 }}>
-                <Text
-                  style={{ fontSize: 18, fontWeight: "700", color: "#000" }}
-                >
-                  {t("forum.title")}
-                </Text>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginTop: 8,
-                  }}
-                >
-                  <Text
-                    style={{ fontSize: 14, color: "#6c757d", marginRight: 8 }}
-                  >
-                    {t("tour.share.title")}
+              <ScrollView
+                style={styles.shareModalBody}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: 20 }}
+              >
+                <View style={styles.shareModalSection}>
+                  <Text style={styles.shareModalSectionTitle}>
+                    {t("forum.title")}
                   </Text>
-                  <Text
-                    style={{ fontSize: 14, color: "#6c757d", marginRight: 32 }}
-                  >
-                    :
-                  </Text>
-                  <TextInput
-                    style={{
-                      flex: 1,
-                      borderBottomWidth: 1,
-                      borderBottomColor: "#6c757d",
-                      paddingVertical: 8,
-                      paddingHorizontal: 12,
-                      fontSize: 14,
-                      color: "#000",
-                    }}
-                    placeholder={t("tour.share.titlePlaceholder")}
-                    value={shareTitle}
-                    onChangeText={setShareTitle}
-                    maxLength={100}
-                  />
-                </View>
-              </View>
-
-              <View style={{ marginBottom: 16 }}>
-                <Text
-                  style={{ fontSize: 18, fontWeight: "700", color: "#000" }}
-                >
-                  {t("forum.content")}
-                </Text>
-                <TextInput
-                  style={{
-                    backgroundColor: "#fff",
-                    borderRadius: 12,
-                    padding: 16,
-                    minHeight: 120,
-                    fontSize: 14,
-                    color: "#000",
-                    textAlignVertical: "top",
-                    borderWidth: 1,
-                    borderColor: "#e9ecef",
-                  }}
-                  placeholder={t("tour.share.contentPlaceholder")}
-                  value={shareContent}
-                  onChangeText={setShareContent}
-                  multiline
-                  maxLength={1000}
-                />
-              </View>
-
-              {shareTour && (
-                <View
-                  style={{
-                    backgroundColor: "#fff",
-                    borderRadius: 12,
-                    padding: 12,
-                    marginBottom: 16,
-                    borderWidth: 1,
-                    borderColor: "#e9ecef",
-                  }}
-                >
-                  <Image
-                    source={{ uri: resolveTourCardImage(shareTour) }}
-                    style={{
-                      width: "100%",
-                      height: 180,
-                      borderRadius: 8,
-                      marginBottom: 8,
-                    }}
-                    contentFit="cover"
-                    cachePolicy="disk"
-                  />
-                  <Text style={{ fontWeight: "700", fontSize: 16 }}>
-                    {shareTour.tourName}
-                  </Text>
-                  <Text
-                    style={{ color: "#555", marginTop: 4 }}
-                    numberOfLines={2}
-                  >
-                    {shareTour.tourDescription}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigate(`/tour/tourDetail?id=${shareTour.id}`)
-                    }
-                    style={{ marginTop: 8 }}
-                  >
-                    <Text
-                      style={{ color: "#007AFF" }}
-                    >{`/tour/tourDetail?id=${shareTour.id}`}</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              <View style={{ marginTop: 8 }}>
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "700",
-                    color: "#000",
-                    marginBottom: 12,
-                  }}
-                >
-                  {t("forum.chooseHashtags")}
-                </Text>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginBottom: 12,
-                  }}
-                >
-                  <Text
-                    style={{ fontSize: 14, color: "#6c757d", marginRight: 8 }}
-                  >
-                    {t("forum.hashtag")}
-                  </Text>
-                  <Text
-                    style={{ fontSize: 14, color: "#6c757d", marginRight: 32 }}
-                  >
-                    :
-                  </Text>
-                  <TextInput
-                    style={{
-                      flex: 1,
-                      borderBottomWidth: 1,
-                      borderBottomColor: "#6c757d",
-                      paddingVertical: 8,
-                      paddingHorizontal: 12,
-                      fontSize: 14,
-                      color: "#6c757d",
-                    }}
-                    placeholder={t("tour.share.hashtagPlaceholder")}
-                    value={shareHashtagInput}
-                    onChangeText={setShareHashtagInput}
-                    onSubmitEditing={addShareHashtag}
-                    returnKeyType="done"
-                    blurOnSubmit={false}
-                  />
-                  <TouchableOpacity
-                    onPress={addShareHashtag}
-                    style={{
-                      marginLeft: 8,
-                      backgroundColor: "#007AFF",
-                      paddingHorizontal: 12,
-                      paddingVertical: 8,
-                      borderRadius: 8,
-                    }}
-                  >
-                    <Text style={{ color: "#fff", fontWeight: "600" }}>
-                      {t("tour.share.addHashtag")}
+                  <View style={styles.shareModalInputRow}>
+                    <Text style={styles.shareModalLabel}>
+                      {t("tour.share.title")}
                     </Text>
-                  </TouchableOpacity>
+                    <Text style={styles.shareModalLabel}>:</Text>
+                    <TextInput
+                      style={styles.shareModalInput}
+                      placeholder={t("tour.share.titlePlaceholder")}
+                      value={shareTitle}
+                      onChangeText={setShareTitle}
+                      maxLength={100}
+                      placeholderTextColor="#CCC"
+                    />
+                  </View>
                 </View>
-                {shareHashtags.length > 0 && (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      flexWrap: "wrap",
-                      marginBottom: 12,
-                    }}
-                  >
-                    {shareHashtags.map((tag, idx) => (
-                      <TouchableOpacity
-                        key={`${tag}-${idx}`}
-                        onPress={() => removeShareHashtag(idx)}
-                        style={{
-                          backgroundColor: "#a1d3ff",
-                          paddingHorizontal: 12,
-                          paddingVertical: 6,
-                          borderRadius: 16,
-                          marginRight: 8,
-                          marginBottom: 8,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            color: "#000",
-                            fontWeight: "500",
-                          }}
-                        >
-                          #{tag}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+
+                <View style={styles.shareModalSection}>
+                  <Text style={styles.shareModalSectionTitle}>
+                    {t("forum.content")}
+                  </Text>
+                  <TextInput
+                    style={styles.shareModalTextArea}
+                    placeholder={t("tour.share.contentPlaceholder")}
+                    value={shareContent}
+                    onChangeText={setShareContent}
+                    multiline
+                    maxLength={1000}
+                    placeholderTextColor="#CCC"
+                  />
+                </View>
+
+                {shareTour && (
+                  <View style={styles.shareModalTourCard}>
+                    <Image
+                      source={{ uri: resolveTourCardImage(shareTour) }}
+                      style={styles.shareModalTourImage}
+                      contentFit="cover"
+                      cachePolicy="disk"
+                    />
+                    <Text style={styles.shareModalTourName}>
+                      {shareTour.tourName}
+                    </Text>
+                    <Text
+                      style={styles.shareModalTourDescription}
+                      numberOfLines={2}
+                    >
+                      {shareTour.tourDescription}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigate(`/tour/tourDetail?id=${shareTour.id}`)
+                      }
+                      style={styles.shareModalTourLink}
+                    >
+                      <Text style={styles.shareModalTourLinkText}>
+                        {`http://localhost:3000/tour/detail?id=${shareTour.id}`}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 )}
-              </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
+
+                <View style={styles.shareModalSection}>
+                  <Text style={styles.shareModalSectionTitle}>
+                    {t("forum.chooseHashtags")}
+                  </Text>
+                  <View style={styles.shareModalHashtagContainer}>
+                    <Text style={styles.shareModalLabel}>
+                      {t("forum.hashtag")}
+                    </Text>
+                    <Text style={styles.shareModalLabel}>:</Text>
+                    <TextInput
+                      style={styles.shareModalHashtagInput}
+                      placeholder={t("tour.share.hashtagPlaceholder")}
+                      value={shareHashtagInput}
+                      onChangeText={setShareHashtagInput}
+                      onSubmitEditing={addShareHashtag}
+                      returnKeyType="done"
+                      blurOnSubmit={false}
+                      placeholderTextColor="#CCC"
+                    />
+                    <TouchableOpacity
+                      onPress={addShareHashtag}
+                      style={styles.shareModalAddHashtagButton}
+                    >
+                      <Text style={styles.shareModalAddHashtagText}>
+                        {t("tour.share.addHashtag")}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  {shareHashtags.length > 0 && (
+                    <View style={styles.shareModalHashtagList}>
+                      {shareHashtags.map((tag, idx) => (
+                        <TouchableOpacity
+                          key={`${tag}-${idx}`}
+                          onPress={() => removeShareHashtag(idx)}
+                          style={styles.shareModalHashtagTag}
+                        >
+                          <Text style={styles.shareModalHashtagText}>
+                            #{tag}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              </ScrollView>
+            </KeyboardAvoidingView>
+          </View>
         </View>
       </Modal>
 

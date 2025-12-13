@@ -52,14 +52,22 @@ export interface GetNotificationsParams {
 export async function getNotifications(
   params?: GetNotificationsParams
 ): Promise<NotificationSummaryResponse> {
+  const queryParams: any = {
+    page: params?.page ?? 0,
+    size: params?.size ?? 20,
+    sort: params?.sort ?? "createdAt,desc",
+  };
+  
+  // Only include isRead param if it's explicitly set (not undefined)
+  // This ensures "all" tab gets all notifications (read + unread)
+  if (params?.isRead !== undefined) {
+    queryParams.isRead = params.isRead;
+  }
+  
   const response = await api.get<NotificationSummaryResponse>(
     "/api/notifications",
     {
-      params: {
-        page: params?.page ?? 0,
-        size: params?.size ?? 20,
-        sort: params?.sort ?? "createdAt,desc",
-      },
+      params: queryParams,
     }
   );
   return response.data;

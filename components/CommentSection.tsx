@@ -16,6 +16,7 @@ import api from "../services/api";
 import { useAuthContext } from "../src/contexts/authContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
+import geminiEndpoints from "../services/endpoints/gemini";
 
 interface CommentSectionProps {
   postId: number;
@@ -48,6 +49,14 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   const [totalCommentCounts, setTotalCommentCounts] = useState<
     Record<number, number>
   >({});
+  const [translatedComments, setTranslatedComments] = useState<
+    Record<number, string>
+  >({});
+  const [isTranslatingComments, setIsTranslatingComments] = useState<
+    Record<number, boolean>
+  >({});
+  const [isShowingTranslatedComments, setIsShowingTranslatedComments] =
+    useState<Record<number, boolean>>({});
 
   const toAbsoluteUrl = (path: string): string => {
     if (!path) return path;
@@ -121,6 +130,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         forumPostId: Number(postId),
         content: newComment.trim(),
         userEmail: chosenEmail,
+        imgPath: "NO_IMAGE", // Backend requires @NotBlank, use "NO_IMAGE" as placeholder if no image
       });
 
       onCommentAdded(response.data);
@@ -170,12 +180,50 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         forumPostId: postId,
         content: editText.trim(),
         userEmail: user.email,
+        imgPath: "NO_IMAGE", // Backend requires imgPath
       });
 
-      onCommentUpdated?.(response.data);
-      setEditingComment(null);
-      setEditText("");
-    } catch {
+      if (response.data) {
+        const updatedComment = response.data;
+        // Update repliesMap if this comment is in replies
+        setRepliesMap((prev) => {
+          const newMap = { ...prev };
+          Object.keys(newMap).forEach((parentId) => {
+            newMap[Number(parentId)] = newMap[Number(parentId)].map((c) =>
+              c.forumCommentId === commentId ? updatedComment : c
+            );
+          });
+          return newMap;
+        });
+        onCommentUpdated?.(updatedComment);
+        setEditingComment(null);
+        setEditText("");
+      } else {
+        // If response.data is null, reload comments from server
+        const commentsResponse = await forumEndpoints.getCommentsByPost(postId);
+        const updatedComments = commentsResponse.data || [];
+        // Find and update the comment in the list
+        const updatedComment = updatedComments.find(
+          (c: ForumCommentResponse) => c.forumCommentId === commentId
+        );
+        if (updatedComment) {
+          // Update repliesMap
+          setRepliesMap((prev) => {
+            const newMap = { ...prev };
+            Object.keys(newMap).forEach((parentId) => {
+              newMap[Number(parentId)] = newMap[Number(parentId)].map((c) =>
+                c.forumCommentId === commentId ? updatedComment : c
+              );
+            });
+            return newMap;
+          });
+          onCommentUpdated?.(updatedComment);
+        }
+        setEditingComment(null);
+        setEditText("");
+      }
+    } catch (error) {
+      console.error("Update comment error:", error);
       Alert.alert(t("forum.errorTitle"), t("forum.cannotPerformAction"));
     }
   };
@@ -268,6 +316,54 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
   const isCommentOwner = (comment: ForumCommentResponse) => {
     return user?.username === comment.username;
+  };
+
+  const handleTranslateComment = async (comment: ForumCommentResponse) => {
+    const commentId = comment.forumCommentId;
+
+    // If already translated, just toggle visibility
+    if (translatedComments[commentId]) {
+      setIsShowingTranslatedComments((prev) => ({
+        ...prev,
+        [commentId]: !prev[commentId],
+      }));
+      return;
+    }
+
+    // Start translating
+    setIsTranslatingComments((prev) => ({
+      ...prev,
+      [commentId]: true,
+    }));
+
+    try {
+      const baseContent = comment.content || "";
+      if (!baseContent.trim()) {
+        return;
+      }
+
+      const response = await geminiEndpoints.translate({ text: baseContent });
+      const translatedText =
+        typeof response.data === "string" ? response.data.trim() : "";
+
+      if (translatedText) {
+        setTranslatedComments((prev) => ({
+          ...prev,
+          [commentId]: translatedText,
+        }));
+        setIsShowingTranslatedComments((prev) => ({
+          ...prev,
+          [commentId]: true,
+        }));
+      }
+    } catch {
+      Alert.alert(t("common.error"), t("forum.translateFailed"));
+    } finally {
+      setIsTranslatingComments((prev) => ({
+        ...prev,
+        [commentId]: false,
+      }));
+    }
   };
 
   const calculateTotalCommentCount = (commentId: number): number => {
@@ -445,7 +541,39 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                   </View>
                 </View>
               ) : (
-                <Text style={styles.commentContent}>{comment.content}</Text>
+                <View>
+                  <View style={styles.commentContentRow}>
+                    <Text style={styles.commentContent}>{comment.content}</Text>
+                    {comment.content && comment.content.trim().length > 0 && (
+                      <TouchableOpacity
+                        style={styles.translateChip}
+                        onPress={() => handleTranslateComment(comment)}
+                        disabled={isTranslatingComments[comment.forumCommentId]}
+                      >
+                        <Ionicons
+                          name="language-outline"
+                          size={12}
+                          color="#007AFF"
+                        />
+                        <Text style={styles.translateChipText}>
+                          {isTranslatingComments[comment.forumCommentId]
+                            ? t("common.loading")
+                            : isShowingTranslatedComments[
+                                comment.forumCommentId
+                              ]
+                            ? t("forum.hideTranslation")
+                            : t("forum.translate")}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  {isShowingTranslatedComments[comment.forumCommentId] &&
+                    translatedComments[comment.forumCommentId] && (
+                      <Text style={styles.translatedCommentContent}>
+                        {translatedComments[comment.forumCommentId]}
+                      </Text>
+                    )}
+                </View>
               )}
               {comment.imgPath && (
                 <Image
@@ -466,25 +594,32 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                       return;
                     }
                     const isLiked = !!likedMap[comment.forumCommentId];
-                    if (!isLiked) {
-                      setLikedMap((prev) => ({
-                        ...prev,
-                        [comment.forumCommentId]: true,
-                      }));
-                      comment.react = (comment.react || 0) + 1;
-                    } else {
-                      setLikedMap((prev) => ({
-                        ...prev,
-                        [comment.forumCommentId]: false,
-                      }));
-                      comment.react = Math.max(0, (comment.react || 0) - 1);
-                    }
                     try {
-                      await forumEndpoints.addCommentReaction(
-                        comment.forumCommentId,
-                        "LIKE",
-                        user.email
-                      );
+                      if (isLiked) {
+                        // Unlike: remove reaction
+                        await forumEndpoints.removeCommentReaction(
+                          comment.forumCommentId,
+                          user.email
+                        );
+                        setLikedMap((prev) => ({
+                          ...prev,
+                          [comment.forumCommentId]: false,
+                        }));
+                        comment.react = Math.max(0, (comment.react || 0) - 1);
+                      } else {
+                        // Like: add reaction
+                        await forumEndpoints.addCommentReaction(
+                          comment.forumCommentId,
+                          "LIKE",
+                          user.email
+                        );
+                        setLikedMap((prev) => ({
+                          ...prev,
+                          [comment.forumCommentId]: true,
+                        }));
+                        comment.react = (comment.react || 0) + 1;
+                      }
+                      // Refresh summary to get accurate counts
                       const summaryResponse =
                         await forumEndpoints.getCommentReactionSummary(
                           comment.forumCommentId,
@@ -499,7 +634,16 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                         }));
                         comment.react = summary.likeCount || 0;
                       }
-                    } catch {}
+                    } catch {
+                      // Revert optimistic update on error
+                      setLikedMap((prev) => ({
+                        ...prev,
+                        [comment.forumCommentId]: !isLiked,
+                      }));
+                      comment.react = isLiked
+                        ? (comment.react || 0) + 1
+                        : Math.max(0, (comment.react || 0) - 1);
+                    }
                   }}
                 >
                   <Ionicons
@@ -639,9 +783,44 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                           </View>
                         </View>
                       ) : (
-                        <Text style={styles.commentContent}>
-                          {reply.content}
-                        </Text>
+                        <View>
+                          <View style={styles.commentContentRow}>
+                            <Text style={styles.commentContent}>
+                              {reply.content}
+                            </Text>
+                            {reply.content &&
+                              reply.content.trim().length > 0 && (
+                                <TouchableOpacity
+                                  style={styles.translateChip}
+                                  onPress={() => handleTranslateComment(reply)}
+                                  disabled={
+                                    isTranslatingComments[reply.forumCommentId]
+                                  }
+                                >
+                                  <Ionicons
+                                    name="language-outline"
+                                    size={12}
+                                    color="#007AFF"
+                                  />
+                                  <Text style={styles.translateChipText}>
+                                    {isTranslatingComments[reply.forumCommentId]
+                                      ? t("common.loading")
+                                      : isShowingTranslatedComments[
+                                          reply.forumCommentId
+                                        ]
+                                      ? t("forum.hideTranslation")
+                                      : t("forum.translate")}
+                                  </Text>
+                                </TouchableOpacity>
+                              )}
+                          </View>
+                          {isShowingTranslatedComments[reply.forumCommentId] &&
+                            translatedComments[reply.forumCommentId] && (
+                              <Text style={styles.translatedCommentContent}>
+                                {translatedComments[reply.forumCommentId]}
+                              </Text>
+                            )}
+                        </View>
                       )}
                       {reply.imgPath && (
                         <Image
@@ -663,25 +842,35 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                               return;
                             }
                             const isLiked = !!likedMap[reply.forumCommentId];
-                            if (!isLiked) {
-                              setLikedMap((prev) => ({
-                                ...prev,
-                                [reply.forumCommentId]: true,
-                              }));
-                              reply.react = (reply.react || 0) + 1;
-                            } else {
-                              setLikedMap((prev) => ({
-                                ...prev,
-                                [reply.forumCommentId]: false,
-                              }));
-                              reply.react = Math.max(0, (reply.react || 0) - 1);
-                            }
                             try {
-                              await forumEndpoints.addCommentReaction(
-                                reply.forumCommentId,
-                                "LIKE",
-                                user.email
-                              );
+                              if (isLiked) {
+                                // Unlike: remove reaction
+                                await forumEndpoints.removeCommentReaction(
+                                  reply.forumCommentId,
+                                  user.email
+                                );
+                                setLikedMap((prev) => ({
+                                  ...prev,
+                                  [reply.forumCommentId]: false,
+                                }));
+                                reply.react = Math.max(
+                                  0,
+                                  (reply.react || 0) - 1
+                                );
+                              } else {
+                                // Like: add reaction
+                                await forumEndpoints.addCommentReaction(
+                                  reply.forumCommentId,
+                                  "LIKE",
+                                  user.email
+                                );
+                                setLikedMap((prev) => ({
+                                  ...prev,
+                                  [reply.forumCommentId]: true,
+                                }));
+                                reply.react = (reply.react || 0) + 1;
+                              }
+                              // Refresh summary to get accurate counts
                               const summaryResponse =
                                 await forumEndpoints.getCommentReactionSummary(
                                   reply.forumCommentId,
@@ -696,7 +885,16 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                 }));
                                 reply.react = summary.likeCount || 0;
                               }
-                            } catch {}
+                            } catch {
+                              // Revert optimistic update on error
+                              setLikedMap((prev) => ({
+                                ...prev,
+                                [reply.forumCommentId]: !isLiked,
+                              }));
+                              reply.react = isLiked
+                                ? (reply.react || 0) + 1
+                                : Math.max(0, (reply.react || 0) - 1);
+                            }
                           }}
                         >
                           <Ionicons
@@ -871,14 +1069,76 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                     </View>
                                   </View>
                                 ) : (
-                                  <Text
-                                    style={[
-                                      styles.commentContent,
-                                      { fontSize: 13 },
-                                    ]}
-                                  >
-                                    {nestedReply.content}
-                                  </Text>
+                                  <View>
+                                    <View style={styles.commentContentRow}>
+                                      <Text
+                                        style={[
+                                          styles.commentContent,
+                                          { fontSize: 13 },
+                                        ]}
+                                      >
+                                        {nestedReply.content}
+                                      </Text>
+                                      {nestedReply.content &&
+                                        nestedReply.content.trim().length >
+                                          0 && (
+                                          <TouchableOpacity
+                                            style={styles.translateChip}
+                                            onPress={() =>
+                                              handleTranslateComment(
+                                                nestedReply
+                                              )
+                                            }
+                                            disabled={
+                                              isTranslatingComments[
+                                                nestedReply.forumCommentId
+                                              ]
+                                            }
+                                          >
+                                            <Ionicons
+                                              name="language-outline"
+                                              size={11}
+                                              color="#007AFF"
+                                            />
+                                            <Text
+                                              style={[
+                                                styles.translateChipText,
+                                                { fontSize: 10 },
+                                              ]}
+                                            >
+                                              {isTranslatingComments[
+                                                nestedReply.forumCommentId
+                                              ]
+                                                ? t("common.loading")
+                                                : isShowingTranslatedComments[
+                                                    nestedReply.forumCommentId
+                                                  ]
+                                                ? t("forum.hideTranslation")
+                                                : t("forum.translate")}
+                                            </Text>
+                                          </TouchableOpacity>
+                                        )}
+                                    </View>
+                                    {isShowingTranslatedComments[
+                                      nestedReply.forumCommentId
+                                    ] &&
+                                      translatedComments[
+                                        nestedReply.forumCommentId
+                                      ] && (
+                                        <Text
+                                          style={[
+                                            styles.translatedCommentContent,
+                                            { fontSize: 12 },
+                                          ]}
+                                        >
+                                          {
+                                            translatedComments[
+                                              nestedReply.forumCommentId
+                                            ]
+                                          }
+                                        </Text>
+                                      )}
+                                  </View>
                                 )}
                                 {nestedReply.imgPath && (
                                   <Image
@@ -903,29 +1163,36 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                       }
                                       const isLiked =
                                         !!likedMap[nestedReply.forumCommentId];
-                                      if (!isLiked) {
-                                        setLikedMap((prev) => ({
-                                          ...prev,
-                                          [nestedReply.forumCommentId]: true,
-                                        }));
-                                        nestedReply.react =
-                                          (nestedReply.react || 0) + 1;
-                                      } else {
-                                        setLikedMap((prev) => ({
-                                          ...prev,
-                                          [nestedReply.forumCommentId]: false,
-                                        }));
-                                        nestedReply.react = Math.max(
-                                          0,
-                                          (nestedReply.react || 0) - 1
-                                        );
-                                      }
                                       try {
-                                        await forumEndpoints.addCommentReaction(
-                                          nestedReply.forumCommentId,
-                                          "LIKE",
-                                          user.email
-                                        );
+                                        if (isLiked) {
+                                          // Unlike: remove reaction
+                                          await forumEndpoints.removeCommentReaction(
+                                            nestedReply.forumCommentId,
+                                            user.email
+                                          );
+                                          setLikedMap((prev) => ({
+                                            ...prev,
+                                            [nestedReply.forumCommentId]: false,
+                                          }));
+                                          nestedReply.react = Math.max(
+                                            0,
+                                            (nestedReply.react || 0) - 1
+                                          );
+                                        } else {
+                                          // Like: add reaction
+                                          await forumEndpoints.addCommentReaction(
+                                            nestedReply.forumCommentId,
+                                            "LIKE",
+                                            user.email
+                                          );
+                                          setLikedMap((prev) => ({
+                                            ...prev,
+                                            [nestedReply.forumCommentId]: true,
+                                          }));
+                                          nestedReply.react =
+                                            (nestedReply.react || 0) + 1;
+                                        }
+                                        // Refresh summary to get accurate counts
                                         const summaryResponse =
                                           await forumEndpoints.getCommentReactionSummary(
                                             nestedReply.forumCommentId,
@@ -941,7 +1208,20 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                           nestedReply.react =
                                             summary.likeCount || 0;
                                         }
-                                      } catch {}
+                                      } catch {
+                                        // Revert optimistic update on error
+                                        setLikedMap((prev) => ({
+                                          ...prev,
+                                          [nestedReply.forumCommentId]:
+                                            !isLiked,
+                                        }));
+                                        nestedReply.react = isLiked
+                                          ? (nestedReply.react || 0) + 1
+                                          : Math.max(
+                                              0,
+                                              (nestedReply.react || 0) - 1
+                                            );
+                                      }
                                     }}
                                   >
                                     <Ionicons
@@ -1149,14 +1429,84 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                             </View>
                                           </View>
                                         ) : (
-                                          <Text
-                                            style={[
-                                              styles.commentContent,
-                                              { fontSize: 12 },
-                                            ]}
-                                          >
-                                            {deepNestedReply.content}
-                                          </Text>
+                                          <View>
+                                            <View
+                                              style={styles.commentContentRow}
+                                            >
+                                              <Text
+                                                style={[
+                                                  styles.commentContent,
+                                                  { fontSize: 12 },
+                                                ]}
+                                              >
+                                                {deepNestedReply.content}
+                                              </Text>
+                                              {deepNestedReply.content &&
+                                                deepNestedReply.content.trim()
+                                                  .length > 0 && (
+                                                  <TouchableOpacity
+                                                    style={styles.translateChip}
+                                                    onPress={() =>
+                                                      handleTranslateComment(
+                                                        deepNestedReply
+                                                      )
+                                                    }
+                                                    disabled={
+                                                      isTranslatingComments[
+                                                        deepNestedReply
+                                                          .forumCommentId
+                                                      ]
+                                                    }
+                                                  >
+                                                    <Ionicons
+                                                      name="language-outline"
+                                                      size={10}
+                                                      color="#007AFF"
+                                                    />
+                                                    <Text
+                                                      style={[
+                                                        styles.translateChipText,
+                                                        { fontSize: 9 },
+                                                      ]}
+                                                    >
+                                                      {isTranslatingComments[
+                                                        deepNestedReply
+                                                          .forumCommentId
+                                                      ]
+                                                        ? t("common.loading")
+                                                        : isShowingTranslatedComments[
+                                                            deepNestedReply
+                                                              .forumCommentId
+                                                          ]
+                                                        ? t(
+                                                            "forum.hideTranslation"
+                                                          )
+                                                        : t("forum.translate")}
+                                                    </Text>
+                                                  </TouchableOpacity>
+                                                )}
+                                            </View>
+                                            {isShowingTranslatedComments[
+                                              deepNestedReply.forumCommentId
+                                            ] &&
+                                              translatedComments[
+                                                deepNestedReply.forumCommentId
+                                              ] && (
+                                                <Text
+                                                  style={[
+                                                    styles.translatedCommentContent,
+                                                    { fontSize: 11 },
+                                                  ]}
+                                                >
+                                                  {
+                                                    translatedComments[
+                                                      deepNestedReply
+                                                        .forumCommentId
+                                                    ]
+                                                  }
+                                                </Text>
+                                              )}
+                                          </View>
                                         )}
                                         {deepNestedReply.imgPath && (
                                           <Image
@@ -1185,34 +1535,41 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                 !!likedMap[
                                                   deepNestedReply.forumCommentId
                                                 ];
-                                              if (!isLiked) {
-                                                setLikedMap((prev) => ({
-                                                  ...prev,
-                                                  [deepNestedReply.forumCommentId]:
-                                                    true,
-                                                }));
-                                                deepNestedReply.react =
-                                                  (deepNestedReply.react || 0) +
-                                                  1;
-                                              } else {
-                                                setLikedMap((prev) => ({
-                                                  ...prev,
-                                                  [deepNestedReply.forumCommentId]:
-                                                    false,
-                                                }));
-                                                deepNestedReply.react =
-                                                  Math.max(
-                                                    0,
-                                                    (deepNestedReply.react ||
-                                                      0) - 1
-                                                  );
-                                              }
                                               try {
-                                                await forumEndpoints.addCommentReaction(
-                                                  deepNestedReply.forumCommentId,
-                                                  "LIKE",
-                                                  user.email
-                                                );
+                                                if (isLiked) {
+                                                  // Unlike: remove reaction
+                                                  await forumEndpoints.removeCommentReaction(
+                                                    deepNestedReply.forumCommentId,
+                                                    user.email
+                                                  );
+                                                  setLikedMap((prev) => ({
+                                                    ...prev,
+                                                    [deepNestedReply.forumCommentId]:
+                                                      false,
+                                                  }));
+                                                  deepNestedReply.react =
+                                                    Math.max(
+                                                      0,
+                                                      (deepNestedReply.react ||
+                                                        0) - 1
+                                                    );
+                                                } else {
+                                                  // Like: add reaction
+                                                  await forumEndpoints.addCommentReaction(
+                                                    deepNestedReply.forumCommentId,
+                                                    "LIKE",
+                                                    user.email
+                                                  );
+                                                  setLikedMap((prev) => ({
+                                                    ...prev,
+                                                    [deepNestedReply.forumCommentId]:
+                                                      true,
+                                                  }));
+                                                  deepNestedReply.react =
+                                                    (deepNestedReply.react ||
+                                                      0) + 1;
+                                                }
+                                                // Refresh summary to get accurate counts
                                                 const summaryResponse =
                                                   await forumEndpoints.getCommentReactionSummary(
                                                     deepNestedReply.forumCommentId,
@@ -1230,7 +1587,22 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                   deepNestedReply.react =
                                                     summary.likeCount || 0;
                                                 }
-                                              } catch {}
+                                              } catch {
+                                                // Revert optimistic update on error
+                                                setLikedMap((prev) => ({
+                                                  ...prev,
+                                                  [deepNestedReply.forumCommentId]:
+                                                    !isLiked,
+                                                }));
+                                                deepNestedReply.react = isLiked
+                                                  ? (deepNestedReply.react ||
+                                                      0) + 1
+                                                  : Math.max(
+                                                      0,
+                                                      (deepNestedReply.react ||
+                                                        0) - 1
+                                                    );
+                                              }
                                             }}
                                           >
                                             <Ionicons
@@ -1361,6 +1733,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                             user.email!,
                                                           parentCommentId:
                                                             deepNestedReply.forumCommentId,
+                                                          imgPath: "NO_IMAGE",
                                                         }
                                                       );
                                                     const newDeepNestedReply =
@@ -1510,6 +1883,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                     userEmail: user.email!,
                                                     parentCommentId:
                                                       nestedReply.forumCommentId,
+                                                    imgPath: "NO_IMAGE",
                                                   }
                                                 );
                                               const newDeepNestedReply =
@@ -1649,6 +2023,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                         content: text,
                                         userEmail: user.email!,
                                         parentCommentId: reply.forumCommentId,
+                                        imgPath: "NO_IMAGE",
                                       });
                                     const newNestedReply = response.data;
 
@@ -1754,6 +2129,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                 content: text,
                                 userEmail: user.email!,
                                 parentCommentId: comment.forumCommentId,
+                                imgPath: "NO_IMAGE",
                               });
                             const newReply = response.data;
 
@@ -1876,115 +2252,181 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   commentItem: {
-    marginBottom: 16,
-    paddingBottom: 16,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-    backgroundColor: "#fafafa",
-    borderRadius: 8,
-    padding: 12,
+    marginBottom: 8,
+    paddingHorizontal: 0,
+    borderBottomWidth: 0,
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    paddingLeft: 12,
+    paddingRight: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   commentHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   commentHeaderRight: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 4,
+    paddingRight: 3,
   },
   ownerActions: {
     flexDirection: "row",
-    marginLeft: 8,
+    marginLeft: 4,
+    gap: 2,
   },
   actionButton: {
-    padding: 4,
-    marginLeft: 4,
+    padding: 6,
+    borderRadius: 8,
   },
   commentAuthor: {
     fontSize: 14,
     fontWeight: "600",
     color: "#333",
-    paddingLeft: 8,
+    paddingLeft: 0,
   },
   commentTime: {
-    fontSize: 12,
-    color: "#666",
+    fontSize: 11,
+    color: "#999",
+  },
+  commentContentRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    flexWrap: "wrap",
+    marginBottom: 0,
   },
   commentContent: {
     fontSize: 14,
-    color: "#666",
+    color: "#333",
     lineHeight: 20,
-    marginBottom: 8,
-    paddingLeft: 8,
+    marginBottom: 0,
+    paddingLeft: 3,
+    flex: 1,
+  },
+  translatedCommentContent: {
+    fontSize: 13,
+    color: "#666",
+    lineHeight: 18,
+    marginTop: 0,
+    marginBottom: 0,
+    paddingLeft: 3,
+    fontStyle: "italic",
+    paddingHorizontal: 8,
+    paddingVertical: 0,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+  },
+  translateChip: {
+    marginLeft: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#007AFF",
+    backgroundColor: "#f0f8ff",
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+  },
+  translateChipText: {
+    marginLeft: 4,
+    fontSize: 10,
+    color: "#007AFF",
+    fontWeight: "500",
   },
   commentImage: {
     width: 100,
     height: 100,
-    borderRadius: 8,
-    marginBottom: 8,
+    borderRadius: 12,
+    marginBottom: 0,
   },
   commentActions: {
     flexDirection: "row",
+    marginTop: 0,
   },
   commentAction: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 8,
     paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: "#f8f9fa",
+    marginRight: 4,
   },
   commentActionText: {
     fontSize: 12,
     color: "#666",
     marginLeft: 4,
+    fontWeight: "500",
   },
   repliesContainer: {
-    marginTop: 12,
-    paddingLeft: 20,
+    marginTop: 10,
+    paddingLeft: 16,
     borderLeftWidth: 0,
     borderLeftColor: "transparent",
     backgroundColor: "#f8f9ff",
-    borderRadius: 8,
-    padding: 12,
-    marginHorizontal: 8,
+    borderRadius: 12,
+    padding: 10,
+    marginHorizontal: 4,
   },
   replyItem: {
-    marginTop: 12,
-    paddingBottom: 12,
-    paddingHorizontal: 8,
-    backgroundColor: "#fff",
-    borderRadius: 6,
-    padding: 10,
+    marginTop: 6,
+    paddingHorizontal: 0,
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    paddingTop: 10,
+    paddingBottom: 10,
+    paddingLeft: 10,
+    paddingRight: 10,
     borderLeftWidth: 0,
     borderLeftColor: "transparent",
-    marginBottom: 8,
+    marginBottom: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
+    elevation: 1,
   },
   replyAuthorContainer: {
     flexDirection: "row",
     alignItems: "center",
+    paddingLeft: 3,
   },
   nestedRepliesContainer: {
-    marginTop: 12,
-    paddingLeft: 16,
+    marginTop: 8,
+    paddingLeft: 12,
     borderLeftWidth: 0,
     borderLeftColor: "transparent",
     backgroundColor: "#f0f8ff",
-    borderRadius: 6,
-    padding: 10,
-    marginHorizontal: 4,
+    borderRadius: 12,
+    padding: 8,
+    marginHorizontal: 2,
   },
   nestedReplyItem: {
-    marginTop: 8,
+    marginTop: 4,
+    paddingHorizontal: 0,
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
+    paddingTop: 8,
     paddingBottom: 8,
-    paddingHorizontal: 6,
-    backgroundColor: "#fff",
-    borderRadius: 4,
-    padding: 8,
-    borderLeftWidth: 1,
-    borderLeftColor: "#34C759",
-    marginBottom: 4,
+    paddingLeft: 8,
+    paddingRight: 8,
+    borderLeftWidth: 0,
+    marginBottom: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 1,
+    elevation: 1,
   },
   nestedReplyInputContainer: {
     marginTop: 6,
@@ -2014,22 +2456,28 @@ const styles = StyleSheet.create({
   },
   deepNestedRepliesContainer: {
     marginTop: 6,
-    paddingLeft: 10,
+    paddingLeft: 8,
     borderLeftWidth: 0,
     borderLeftColor: "transparent",
     backgroundColor: "#f0f8ff",
-    borderRadius: 4,
+    borderRadius: 10,
     padding: 6,
   },
   deepNestedReplyItem: {
-    marginTop: 4,
-    paddingBottom: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ffe8e0",
-    backgroundColor: "#fff",
-    borderRadius: 3,
-    padding: 4,
+    marginTop: 3,
+    borderBottomWidth: 0,
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    paddingTop: 6,
+    paddingBottom: 6,
+    paddingLeft: 6,
+    paddingRight: 6,
     marginBottom: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 1,
+    elevation: 1,
   },
   deepNestedReplyInputContainer: {
     marginTop: 4,

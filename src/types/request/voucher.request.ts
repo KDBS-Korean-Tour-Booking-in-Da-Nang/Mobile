@@ -3,3 +3,10 @@ export interface ApplyVoucherRequest {
   voucherCode: string;
 }
 
+export interface AllVoucherRequest {
+  tourId: number;
+  adultsCount: number;
+  childrenCount: number;
+  babiesCount: number;
+}
+

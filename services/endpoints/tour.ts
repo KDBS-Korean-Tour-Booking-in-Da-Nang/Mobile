@@ -48,6 +48,10 @@ export const tourEndpoints = {
     api.post("/api/booking/payment", payload),
   sendBookingEmail: (bookingId: number) =>
     api.post(`/api/booking/id/${bookingId}/send-email`),
+  previewCancelBooking: (bookingId: number) =>
+    api.get(`/api/booking/cancel/preview/${bookingId}`),
+  cancelBooking: (bookingId: number) =>
+    api.post(`/api/booking/cancel/${bookingId}`),
   createTourRating: (formData: FormData) =>
     api.post("/api/tourRated", formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -59,6 +63,16 @@ export const tourEndpoints = {
     }),
   deleteTourRating: (ratingId: number) =>
     api.delete(`/api/tour/rated/${ratingId}`),
+  suggestByArticle: (userId?: number) =>
+    api.get("/api/tour/suggestByArticle", {
+      params: userId !== undefined && userId !== null ? { userId } : {},
+      timeout: 10000, // 10 seconds timeout for suggest tours
+    }),
+  suggestViaBehavior: (userId?: number) =>
+    api.get("/api/tour/suggestViaBehavior", {
+      params: userId !== undefined && userId !== null ? { userId } : {},
+      timeout: 10000, // 10 seconds timeout for suggest tours
+    }),
 };
 
 export default tourEndpoints;

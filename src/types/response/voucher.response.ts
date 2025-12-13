@@ -30,3 +30,17 @@ export enum VoucherStatus {
   EXPIRED = "EXPIRED",
 }
 
+export interface ApplyVoucherResponse {
+  voucherId?: number;
+  voucherCode?: string;
+  discountType?: VoucherDiscountType;
+  discountValue?: number;
+  originalTotal?: number;
+  discountAmount?: number;
+  finalTotal?: number;
+  depositPercentage?: number;
+  oneTimePayment?: boolean;
+  finalDepositAmount?: number;
+  finalRemainingAmount?: number;
+}
+

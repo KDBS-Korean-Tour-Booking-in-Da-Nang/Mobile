@@ -26,6 +26,10 @@
       "logout": "로그아웃",
       "loggingOut": "로그아웃 중...",
       "role": "역할"
+    },
+    "suggestTours": {
+      "title": "추천 투어",
+      "noTours": "추천 투어가 없습니다"
     }
   },
   "auth": {
@@ -199,6 +203,19 @@
     "save": "저장",
     "unsave": "저장 취소",
     "report": "신고",
+    "reportTitle": "게시물 신고",
+    "reportReason": "사유:",
+    "reportReasonSpam": "스팸",
+    "reportReasonInappropriate": "부적절함",
+    "reportReasonViolence": "폭력",
+    "reportReasonHarassment": "괴롭힘",
+    "reportReasonOther": "기타",
+    "reportDescription": "추가 설명 (선택사항):",
+    "reportDescriptionPlaceholder": "추가 정보를 제공하세요...",
+    "reportCancel": "취소",
+    "reportSubmit": "신고 제출",
+    "reportSubmitting": "제출 중...",
+    "reportSelectReason": "최소한 하나의 사유를 선택하세요.",
     "translate": "번역",
     "hideTranslation": "번역 숨기기",
     "translateFailed": "이 내용을 번역할 수 없습니다. 다시 시도해주세요."
@@ -334,7 +351,15 @@
       "INTERNATIONAL": "국제",
       "openTrip": "오픈 트립",
       "국내": "국내",
-      "국제": "국제"
+      "국제": "국제",
+      "resort": "리조트",
+      "culture": "문화",
+      "adventure": "모험",
+      "teamBuilding": "팀 빌딩",
+      "food": "미식",
+      "photography": "사진",
+      "religious": "종교",
+      "other": "기타"
     },
     "vehicles": {
       "BUS": "관광버스",
@@ -368,6 +393,35 @@
       "children": "어린이",
       "baby": "유아",
       "atLeastOneAdult": "최소 1명의 성인",
+      "depositRequired": "예약금 결제가 필요합니다",
+      "depositPaid": "예약금 결제 완료",
+      "totalPaid": "총 결제 금액",
+      "depositNote": "{{percent}}% 예약금을 먼저 결제하세요",
+      "remainingAmount": "잔액",
+      "cancelTitle": "예약 취소",
+      "cancelAction": "투어 취소",
+      "cancelConfirmMessage": "이 예약을 취소하시겠습니까?",
+      "cancelPreviewTitle": "환불 미리보기",
+      "refundAmount": "환불 금액",
+      "refundPercentage": "환불 비율",
+      "payedAmount": "결제 금액",
+      "depositAmount": "예약금",
+      "totalAmount": "총 금액",
+      "noRefund": "환불 금액이 없습니다",
+      "cancelSuccess": "예약이 취소되었습니다",
+      "cancelFailed": "예약을 취소할 수 없습니다",
+      "cancelSuccessTitle": "예약 취소 완료",
+      "refundCompleted": "환불 완료",
+      "refundPolicy": "환불 정책",
+      "refundNoteBeforeDeadline": "결제 기한 전: 환불 적용",
+      "refundNoteAfterDeadline": "결제 기한 후: 환불 없음",
+      "refundPolicy100": "승인/업데이트 대기 상태: 결제 금액의 100% 환불",
+      "refundPolicy80BeforeDeadline": "잔액 결제 기한 전: 결제 금액의 80% 환불",
+      "refundPolicyExpired": "잔액 결제 기한 만료: 환불 없음",
+      "refundPolicyByRemainingDays": "출발일까지 남은 일수에 따른 환불 (최대 80%)",
+      "viewDetails": "자세히 보기",
+      "cancelButton": "취소",
+      "refundFromPaid": "결제 금액 기준",
       "total": "총계",
       "bookingNow": "지금 예약",
       "fullname": "성명",
@@ -432,14 +486,19 @@
     },
     "status": {
       "PENDING_PAYMENT": "결제 대기",
+      "PENDING_DEPOSIT_PAYMENT": "보증금 결제 대기",
+      "PENDING_BALANCE_PAYMENT": "잔금 결제 대기",
       "WAITING_FOR_APPROVED": "승인 대기 중",
+      "BOOKING_REJECTED": "거부됨",
       "WAITING_FOR_UPDATE": "정보 업데이트 대기 중",
+      "BOOKING_FAILED": "실패",
+      "BOOKING_BALANCE_SUCCESS": "전액 결제 완료",
+      "BOOKING_SUCCESS_PENDING": "처리 대기 중",
       "BOOKING_SUCCESS_WAIT_FOR_CONFIRMED": "완료 확인 대기 중",
       "BOOKING_SUCCESS": "완료됨",
-      "SUCCESS": "성공",
       "BOOKING_UNDER_COMPLAINT": "불만 처리 중",
-      "BOOKING_REJECTED": "거부됨",
-      "BOOKING_FAILED": "실패"
+      "BOOKING_CANCELLED": "취소됨",
+      "SUCCESS": "성공"
     },
     "errors": {
       "notFound": "투어를 찾을 수 없습니다",
@@ -555,7 +614,11 @@
       "alreadyRated": "이 투어를 {{star}}점으로 평가했어요",
       "checkingBooking": "확인 중...",
       "bookingRequired": "평가하기 전에 이 투어를 예약해야 합니다",
-      "bookingRequiredMessage": "평가를 공유하려면 이 투어를 예약해주세요."
+      "bookingRequiredMessage": "평가를 공유하려면 이 투어를 예약해주세요.",
+      "depositRequired": "보증금 결제 필요",
+      "depositNote": "{{percent}}% 보증금 결제 필요",
+      "balanceRequired": "잔금 결제 필요",
+      "balanceNote": "보증금 결제 후 남은 금액"
     }
   },
   "payment": {
@@ -603,6 +666,7 @@
     "save": "저장",
     "ok": "확인",
     "na": "없음",
+    "loading": "로딩 중...",
     "hotTopic": "인기 주제",
     "seeAll": "모두 보기",
     "article": "기사",
@@ -610,6 +674,7 @@
     "delete": "삭제",
     "close": "닫기",
     "continue": "계속",
+    "optional": "선택사항",
     "tourTypes": {
       "resort": "리조트",
       "culture": "문화",
@@ -641,6 +706,10 @@
     "translate": "번역",
     "hideTranslation": "번역 숨기기",
     "translateFailed": "이 기사를 번역할 수 없습니다. 다시 시도해주세요.",
+    "suggestTours": {
+      "title": "관련 투어",
+      "noTours": "추천 투어가 없습니다"
+    },
     "comment": {
       "title": "댓글",
       "placeholder": "댓글을 입력하세요...",
@@ -749,6 +818,9 @@
     "selectUser": "채팅할 사용자 선택",
     "noUsers": "사용자가 없습니다",
     "noMessages": "메시지가 없습니다",
-    "typeMessage": "메시지 입력"
+    "typeMessage": "메시지 입력",
+    "aiAssistant": "AI 어시스턴트",
+    "aiassitant": "AI 어시스턴트",
+    "startConversation": "AI와 대화 시작하기"
   }
 }

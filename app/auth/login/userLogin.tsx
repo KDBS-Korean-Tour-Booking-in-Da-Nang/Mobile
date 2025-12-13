@@ -10,6 +10,7 @@ import {
   Platform,
   Image,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "../../../navigation/navigation";
@@ -70,11 +71,15 @@ export default function UserLogin() {
   }, [googleError]);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+    <View style={styles.container}>
+      {Platform.OS === "android" && (
+        <StatusBar backgroundColor="#000000" barStyle="light-content" />
+      )}
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Background Illustration */}
         <View style={styles.illustrationContainer}>
           <Image
@@ -198,5 +203,6 @@ export default function UserLogin() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    </View>
   );
 }
