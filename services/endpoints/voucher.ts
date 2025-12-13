@@ -6,8 +6,10 @@ export const voucherEndpoints = {
   getByCompanyId: (companyId: number) =>
     api.get(`/api/vouchers/company/${companyId}`),
   getByTourId: (tourId: number) => api.get(`/api/vouchers/${tourId}`),
-  previewAllAvailable: (bookingId: number) =>
-    api.get(`/api/vouchers/preview-all/${bookingId}`),
+  previewAllAvailable: (payload: any) =>
+    api.post("/api/vouchers/preview-all", payload),
+  previewApply: (bookingId: number) =>
+    api.get(`/api/vouchers/preview-apply/${bookingId}`),
   applyVoucher: (payload: ApplyVoucherRequest) =>
     api.post("/api/vouchers/apply", payload),
 };

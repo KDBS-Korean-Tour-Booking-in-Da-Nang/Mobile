@@ -26,6 +26,7 @@ export interface BookingGuestRequest {
 export interface BookingPaymentRequest {
   bookingId: number;
   userEmail: string;
+  deposit: boolean; // required by backend (primitive boolean)
   voucherCode?: string;
 }
 

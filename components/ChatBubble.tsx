@@ -1,24 +1,27 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
-  View,
+  Keyboard,
+  Platform,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  Keyboard,
-  Platform,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import useStompChat from "../hooks/useStompChat";
 import { colors } from "../constants/theme";
+import useStompChat, { IncomingChatMessage } from "../hooks/useStompChat";
 import chatEndpoints from "../services/endpoints/chat";
 import usersEndpoints from "../services/endpoints/users";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useTranslation } from "react-i18next";
-import { useRoute } from "@react-navigation/native";
-import { IncomingChatMessage } from "../hooks/useStompChat";
 
-export default function ChatBubble() {
+
+interface ChatBubbleProps {
+  onOpenAIChat?: () => void;
+}
+
+export default function ChatBubble({ onOpenAIChat }: ChatBubbleProps = {}) {
   const { t } = useTranslation();
   const { messages, send, connected } = useStompChat();
   const [text, setText] = useState("");
@@ -279,12 +282,18 @@ export default function ChatBubble() {
         style={{
           position: "absolute",
           right: 16,
-          bottom: 118 + (Platform.OS === "ios" ? keyboardHeight : 64),
+          bottom: 188 + (Platform.OS === "ios" ? keyboardHeight : 64),
           zIndex: 50,
         }}
       >
         <TouchableOpacity
-          onPress={() => setMinimized(false)}
+          onPress={() => {
+            if (onOpenAIChat) {
+              onOpenAIChat();
+            } else {
+              setMinimized(false);
+            }
+          }}
           activeOpacity={0.9}
           style={{
             width: 56,
@@ -316,7 +325,7 @@ export default function ChatBubble() {
       style={{
         position: "absolute",
         right: 16,
-        bottom: 188 + (Platform.OS === "ios" ? keyboardHeight : 64),
+        bottom: 258 + (Platform.OS === "ios" ? keyboardHeight : 64),
         width: 280,
         backgroundColor: "#fff",
         borderRadius: 12,

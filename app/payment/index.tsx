@@ -1,24 +1,26 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
-  View,
-  Text,
   ActivityIndicator,
   Alert,
-  TouchableOpacity,
   StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { WebView } from "react-native-webview";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { useTranslation } from "react-i18next";
+import { API_BASE } from "../../services/api";
 import { tourEndpoints } from "../../services/endpoints/tour";
 import { transactionEndpoints } from "../../services/endpoints/transactions";
-import { API_BASE } from "../../services/api";
 
 interface TossPaymentParams {
   bookingId?: string;
   userEmail?: string;
   voucherCode?: string;
+  bookingStatus?: string; 
+  amount?: string;
 }
 
 export default function TossPaymentScreen() {
@@ -32,8 +34,24 @@ export default function TossPaymentScreen() {
   const paymentCreatedRef = React.useRef(false);
   const orderIdRef = React.useRef<string | null>(null);
   const transactionIdRef = React.useRef<number | null>(null);
+  const actualPaymentAmountRef = React.useRef<number | null>(null);
 
-  const { bookingId = "", userEmail = "", voucherCode = "" } = params;
+  const {
+    bookingId = "",
+    userEmail = "",
+    voucherCode = "",
+    bookingStatus = "",
+    amount = "",
+  } = params;
+
+  console.log("[PAYMENT] Params received:", {
+    bookingId,
+    userEmail,
+    voucherCode,
+    bookingStatus,
+    amount: amount || "(empty)",
+    amountType: typeof amount,
+  });
 
   const createPayment = useCallback(async () => {
     if (paymentCreatedRef.current) {
@@ -51,13 +69,41 @@ export default function TossPaymentScreen() {
       setLoading(true);
       setError(null);
 
-      const response = await tourEndpoints.createBookingPayment({
+      // Determine if this is a deposit payment based on booking status
+      // PENDING_DEPOSIT_PAYMENT = deposit payment (isDeposit = true)
+      // PENDING_BALANCE_PAYMENT = balance payment (isDeposit = false)
+      // PENDING_PAYMENT = full payment (isDeposit = true or false, doesn't matter)
+      const normalizedStatus = String(bookingStatus || "").toUpperCase();
+      const isDeposit =
+        normalizedStatus === "PENDING_DEPOSIT_PAYMENT" ||
+        normalizedStatus === "PENDING_PAYMENT";
+
+      const requestPayload = {
         bookingId: parseInt(bookingId) || 0,
         userEmail: userEmail,
+        deposit: isDeposit,
         voucherCode: voucherCode || undefined,
+      };
+
+      console.log("[PAYMENT] Calling createBookingPayment - REQUEST BODY:", {
+        ...requestPayload,
+        voucherCode: requestPayload.voucherCode || "(empty/undefined)",
+        amountFromParams: amount || "(empty) - NOT SENT TO BE",
       });
 
+      const response = await tourEndpoints.createBookingPayment(requestPayload);
+
       const data = response.data || {};
+      
+      console.log("[PAYMENT] API Response received - RESPONSE BODY:", {
+        success: data.success,
+        amountFromBackend: data.amount,
+        amountFromBackendType: typeof data.amount,
+        orderId: data.orderId,
+        voucherCodeUsed: requestPayload.voucherCode || "(none)",
+        fullResponse: JSON.stringify(data),
+      });
+
       if (
         data.success &&
         data.clientKey &&
@@ -68,12 +114,51 @@ export default function TossPaymentScreen() {
         data.failUrl
       ) {
         orderIdRef.current = data.orderId || null;
-        
-        const txId = data.transactionId || data.transaction_id || data.id || null;
+
+        const txId =
+          data.transactionId || data.transaction_id || data.id || null;
         transactionIdRef.current = txId ? Number(txId) : null;
+
+        // Ưu tiên dùng amount từ backend (đã được tính đúng với voucher và deposit)
+        // Backend đã tính toán chính xác số tiền cần thanh toán dựa trên booking và voucher
+        let amountValue: string = "0";
+        let savedAmount: number | null = null;
         
-        const amountValue =
-          typeof data.amount === "string" ? data.amount : String(data.amount);
+        if (data.amount != null) {
+          // Ưu tiên: dùng số tiền từ backend (đã được tính đúng)
+          const backendAmount = typeof data.amount === "number" 
+            ? data.amount 
+            : Number(data.amount);
+          if (!isNaN(backendAmount) && backendAmount > 0) {
+            savedAmount = Math.round(backendAmount);
+            amountValue = String(savedAmount);
+            actualPaymentAmountRef.current = savedAmount;
+            console.log("[PAYMENT] Using amount from backend:", savedAmount);
+          }
+        }
+        
+        // Nếu backend không có, dùng từ params
+        if (!savedAmount && amount && String(amount).trim().length > 0 && !isNaN(Number(amount)) && Number(amount) > 0) {
+          savedAmount = Math.round(Number(amount));
+          amountValue = String(savedAmount);
+          actualPaymentAmountRef.current = savedAmount;
+          console.log("[PAYMENT] Using amount from params:", savedAmount);
+        }
+        
+        // Nếu vẫn không có, dùng 0
+        if (!savedAmount) {
+          console.log("[PAYMENT] No valid amount, using 0");
+        }
+
+        console.log("[PAYMENT] Amount processing:", {
+          amountFromParams: amount || "(empty)",
+          amountFromBackend: data.amount,
+          amountValue: amountValue,
+          amountValueType: typeof amountValue,
+          usingBackendAmount: data.amount != null,
+          usingParamsAmount: data.amount == null && amount && String(amount).trim().length > 0 && !isNaN(Number(amount)),
+          actualPaymentAmount: actualPaymentAmountRef.current,
+        });
         const html = `
 <!DOCTYPE html>
 <html>
@@ -144,11 +229,20 @@ export default function TossPaymentScreen() {
           const failUrl = ${JSON.stringify(data.failUrl)};
           var amountStr = ${JSON.stringify(amountValue)};
           var amountNum = Number(amountStr);
+          
+          console.log("[PAYMENT HTML] Amount values:", {
+            amountStr: amountStr,
+            amountNum: amountNum,
+            amountNumType: typeof amountNum,
+            isNaN: isNaN(amountNum),
+          });
 
           const tp = TossPayments(clientKey);
           const widgets = tp.widgets({ customerKey: customerKey });
 
           await widgets.setAmount({ currency: "KRW", value: amountNum });
+          
+          console.log("[PAYMENT HTML] Toss widget amount set:", amountNum);
 
           await Promise.all([
             widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" }),
@@ -191,7 +285,7 @@ export default function TossPaymentScreen() {
     } finally {
       setLoading(false);
     }
-  }, [userEmail, bookingId, voucherCode, t]);
+  }, [userEmail, bookingId, voucherCode, t, bookingStatus, amount]);
 
   useEffect(() => {
     createPayment();
@@ -199,12 +293,49 @@ export default function TossPaymentScreen() {
 
   const handleWebViewRequest = (request: any): boolean => {
     const url = request.url;
+
+    // Success callback
     if (url.includes("transaction-result")) {
       try {
         const urlObj = new URL(url);
         const orderId = urlObj.searchParams.get("orderId");
         const paymentMethod = urlObj.searchParams.get("paymentMethod");
         const status = urlObj.searchParams.get("status");
+        const amountParam = urlObj.searchParams.get("amount");
+        
+        console.log("[PAYMENT] Success callback - amount from URL:", {
+          amountParam: amountParam || "(empty)",
+          orderId,
+          status,
+          actualPaymentAmountFromBackend: actualPaymentAmountRef.current,
+          actualPaymentAmountType: typeof actualPaymentAmountRef.current,
+        });
+
+        // Luôn dùng số tiền từ backend response (đã được tính đúng với voucher và deposit)
+        // Không dùng amountParam từ URL callback vì có thể không chính xác
+        // actualPaymentAmountRef.current đã được set từ data.amount (backend response) khi tạo payment
+        let finalAmount = "";
+        if (actualPaymentAmountRef.current !== null && actualPaymentAmountRef.current > 0) {
+          finalAmount = String(Math.round(actualPaymentAmountRef.current));
+        } else if (amount && String(amount).trim().length > 0 && !isNaN(Number(amount)) && Number(amount) > 0) {
+          finalAmount = String(Math.round(Number(amount)));
+        } else {
+          // Fallback: thử lấy từ URL nếu không có
+          if (amountParam && String(amountParam).trim().length > 0 && !isNaN(Number(amountParam)) && Number(amountParam) > 0) {
+            finalAmount = String(Math.round(Number(amountParam)));
+          }
+        }
+
+        console.log("[PAYMENT] Success callback - sending to transactionResult:", {
+          orderId,
+          status,
+          actualPaymentAmountFromBackend: actualPaymentAmountRef.current,
+          amountFromParams: amount,
+          amountFromUrl: amountParam,
+          finalAmount,
+          finalAmountType: typeof finalAmount,
+          usingBackendAmount: actualPaymentAmountRef.current !== null && actualPaymentAmountRef.current > 0,
+        });
 
         router.replace({
           pathname: "/transactionResult" as any,
@@ -213,6 +344,7 @@ export default function TossPaymentScreen() {
             status: status || "",
             paymentMethod: paymentMethod || "TOSS",
             bookingId: bookingId,
+            amount: finalAmount,
           },
         });
 
@@ -220,6 +352,41 @@ export default function TossPaymentScreen() {
       } catch {
         return true;
       }
+    }
+
+    // Fail / access-denied callbacks (e.g., change-status failUrl)
+    if (
+      url.includes("transactions/change-status") ||
+      url.includes("status=FAILED") ||
+      url.toLowerCase().includes("fail")
+    ) {
+      const currentOrderId = orderIdRef.current;
+      const urlObj = new URL(url);
+      const amountParam = urlObj.searchParams.get("amount");
+      
+      console.log("[PAYMENT] Fail callback - amount from URL:", {
+        amountParam: amountParam || "(empty)",
+        currentOrderId,
+        actualPaymentAmountFromBackend: actualPaymentAmountRef.current,
+      });
+      // Luôn dùng số tiền từ backend response (đã được tính đúng với voucher và deposit)
+      const finalAmount = actualPaymentAmountRef.current !== null && actualPaymentAmountRef.current > 0
+        ? String(Math.round(actualPaymentAmountRef.current))
+        : (amount && String(amount).trim().length > 0 && !isNaN(Number(amount)) && Number(amount) > 0)
+        ? String(Math.round(Number(amount)))
+        : "";
+
+      router.replace({
+        pathname: "/transactionResult" as any,
+        params: {
+          orderId: currentOrderId || "",
+          status: "FAILED",
+          paymentMethod: "TOSS",
+          bookingId: bookingId,
+          amount: finalAmount,
+        },
+      });
+      return false;
     }
 
     return true;
@@ -235,41 +402,52 @@ export default function TossPaymentScreen() {
         text: t("common.confirm"),
         onPress: async () => {
           try {
-            if (orderIdRef.current) {
+            const parsedBookingId = parseInt(bookingId) || 0;
+            const currentOrderId = orderIdRef.current;
+
+            // Cố gắng update transaction status, nhưng không bắt buộc
+            if (currentOrderId) {
               try {
                 await transactionEndpoints.changeTransactionStatus(
-                  orderIdRef.current,
+                  currentOrderId,
                   "FAILED"
                 );
               } catch (error: any) {
-                // Silently handle errors
+                // Bỏ qua lỗi interceptor hoặc API, không hiển thị lỗi cho user
+                console.log("[PAYMENT] Could not update transaction status (user cancelled):", error?.message);
               }
             }
 
-            if (bookingId) {
+            // Cố gắng update booking status, nhưng không bắt buộc
+            if (parsedBookingId) {
               try {
-                await tourEndpoints.changeBookingStatus(
-                  parseInt(bookingId) || 0,
-                  {
-                    status: "BOOKING_FAILED",
-                    message: "User cancelled payment",
-                  }
-                );
+                await tourEndpoints.changeBookingStatus(parsedBookingId, {
+                  status: "PENDING_DEPOSIT_PAYMENT",
+                  message: "User cancelled payment",
+                });
               } catch (error: any) {
-                // Silently handle errors
+                // Bỏ qua lỗi, không hiển thị lỗi cho user
+                console.log("[PAYMENT] Could not update booking status (user cancelled):", error?.message);
               }
             }
 
+            // Navigate về transactionResult với status CANCELLED thay vì FAILED
+            // để phân biệt user tự cancel vs thanh toán thất bại
             router.replace({
               pathname: "/transactionResult" as any,
               params: {
-                orderId: orderIdRef.current || "",
-                status: "FAILED",
+                orderId: currentOrderId || "",
+                status: "CANCELLED", // Dùng CANCELLED thay vì FAILED để phân biệt
                 paymentMethod: "TOSS",
                 bookingId: bookingId,
+                amount: actualPaymentAmountRef.current !== null
+                  ? String(actualPaymentAmountRef.current)
+                  : amount || "",
               },
             });
-          } catch {
+          } catch (error: any) {
+            // Nếu có lỗi, chỉ navigate back, không hiển thị lỗi
+            console.log("[PAYMENT] Error handling back button:", error?.message);
             router.back();
           }
         },
@@ -431,6 +609,7 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
+    marginTop: 60, // Thêm margin top để không che header
   },
   webviewLoading: {
     position: "absolute",

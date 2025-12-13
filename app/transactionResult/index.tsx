@@ -1,16 +1,16 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-} from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as MailComposer from "expo-mail-composer";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { tourEndpoints } from "../../services/endpoints/tour";
 import styles from "./style";
 
@@ -19,6 +19,7 @@ interface TransactionResultParams {
   status?: string;
   paymentMethod: string;
   bookingId?: string;
+  amount?: string;
 }
 
 export default function TransactionResult() {
@@ -28,17 +29,34 @@ export default function TransactionResult() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [transactionAmount, setTransactionAmount] = useState<number | null>(
+    null
+  );
+
+  // Parse amount từ params (có thể là string, number, hoặc array)
+  const amountParam = params.amount
+    ? Array.isArray(params.amount)
+      ? params.amount[0]
+      : params.amount
+    : "";
 
   const { orderId, status, paymentMethod, bookingId } =
-    params as unknown as TransactionResultParams;
+    params as unknown as Omit<TransactionResultParams, "amount">;
+
+  const amount =
+    typeof amountParam === "string" || typeof amountParam === "number"
+      ? amountParam
+      : String(amountParam || "");
 
   const finalStatus = status || "";
   const statusUpper = finalStatus?.toUpperCase() || "";
 
   const isSuccess = statusUpper === "SUCCESS";
   const isFailed = statusUpper === "FAILED";
+  const isCancelled = statusUpper === "CANCELLED";
   const isPending =
-    statusUpper === "PENDING" || (!finalStatus && !isSuccess && !isFailed);
+    statusUpper === "PENDING" ||
+    (!finalStatus && !isSuccess && !isFailed && !isCancelled);
 
   const emailAttemptedRef = useRef(false);
 
@@ -49,13 +67,51 @@ export default function TransactionResult() {
         setLoading(false);
         return;
       }
-     
+
+      // Số tiền đã được gửi từ payment page (từ backend response)
+      // Payment page đã lưu số tiền thực tế từ backend (actualPaymentAmountRef) và gửi sang đây
+      if (amount && String(amount).trim().length > 0) {
+        const parsedAmount = Number(amount);
+        if (!isNaN(parsedAmount) && parsedAmount > 0) {
+          const roundedAmount = Math.round(parsedAmount);
+          setTransactionAmount(roundedAmount);
+          console.log(
+            "[TRANSACTION RESULT] Amount from params (from payment page):",
+            {
+              amountParam: amount,
+              parsedAmount: parsedAmount,
+              roundedAmount: roundedAmount,
+              amountType: typeof amount,
+            }
+          );
+        } else {
+          console.log("[TRANSACTION RESULT] Invalid amount value:", {
+            amount: amount,
+            parsedAmount: parsedAmount,
+            isNaN: isNaN(parsedAmount),
+            isPositive: parsedAmount > 0,
+          });
+        }
+      } else {
+        console.log("[TRANSACTION RESULT] No amount in params:", {
+          amount: amount,
+          amountType: typeof amount,
+          isEmpty: !amount || String(amount).trim().length === 0,
+        });
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || t("payment.result.fetchError"));
+      // Fallback: dùng amount từ params nếu có
+      if (amount && String(amount).trim().length > 0) {
+        const parsedAmount = Number(amount);
+        if (!isNaN(parsedAmount) && parsedAmount > 0) {
+          setTransactionAmount(Math.round(parsedAmount));
+        }
+      }
     } finally {
       setLoading(false);
     }
-  }, [orderId, t]);
+  }, [orderId, amount, t]);
 
   useEffect(() => {
     if (orderId) {
@@ -115,6 +171,8 @@ export default function TransactionResult() {
       return <Ionicons name="checkmark-circle" size={80} color="#34C759" />;
     } else if (isFailed) {
       return <Ionicons name="close-circle" size={80} color="#FF3B30" />;
+    } else if (isCancelled) {
+      return <Ionicons name="close-circle-outline" size={80} color="#FF9500" />;
     }
     return <Ionicons name="time" size={80} color="#FF9500" />;
   };
@@ -124,6 +182,8 @@ export default function TransactionResult() {
       return t("payment.result.success");
     } else if (isFailed) {
       return t("payment.result.failed");
+    } else if (isCancelled) {
+      return t("payment.result.cancelled") || "Payment Cancelled";
     }
     return t("payment.result.pending");
   };
@@ -131,6 +191,7 @@ export default function TransactionResult() {
   const getStatusColor = () => {
     if (isSuccess) return "#34C759";
     if (isFailed) return "#FF3B30";
+    if (isCancelled) return "#FF9500";
     return "#FF9500";
   };
 
@@ -169,11 +230,19 @@ export default function TransactionResult() {
           <Text style={[styles.statusText, { color: getStatusColor() }]}>
             {getStatusText()}
           </Text>
+          {isSuccess && transactionAmount !== null && (
+            <Text style={styles.amountText}>
+              {transactionAmount.toLocaleString()} KRW
+            </Text>
+          )}
           <Text style={styles.statusSubtext}>
             {isSuccess
               ? t("payment.result.successMessage")
               : isFailed
               ? t("payment.result.failedMessage")
+              : isCancelled
+              ? t("payment.result.cancelledMessage") ||
+                "You cancelled the payment. You can try again later."
               : t("payment.result.pendingMessage")}
           </Text>
         </View>

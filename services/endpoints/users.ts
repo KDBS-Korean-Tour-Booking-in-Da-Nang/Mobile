@@ -1,4 +1,4 @@
-import api, { apiForm } from "../api";
+import api from "../api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   UpdateUserRequest,
@@ -9,6 +9,13 @@ import {
 
 async function updateUser(params: UpdateUserRequest) {
   const form = new FormData();
+
+  // Append email first (required by backend)
+  if (params.email) {
+    form.append("email", params.email);
+  }
+
+  // Create the data object
   const data = {
     username: params.username,
     phone: params.phone,
@@ -16,18 +23,47 @@ async function updateUser(params: UpdateUserRequest) {
     gender: params.gender,
     cccd: 99,
   } as Record<string, any>;
-  try {
-  } catch {}
-  form.append("data", JSON.stringify(data));
-  console.log("[users.updateUser] request", form);
 
-  form.append("email", params.email);
+  // Include address if provided (backend supports it in UserUpdateRequest)
+  if (params.address !== undefined && params.address !== null) {
+    data.address = params.address;
+  }
+
+  // Append data as JSON string
+  form.append("data", JSON.stringify(data));
+
+  // Append avatar if provided - use exact same pattern as forum
   if (params.avatarImg) {
     const file: any = params.avatarImg;
-    const name = file?.name || "avatar.jpg";
-    const type = file?.type || "image/jpeg";
-    form.append("avatarImg", { uri: file.uri, name, type } as any);
+    const uri: string = file?.uri || file?.path || "";
+
+    // Clean URI (remove query params if any) - same as forum
+    const clean = uri.split("?")[0];
+
+    // Extract extension from URI or use default
+    const ext = (clean.match(/\.([a-zA-Z0-9]+)$/)?.[1] || "jpg").toLowerCase();
+
+    // Determine MIME type
+    const mime =
+      file?.type ||
+      (ext === "jpg" || ext === "jpeg" ? "image/jpeg" : `image/${ext}`);
+
+    // Use provided name or generate one
+    const name = file?.name || `avatar_${Date.now()}.${ext}`;
+
+    // Use original URI (not cleaned) - React Native FormData handles it
+    if (uri) {
+      form.append("avatarImg", {
+        uri: uri, // Use original URI, not cleaned
+        name,
+        type: mime,
+      } as any);
+    }
   }
+
+  const token = await AsyncStorage.getItem("authToken");
+
+  // Log for debugging
   try {
     const parts: any[] = (form as any)?._parts || [];
     console.log(
@@ -47,17 +83,12 @@ async function updateUser(params: UpdateUserRequest) {
       })
     );
   } catch {}
-  const token = await AsyncStorage.getItem("authToken");
-  try {
-    console.log("[users.updateUser] will PUT /api/users/update with headers", {
-      "Content-Type": "multipart/form-data",
-      Authorization: token ? "Bearer ***" : undefined,
-    });
-  } catch {}
-  console.log("[users.updateUser] request", form);
 
-  return apiForm.put("/api/users/update", form, {
+  // Use api with explicit Content-Type header (same pattern as forum endpoints)
+  return api.put("/api/users/update", form, {
+    timeout: 60000, // 60 seconds for file uploads
     headers: {
+      "Content-Type": "multipart/form-data",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });

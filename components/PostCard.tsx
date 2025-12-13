@@ -12,16 +12,13 @@ import {
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import forumEndpoints, {
-  PostResponse,
-  ForumCommentResponse,
-} from "../services/endpoints/forum";
+import { forumEndpoints, PostResponse, ForumCommentResponse } from "../services/endpoints/forum";
 import ReportModal from "./ReportModal";
 import { useAuthContext } from "../src/contexts/authContext";
 import CommentSection from "./CommentSection";
 import { useTranslation } from "react-i18next";
 import { useNavigation } from "../navigation/navigation";
-import geminiEndpoints from "../services/endpoints/gemini";
+import { geminiEndpoints } from "../services/endpoints/gemini";
 
 interface PostCardProps {
   post: PostResponse;
@@ -78,15 +75,23 @@ const PostCard: React.FC<PostCardProps> = ({
     (post.username || "").trim().toLowerCase();
 
   const checkIfSaved = useCallback(async () => {
+    if (!user?.email) {
+      setIsSaved(false);
+      return;
+    }
     try {
       const response = await forumEndpoints.checkPostSaved(post.id);
       const saved = response.data?.saved || false;
       setIsSaved(saved);
-    } catch {}
-  }, [post.id]);
+    } catch {
+      setIsSaved(false);
+    }
+  }, [post.id, user?.email]);
 
   useEffect(() => {
-    checkIfSaved();
+    if (user?.email) {
+      checkIfSaved();
+    }
     (async () => {
       try {
         const response = await forumEndpoints.getReactionSummary(
@@ -136,66 +141,84 @@ const PostCard: React.FC<PostCardProps> = ({
     try {
       if (reactionType === "LIKE") {
         if (isLiked) {
-          await forumEndpoints.removeReaction(post.id, "POST");
+          // Unlike: remove reaction
+          await forumEndpoints.removeReaction(post.id, "POST", user.email);
           setIsLiked(false);
           setLikeCount((prev) => Math.max(0, prev - 1));
         } else {
-          await forumEndpoints.addReaction({
-            targetId: post.id,
-            targetType: "POST",
-            reactionType: "LIKE",
-          });
+          // Like: add reaction
+          await forumEndpoints.addReaction(
+            {
+              targetId: post.id,
+              targetType: "POST",
+              reactionType: "LIKE",
+            },
+            user.email
+          );
           setIsLiked(true);
           setLikeCount((prev) => prev + 1);
-          try {
-            const summaryResponse = await forumEndpoints.getReactionSummary(
-              post.id,
-              "POST",
-              user?.email
-            );
-            const summary = summaryResponse.data;
-            if (summary) {
-              setLikeCount(summary.likeCount || 0);
-              setDislikeCount(summary.dislikeCount || 0);
-            }
-          } catch {}
 
+          // Remove dislike if exists
           if (isDisliked) {
             setIsDisliked(false);
             setDislikeCount((prev) => Math.max(0, prev - 1));
           }
         }
+        // Refresh summary to get accurate counts
+        try {
+          const summaryResponse = await forumEndpoints.getReactionSummary(
+            post.id,
+            "POST",
+            user.email
+          );
+          const summary = summaryResponse.data;
+          if (summary) {
+            setLikeCount(summary.likeCount || 0);
+            setDislikeCount(summary.dislikeCount || 0);
+            setIsLiked(summary.userReaction === "LIKE");
+            setIsDisliked(summary.userReaction === "DISLIKE");
+          }
+        } catch {}
       } else {
         if (isDisliked) {
-          await forumEndpoints.removeReaction(post.id, "POST");
+          // Remove dislike: remove reaction
+          await forumEndpoints.removeReaction(post.id, "POST", user.email);
           setIsDisliked(false);
           setDislikeCount((prev) => Math.max(0, prev - 1));
         } else {
-          await forumEndpoints.addReaction({
-            targetId: post.id,
-            targetType: "POST",
-            reactionType: "DISLIKE",
-          });
+          // Dislike: add reaction
+          await forumEndpoints.addReaction(
+            {
+              targetId: post.id,
+              targetType: "POST",
+              reactionType: "DISLIKE",
+            },
+            user.email
+          );
           setIsDisliked(true);
           setDislikeCount((prev) => prev + 1);
-          try {
-            const summaryResponse = await forumEndpoints.getReactionSummary(
-              post.id,
-              "POST",
-              user?.email
-            );
-            const summary = summaryResponse.data;
-            if (summary) {
-              setLikeCount(summary.likeCount || 0);
-              setDislikeCount(summary.dislikeCount || 0);
-            }
-          } catch {}
 
+          // Remove like if exists
           if (isLiked) {
             setIsLiked(false);
             setLikeCount((prev) => Math.max(0, prev - 1));
           }
         }
+        // Refresh summary to get accurate counts
+        try {
+          const summaryResponse = await forumEndpoints.getReactionSummary(
+            post.id,
+            "POST",
+            user.email
+          );
+          const summary = summaryResponse.data;
+          if (summary) {
+            setLikeCount(summary.likeCount || 0);
+            setDislikeCount(summary.dislikeCount || 0);
+            setIsLiked(summary.userReaction === "LIKE");
+            setIsDisliked(summary.userReaction === "DISLIKE");
+          }
+        } catch {}
       }
     } catch {
       Alert.alert(t("forum.errorTitle"), t("forum.cannotPerformAction"));
@@ -224,6 +247,8 @@ const PostCard: React.FC<PostCardProps> = ({
     } finally {
       setIsLoading(false);
     }
+    // Re-check saved status after save/unsave
+    await checkIfSaved();
   };
 
   const [reportVisible, setReportVisible] = useState(false);
@@ -321,10 +346,18 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const extractTourIdFromContent = (text: string): number | null => {
     if (!text) return null;
-    const match = text.match(/(?:https?:\/\/[^\s]+)?\/?tour\?id=(\d+)/i);
-    if (match && match[1]) {
-      const id = Number(match[1]);
-      return Number.isFinite(id) ? id : null;
+    // Support both web format: /tour/detail?id=2 and mobile format: /tour/tourDetail?id=2
+    const patterns = [
+      /(?:https?:\/\/[^\s]+)?\/?tour\/detail\?id=(\d+)/i,
+      /(?:https?:\/\/[^\s]+)?\/?tour\/tourDetail\?id=(\d+)/i,
+      /(?:https?:\/\/[^\s]+)?\/?tour\?id=(\d+)/i,
+    ];
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        const id = Number(match[1]);
+        if (Number.isFinite(id)) return id;
+      }
     }
     return null;
   };
@@ -334,10 +367,11 @@ const PostCard: React.FC<PostCardProps> = ({
     const withoutMeta = text
       .replace(/<!--META:\{[\s\S]*?\}-->/gi, "")
       .replace(/\[\[META:\{[\s\S]*?\}\]\]/gi, "");
-    const withoutLinks = withoutMeta.replace(
-      new RegExp("(?:https?:\\/\\/[^\\s]+)?\\/?tour\\?id=\\d+", "gi"),
-      ""
-    );
+    // Support both web and mobile tour link formats
+    const withoutLinks = withoutMeta
+      .replace(/(?:https?:\/\/[^\s]+)?\/?tour\/detail\?id=\d+/gi, "")
+      .replace(/(?:https?:\/\/[^\s]+)?\/?tour\/tourDetail\?id=\d+/gi, "")
+      .replace(/(?:https?:\/\/[^\s]+)?\/?tour\?id=\d+/gi, "");
     return withoutLinks
       .replace(/[\t ]+/g, " ")
       .replace(/\n{3,}/g, "\n\n")
@@ -544,6 +578,9 @@ const PostCard: React.FC<PostCardProps> = ({
                 <Text style={styles.timestamp}>
                   • {formatDate(post.createdAt)}
                 </Text>
+              </View>
+              <View style={styles.titleRow}>
+                <Text style={styles.title}>{post.title}</Text>
                 {post.content && post.content.trim().length > 0 && (
                   <TouchableOpacity
                     style={styles.translateChip}
@@ -565,7 +602,6 @@ const PostCard: React.FC<PostCardProps> = ({
                   </TouchableOpacity>
                 )}
               </View>
-              <Text style={styles.title}>{post.title}</Text>
             </View>
           </View>
 
@@ -583,11 +619,11 @@ const PostCard: React.FC<PostCardProps> = ({
             const rawContent = stripTourLinks(post.content || "");
             return (
               <>
-              <Text style={styles.body}>
-                {showFullContent
+                <Text style={styles.body}>
+                  {showFullContent
                     ? rawContent
                     : getTruncatedContent(rawContent)}
-              </Text>
+                </Text>
                 {isShowingTranslated && translatedContent && (
                   <Text style={styles.translatedBody}>
                     {showFullContent
@@ -765,7 +801,7 @@ const PostCard: React.FC<PostCardProps> = ({
                   <Ionicons
                     name={isSaved ? "bookmark" : "bookmark-outline"}
                     size={18}
-                    color={isSaved ? "#007AFF" : "#666"}
+                    color={isSaved ? "#FFD700" : "#666"}
                   />
                   <Text
                     style={[
@@ -801,7 +837,7 @@ const PostCard: React.FC<PostCardProps> = ({
                   <Ionicons
                     name={isSaved ? "bookmark" : "bookmark-outline"}
                     size={18}
-                    color={isSaved ? "#007AFF" : "#666"}
+                    color={isSaved ? "#FFD700" : "#666"}
                   />
                   <Text
                     style={[
@@ -976,7 +1012,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 12,
   },
   userInfo: {
@@ -1007,9 +1043,17 @@ const styles = StyleSheet.create({
     color: "#666",
     marginLeft: 4,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 2,
+  },
   menuButton: {
     padding: 8,
+    paddingTop: 0,
     marginLeft: 8,
+    marginTop: 0,
   },
   menuDropdown: {
     position: "absolute",
@@ -1045,7 +1089,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuItemTextActive: {
-    color: "#007AFF",
+    color: "#FFD700",
   },
   menuItemTextDanger: {
     marginLeft: 8,
@@ -1067,7 +1111,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#333",
-    marginTop: 2,
+    flex: 1,
+    marginRight: 8,
   },
   body: {
     fontSize: 14,

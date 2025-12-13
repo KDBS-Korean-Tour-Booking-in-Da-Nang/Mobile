@@ -1,34 +1,39 @@
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { useLocalSearchParams } from "expo-router";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
-  View,
-  Text,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
   Image,
+  Modal,
+  Platform,
+  Pressable,
   ScrollView,
+  Text,
   TextInput,
   TouchableOpacity,
-  Pressable,
-  Platform,
-  Alert,
-  ActivityIndicator,
-  Modal,
-  Dimensions,
+  View,
 } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import BookingButton from "../../../components/BookingButton";
 import MainLayout from "../../../components/MainLayout";
 import { useNavigation } from "../../../navigation/navigation";
-import { useLocalSearchParams } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { useAuthContext } from "../../../src/contexts/authContext";
-import BookingButton from "../../../components/BookingButton";
-import { useTranslation } from "react-i18next";
 import { tourEndpoints } from "../../../services/endpoints/tour";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { voucherEndpoints } from "../../../services/endpoints/voucher";
+import { useAuthContext } from "../../../src/contexts/authContext";
 import { TourResponse } from "../../../src/types/response/tour.response";
-import styles from "./styles";
 import {
-  getTourThumbnailUrl,
-  mapContentImages,
-} from "../../../src/utils/media";
+  ApplyVoucherResponse,
+  VoucherDiscountType,
+  VoucherResponse,
+  VoucherStatus,
+} from "../../../src/types/response/voucher.response";
+import { formatPriceKRW } from "../../../src/utils/currency";
+import { getTourThumbnailUrl } from "../../../src/utils/media";
+import styles from "./styles";
 
 export default function BuyingTour() {
   const { goBack, navigate } = useNavigation();
@@ -162,6 +167,22 @@ export default function BuyingTour() {
     Record<number, string | null>
   >({});
 
+  // Voucher state (visible on buying screen)
+  const [voucher, setVoucher] = React.useState<VoucherResponse | null>(null);
+  const [selectedVoucherPreview, setSelectedVoucherPreview] = React.useState<ApplyVoucherResponse | null>(null);
+  const [showVoucherModal, setShowVoucherModal] = React.useState(false);
+  const [availableVouchers, setAvailableVouchers] = React.useState<
+    VoucherResponse[]
+  >([]);
+  const [previewVoucherResponses, setPreviewVoucherResponses] = React.useState<ApplyVoucherResponse[]>([]);
+  const [selectedVoucherId, setSelectedVoucherId] = React.useState<
+    number | null
+  >(null);
+  const [loadingVouchers, setLoadingVouchers] = React.useState(false);
+  const [voucherError, setVoucherError] = React.useState<string | null>(null);
+  const [showVoucherAndPrice, setShowVoucherAndPrice] = React.useState(false);
+  const [loadingContinue, setLoadingContinue] = React.useState(false);
+
   const increment = React.useCallback((type: "adult" | "children" | "baby") => {
     if (type === "adult") setAdultCount((c) => c + 1);
     if (type === "children") setChildrenCount((c) => c + 1);
@@ -215,8 +236,38 @@ export default function BuyingTour() {
     return adultTotal + childrenTotal + babyTotal;
   };
 
+  const originalTotal = calculateTotal();
+
+  // Sử dụng data từ preview response nếu có voucher được chọn, nếu không thì tính toán thủ công
+  const computedDiscount = React.useMemo(() => {
+    if (selectedVoucherPreview?.discountAmount !== undefined) {
+      return Number(selectedVoucherPreview.discountAmount) || 0;
+    }
+    if (!voucher) return 0;
+    const base = originalTotal || 0;
+    if (base <= 0) return 0;
+    if (voucher.discountType === VoucherDiscountType.PERCENT) {
+      return Math.floor((base * Number(voucher.discountValue || 0)) / 100);
+    }
+    return Number(voucher.discountValue || 0);
+  }, [selectedVoucherPreview, voucher, originalTotal]);
+
+  const discountAmount = React.useMemo(() => {
+    if (selectedVoucherPreview?.discountAmount !== undefined) {
+      return Number(selectedVoucherPreview.discountAmount) || 0;
+    }
+    return Math.min(Math.max(computedDiscount, 0), Math.max(originalTotal, 0));
+  }, [selectedVoucherPreview, computedDiscount, originalTotal]);
+
+  const finalTotal = React.useMemo(() => {
+    if (selectedVoucherPreview?.finalTotal !== undefined) {
+      return Number(selectedVoucherPreview.finalTotal) || 0;
+    }
+    return Math.max(originalTotal - discountAmount, 0);
+  }, [selectedVoucherPreview, originalTotal, discountAmount]);
+
   const formatPrice = (price: number) => {
-    return price.toLocaleString("vi-VN");
+    return formatPriceKRW(price);
   };
 
   const isValidEmail = (value: string) =>
@@ -255,15 +306,19 @@ export default function BuyingTour() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (tour?.tourDeadline && tour.tourDeadline > 0) {
-      const minDate = new Date(today);
-      minDate.setDate(today.getDate() + tour.tourDeadline + 1);
-      return minDate;
-    }
+    const deadlineDays =
+      tour?.tourDeadline && tour.tourDeadline > 0
+        ? tour.tourDeadline + 1
+        : 1;
+    const advancedDays =
+      tour?.minAdvancedDays && tour.minAdvancedDays > 0
+        ? tour.minAdvancedDays
+        : 0;
+    const daysFromToday = Math.max(deadlineDays, advancedDays, 1);
 
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    return tomorrow;
+      const minDate = new Date(today);
+    minDate.setDate(today.getDate() + daysFromToday);
+      return minDate;
   };
 
   const getMaximumDepartureDate = (): Date | undefined => {
@@ -326,6 +381,16 @@ export default function BuyingTour() {
       ? normalizeDateForComparison(maxDate)
       : null;
 
+    const minDaysRequired = Math.max(
+      tour?.tourDeadline && tour.tourDeadline > 0
+        ? tour.tourDeadline + 1
+        : 1,
+      tour?.minAdvancedDays && tour.minAdvancedDays > 0
+        ? tour.minAdvancedDays
+        : 0,
+      1
+    );
+
     if (departureDateNormalized < minDateNormalized) {
       const minDateStr = `${String(minDate.getDate()).padStart(
         2,
@@ -338,7 +403,7 @@ export default function BuyingTour() {
         t("common.error"),
         t("tour.booking.errors.departureDateMinError", {
           date: minDateStr,
-          days: tour?.tourDeadline || 1,
+          days: minDaysRequired,
         })
       );
       return false;
@@ -499,7 +564,7 @@ export default function BuyingTour() {
     return true;
   };
 
-  const handleBooking = async () => {
+  const handleContinue = async () => {
     if (!tour || !user?.email) {
       Alert.alert(t("common.error"), t("tour.booking.errors.loginRequired"));
       return;
@@ -509,145 +574,202 @@ export default function BuyingTour() {
       return;
     }
 
-    const bookingData = {
-      customerName: formData.fullName || "",
-      customerPhone: formData.phoneNumber || "",
-      customerEmail: formData.email || user.email,
-      customerAddress: formData.address || "",
-      adultCount,
-      childrenCount,
-      babyCount,
-      adultInfo: Object.values(adultInfo).map((guest, index) => ({
-        ...guest,
-        birthDate: adultDob[index] || new Date().toISOString().split("T")[0],
-      })),
-      childrenInfo: Object.values(childrenInfo).map((guest, index) => ({
-        ...guest,
-        birthDate: childrenDob[index] || new Date().toISOString().split("T")[0],
-      })),
-      babyInfo: Object.values(babyInfo).map((guest, index) => ({
-        ...guest,
-        birthDate: babyDob[index] || new Date().toISOString().split("T")[0],
-      })),
-      pickUpPoint: formData.pickUpPoint || "",
-      departureDate: formData.departureDate || "",
-      note: formData.note || "",
-    };
+    try {
+      setLoadingContinue(true);
 
-    const normalizeDateString = (value: any) => {
-      if (!value) return null;
-      if (typeof value === "string") {
-        const trimmed = value.trim();
-        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-        const match = trimmed.match(/^([0-3]\d)\/([0-1]\d)\/(\d{4})$/);
-        if (match) {
-          return `${match[3]}-${match[2]}-${match[1]}`;
-        }
-      }
+      // Gọi preview-all để lấy danh sách voucher có thể apply và tính toán discount
       try {
-        const date = new Date(value);
-        if (!isNaN(date.getTime())) {
-          const yyyy = date.getFullYear();
-          const mm = String(date.getMonth() + 1).padStart(2, "0");
-          const dd = String(date.getDate()).padStart(2, "0");
-          return `${yyyy}-${mm}-${dd}`;
-        }
-      } catch {}
-      return null;
-    };
-
-    const ensureDepartureDate = () => {
-      const normalized = normalizeDateString(
-        formData.departureDate || bookingData.departureDate
-      );
-      if (normalized) return normalized;
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const yyyy = tomorrow.getFullYear();
-      const mm = String(tomorrow.getMonth() + 1).padStart(2, "0");
-      const dd = String(tomorrow.getDate()).padStart(2, "0");
-      return `${yyyy}-${mm}-${dd}`;
-    };
-
-    const mapGuests = (
-      count: number,
-      getGuest: (index: number) => any,
-      getDob: (index: number) => any,
-      type: "ADULT" | "CHILD" | "BABY"
-    ) => {
-      const list: any[] = [];
-      for (let i = 0; i < count; i++) {
-        const guest = getGuest(i) || {};
-        const dobValue = getDob(i) || guest.birthDate;
-        const normalizedDob = normalizeDateString(dobValue);
-        if (!normalizedDob) {
-          continue;
-        }
-        list.push({
-          fullName: guest.fullName?.trim() || "Guest",
-          birthDate: normalizedDob,
-          gender: (guest.gender || "OTHER").toUpperCase(),
-          idNumber: guest.idNumber || "",
-          nationality: guest.nationality || "Korea",
-          bookingGuestType: type,
+        const previewResponse = await voucherEndpoints.previewAllAvailable({
+          tourId: tour.id,
+          adultsCount: adultCount,
+          childrenCount: childrenCount,
+          babiesCount: babyCount,
         });
+
+        // Lưu danh sách preview voucher responses
+        const previewData = Array.isArray(previewResponse.data) 
+          ? previewResponse.data 
+          : [];
+        setPreviewVoucherResponses(previewData);
+
+        // Hiển thị phần Voucher và Price Summary ở dưới để user có thể chọn voucher hoặc không
+        setShowVoucherAndPrice(true);
+      } catch (previewError: any) {
+        const previewErrorMessage =
+          previewError?.response?.data?.message ||
+          previewError?.response?.data?.error ||
+          previewError?.message;
+
+        // Vẫn hiển thị phần Voucher và Price Summary để user có thể tiếp tục
+        setPreviewVoucherResponses([]);
+        setShowVoucherAndPrice(true);
+        Alert.alert(
+          t("common.warning") || "Warning",
+          previewErrorMessage ||
+            "Could not load voucher preview. You can still continue."
+        );
       }
-      return list;
-    };
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        t("tour.booking.errors.loadFailed") ||
+        "Không thể tải voucher. Vui lòng thử lại.";
+      Alert.alert(t("common.error"), message);
+    } finally {
+      setLoadingContinue(false);
+    }
+  };
 
-    const guestPayload = [
-      ...mapGuests(
-        adultCount,
-        (idx) => adultInfo[idx],
-        (idx) => adultDob[idx],
-        "ADULT"
-      ),
-      ...mapGuests(
-        childrenCount,
-        (idx) => childrenInfo[idx],
-        (idx) => childrenDob[idx],
-        "CHILD"
-      ),
-      ...mapGuests(
-        babyCount,
-        (idx) => babyInfo[idx],
-        (idx) => babyDob[idx],
-        "BABY"
-      ),
-    ];
-
-    if (guestPayload.length === 0) {
-      Alert.alert(t("common.error"), "At least one guest is required");
+  // Tạo booking với voucherCode đã chọn
+  const createBookingWithVoucher = async (selectedVoucherCode?: string) => {
+    if (!tour || !user?.email) {
+      Alert.alert(t("common.error"), t("tour.booking.errors.loginRequired"));
       return;
     }
 
-    const sanitizePhone = (value: string) => value.replace(/\D/g, "");
-    const contactPhone = sanitizePhone(formData.phoneNumber || "");
-
-    const bookingRequest = {
-      tourId: tour.id,
-      userEmail: (user.email || "").trim().toLowerCase(),
-      contactName:
-        bookingData.customerName && bookingData.customerName.trim() !== ""
-          ? bookingData.customerName
-          : "Guest User",
-      contactAddress: bookingData.customerAddress || "",
-      contactPhone: contactPhone || "0123456789",
-      contactEmail:
-        bookingData.customerEmail && bookingData.customerEmail.trim() !== ""
-          ? bookingData.customerEmail.trim()
-          : String(user.email || "").trim(),
-      pickupPoint: bookingData.pickUpPoint || "",
-      note: bookingData.note || "",
-      departureDate: ensureDepartureDate(),
-      adultsCount: adultCount,
-      childrenCount,
-      babiesCount: babyCount,
-      bookingGuestRequests: guestPayload,
-    };
-
     try {
       setCreatingBooking(true);
+
+      const bookingData = {
+        customerName: formData.fullName || "",
+        customerPhone: formData.phoneNumber || "",
+        customerEmail: formData.email || user.email,
+        customerAddress: formData.address || "",
+        adultCount,
+        childrenCount,
+        babyCount,
+        adultInfo: Object.values(adultInfo).map((guest, index) => ({
+          ...guest,
+          birthDate: adultDob[index] || new Date().toISOString().split("T")[0],
+        })),
+        childrenInfo: Object.values(childrenInfo).map((guest, index) => ({
+          ...guest,
+          birthDate: childrenDob[index] || new Date().toISOString().split("T")[0],
+        })),
+        babyInfo: Object.values(babyInfo).map((guest, index) => ({
+          ...guest,
+          birthDate: babyDob[index] || new Date().toISOString().split("T")[0],
+        })),
+        pickUpPoint: formData.pickUpPoint || "",
+        departureDate: formData.departureDate || "",
+        note: formData.note || "",
+      };
+
+      const normalizeDateString = (value: any) => {
+        if (!value) return null;
+        if (typeof value === "string") {
+          const trimmed = value.trim();
+          if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+          const match = trimmed.match(/^([0-3]\d)\/([0-1]\d)\/(\d{4})$/);
+          if (match) {
+            return `${match[3]}-${match[2]}-${match[1]}`;
+          }
+        }
+        try {
+          const date = new Date(value);
+          if (!isNaN(date.getTime())) {
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, "0");
+            const dd = String(date.getDate()).padStart(2, "0");
+            return `${yyyy}-${mm}-${dd}`;
+          }
+        } catch {}
+        return null;
+      };
+
+      const ensureDepartureDate = () => {
+        const normalized = normalizeDateString(
+          formData.departureDate || bookingData.departureDate
+        );
+        if (normalized) return normalized;
+          const minDate = getMinimumDepartureDate();
+          const yyyy = minDate.getFullYear();
+          const mm = String(minDate.getMonth() + 1).padStart(2, "0");
+          const dd = String(minDate.getDate()).padStart(2, "0");
+        return `${yyyy}-${mm}-${dd}`;
+      };
+
+      const mapGuests = (
+        count: number,
+        getGuest: (index: number) => any,
+        getDob: (index: number) => any,
+        type: "ADULT" | "CHILD" | "BABY"
+      ) => {
+        const list: any[] = [];
+        for (let i = 0; i < count; i++) {
+          const guest = getGuest(i) || {};
+          const dobValue = getDob(i) || guest.birthDate;
+          const normalizedDob = normalizeDateString(dobValue);
+          if (!normalizedDob) {
+            continue;
+          }
+          list.push({
+            fullName: guest.fullName?.trim() || "Guest",
+            birthDate: normalizedDob,
+            gender: (guest.gender || "OTHER").toUpperCase(),
+            idNumber: guest.idNumber || "",
+            nationality: guest.nationality || "Korea",
+            bookingGuestType: type,
+          });
+        }
+        return list;
+      };
+
+      const guestPayload = [
+        ...mapGuests(
+          adultCount,
+          (idx) => adultInfo[idx],
+          (idx) => adultDob[idx],
+          "ADULT"
+        ),
+        ...mapGuests(
+          childrenCount,
+          (idx) => childrenInfo[idx],
+          (idx) => childrenDob[idx],
+          "CHILD"
+        ),
+        ...mapGuests(
+          babyCount,
+          (idx) => babyInfo[idx],
+          (idx) => babyDob[idx],
+          "BABY"
+        ),
+      ];
+
+      if (guestPayload.length === 0) {
+        Alert.alert(t("common.error"), "At least one guest is required");
+        return;
+      }
+
+      const sanitizePhone = (value: string) => value.replace(/\D/g, "");
+      const contactPhone = sanitizePhone(formData.phoneNumber || "");
+
+      const bookingRequest = {
+        tourId: tour.id,
+        userEmail: (user.email || "").trim().toLowerCase(),
+        contactName:
+          bookingData.customerName && bookingData.customerName.trim() !== ""
+            ? bookingData.customerName
+            : "Guest User",
+        contactAddress: bookingData.customerAddress || "",
+        contactPhone: contactPhone || "0123456789",
+        contactEmail:
+          bookingData.customerEmail && bookingData.customerEmail.trim() !== ""
+            ? bookingData.customerEmail.trim()
+            : String(user.email || "").trim(),
+        pickupPoint: bookingData.pickUpPoint || "",
+        note: bookingData.note || "",
+        departureDate: ensureDepartureDate(),
+        adultsCount: adultCount,
+        childrenCount,
+        babiesCount: babyCount,
+        bookingGuestRequests: guestPayload,
+        // Gửi voucherCode nếu đã chọn voucher
+        voucherCode: selectedVoucherCode ? selectedVoucherCode.trim() : undefined,
+      };
+
+      // Tạo booking với voucherCode
       const response = (await tourEndpoints.createBooking(bookingRequest)).data;
       if (!response?.bookingId) {
         throw new Error("Missing bookingId from response");
@@ -668,6 +790,10 @@ export default function BuyingTour() {
         tour.id
       }&bookingId=${bookingId}&bookingData=${encodeURIComponent(
         JSON.stringify(bookingData)
+      )}&selectedVoucherCode=${encodeURIComponent(
+        selectedVoucherCode || ""
+      )}&voucherData=${encodeURIComponent(
+        voucher ? JSON.stringify(voucher) : ""
       )}`;
 
       navigate(confirmUrl);
@@ -682,6 +808,79 @@ export default function BuyingTour() {
       setCreatingBooking(false);
     }
   };
+
+  const handleBooking = async () => {
+    // Tạo booking với voucherCode đã chọn (nếu có)
+    await createBookingWithVoucher(voucher?.code);
+  };
+
+  React.useEffect(() => {
+    const loadVouchers = async () => {
+      if (!tour?.id) {
+        setAvailableVouchers([]);
+        return;
+      }
+      try {
+        setLoadingVouchers(true);
+        setVoucherError(null);
+        // Lấy voucher theo tourId (giống trang tourDetail)
+        const response = await voucherEndpoints.getByTourId(tour.id);
+        const data = Array.isArray(response.data) ? response.data : [];
+        const normalized = data
+          .map((raw: any) => {
+            try {
+              const toNumber = (val: any) => {
+                if (val === null || val === undefined) return 0;
+                const num = Number(val);
+                return Number.isNaN(num) ? 0 : num;
+              };
+              const normalizedType =
+                String(raw.discountType || "").toUpperCase() === "PERCENT"
+                  ? VoucherDiscountType.PERCENT
+                  : VoucherDiscountType.FIXED;
+              return {
+                voucherId: Number(raw.voucherId ?? raw.id ?? 0),
+                companyId: Number(raw.companyId ?? 0),
+                code: raw.voucherCode || raw.code || "",
+                name: raw.name || raw.voucherName || "",
+                discountType: normalizedType,
+                discountValue: toNumber(raw.discountValue),
+                minOrderValue: toNumber(raw.minOrderValue),
+                totalQuantity: toNumber(raw.totalQuantity),
+                remainingQuantity: toNumber(raw.remainingQuantity),
+                startDate: raw.startDate || "",
+                endDate: raw.endDate || "",
+                status: raw.status ?? VoucherStatus.ACTIVE,
+                createdAt: raw.createdAt || "",
+                updatedAt: raw.updatedAt || "",
+                tourId: raw.tourId ? Number(raw.tourId) : undefined,
+                companyUsername: raw.companyUsername ?? undefined,
+                tourName: raw.tourName ?? undefined,
+                tourIds: Array.isArray(raw.tourIds)
+                  ? raw.tourIds
+                      .map((id: any) => Number(id))
+                      .filter((n: number) => !Number.isNaN(n))
+                  : undefined,
+              } as VoucherResponse;
+            } catch {
+              return null;
+            }
+          })
+          .filter((v): v is VoucherResponse => !!v && !!v.code);
+
+        setAvailableVouchers(normalized);
+      } catch {
+        setVoucherError(t("tour.confirm.voucherLoadFailed"));
+        setAvailableVouchers([]);
+        setSelectedVoucherId(null);
+        setVoucher(null);
+      } finally {
+        setLoadingVouchers(false);
+      }
+    };
+
+    loadVouchers();
+  }, [t, tour?.id]);
 
   // Hero carousel: chỉ dùng ảnh bìa (thumbnails)
   const imageList = React.useMemo(() => {
@@ -728,6 +927,8 @@ export default function BuyingTour() {
           scrollEventThrottle={32}
           removeClippedSubviews
           directionalLockEnabled
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled={true}
         >
           <View style={styles.imageWrapper}>
             {(() => {
@@ -1814,45 +2015,444 @@ export default function BuyingTour() {
               </View>
             )}
 
-            <View style={styles.totalSection}>
-              <Text style={styles.totalTitle}>{t("tour.booking.total")}</Text>
-              <View style={styles.totalBreakdown}>
-                {adultCount > 0 && (
-                  <View style={styles.totalRow}>
-                    <Text style={styles.totalLabel}>
-                      {t("tour.booking.adult")}
+            {/* Continue Button - Show before voucher selection */}
+            {!showVoucherAndPrice && (
+              <View style={{ marginTop: 24, marginBottom: 24 }}>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: loadingContinue ? "#ccc" : "#007AFF",
+                    borderRadius: 20,
+                    paddingVertical: 12,
+                    paddingHorizontal: 12,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginHorizontal: 80,
+                    marginBottom: 20,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 3 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 4,
+                    elevation: 4,
+                  }}
+                  onPress={handleContinue}
+                  disabled={loadingContinue}
+                >
+                  {loadingContinue ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "800",
+                        color: "#fff",
+                      }}
+                    >
+                      {t("common.continue") || "Tiếp tục"}
                     </Text>
-                    <Text style={styles.totalCount}>x{adultCount}</Text>
-                  </View>
-                )}
-                {childrenCount > 0 && (
-                  <View style={styles.totalRow}>
-                    <Text style={styles.totalLabel}>
-                      {t("tour.booking.children")}
-                    </Text>
-                    <Text style={styles.totalCount}>x{childrenCount}</Text>
-                  </View>
-                )}
-                {babyCount > 0 && (
-                  <View style={styles.totalRow}>
-                    <Text style={styles.totalLabel}>
-                      {t("tour.booking.baby")}
-                    </Text>
-                    <Text style={styles.totalCount}>x{babyCount}</Text>
-                  </View>
-                )}
+                  )}
+                </TouchableOpacity>
               </View>
-              <Text style={styles.totalPrice}>
-                {formatPrice(calculateTotal())} VND
+            )}
+
+            {/* Voucher Selection - Show after Continue */}
+            {showVoucherAndPrice && (
+              <>
+                <View style={styles.section}>
+                  <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>
+                      {t("tour.confirm.voucher")}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.selectVoucherButton}
+                      onPress={() => setShowVoucherModal(true)}
+                    >
+                      <Text style={styles.selectVoucherButtonText}>
+                        {t("tour.confirm.selectVoucher")}
+                      </Text>
+                      <Ionicons name="chevron-forward" size={20} color="#007AFF" />
+                    </TouchableOpacity>
+                  </View>
+
+                  {voucher ? (
+                    <View style={styles.voucherCard}>
+                      <View style={styles.voucherHeader}>
+                        <View style={styles.voucherIcon}>
+                          <Ionicons name="ticket" size={14} color="#007AFF" />
+                        </View>
+                        <Text style={styles.voucherCode}>
+                          {voucher.code.toUpperCase()}
+                        </Text>
+                        <Text style={styles.voucherDetailValue}>
+                          {voucher.discountType === VoucherDiscountType.PERCENT
+                            ? `${voucher.discountValue}%`
+                            : formatPriceKRW(voucher.discountValue)}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => {
+                            setVoucher(null);
+                            setSelectedVoucherPreview(null);
+                            setSelectedVoucherId(null);
+                          }}
+                          style={styles.removeVoucherButton}
+                        >
+                          <Ionicons name="close-circle" size={18} color="#999" />
+                        </TouchableOpacity>
+                      </View>
+                      {voucher.name && (
+                        <Text style={styles.voucherName}>{voucher.name}</Text>
+                      )}
+                    </View>
+                  ) : (
+                    <View style={styles.noVoucherCard}>
+                      <Text style={styles.noVoucherText}>
+                        {voucherError || t("tour.confirm.noVoucher")}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+            {/* Price Summary Section */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>
+                {t("tour.confirm.priceSummary")}
               </Text>
+
+              <View style={styles.priceCard}>
+                <View style={styles.priceItems}>
+                  <View style={styles.priceItem}>
+                    <View style={styles.priceItemLeft}>
+                      <Text style={styles.priceItemLabel}>
+                        {adultCount} {t("tour.booking.adultCount")}
+                      </Text>
+                      <Text style={styles.priceItemUnit}>
+                        {formatPriceKRW(tour.adultPrice || 0)} /person
+                      </Text>
+                    </View>
+                    <Text style={styles.priceItemValue}>
+                      {formatPriceKRW(adultCount * (tour.adultPrice || 0))}
+                    </Text>
+                  </View>
+
+                  {childrenCount > 0 && (
+                    <View style={styles.priceItem}>
+                      <View style={styles.priceItemLeft}>
+                        <Text style={styles.priceItemLabel}>
+                          {childrenCount} {t("tour.booking.childrenCount")}
+                        </Text>
+                        <Text style={styles.priceItemUnit}>
+                          {formatPriceKRW(tour.childrenPrice || 0)} /person
+                        </Text>
+                      </View>
+                      <Text style={styles.priceItemValue}>
+                        {formatPriceKRW(
+                          childrenCount * (tour.childrenPrice || 0)
+                        )}
+                      </Text>
+                    </View>
+                  )}
+
+                  {babyCount > 0 && (
+                    <View style={styles.priceItem}>
+                      <View style={styles.priceItemLeft}>
+                        <Text style={styles.priceItemLabel}>
+                          {babyCount} {t("tour.booking.babyCount")}
+                        </Text>
+                        <Text style={styles.priceItemUnit}>
+                          {formatPriceKRW(tour.babyPrice || 0)} /person
+                        </Text>
+                      </View>
+                      <Text style={styles.priceItemValue}>
+                        {formatPriceKRW(babyCount * (tour.babyPrice || 0))}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.priceDivider} />
+
+                {discountAmount > 0 && (
+                  <>
+                    <View style={styles.priceItem}>
+                      <View style={styles.priceItemLeft}>
+                        <Text
+                          style={[styles.priceItemLabel, { color: "#FF3B30" }]}
+                        >
+                      {t("tour.confirm.discount")}
+                    </Text>
+                      </View>
+                      <Text style={[styles.priceItemValue, { color: "#FF3B30" }]}>
+                      -{formatPriceKRW(discountAmount)}
+                    </Text>
+                  </View>
+                    <View style={styles.priceDivider} />
+                  </>
+                )}
+
+                {/* Total Amount (after voucher) */}
+                <View style={styles.totalSection}>
+                  <Text style={styles.totalLabel}>
+                    {t("tour.confirm.total")}
+                  </Text>
+                  <Text style={styles.totalValue}>
+                    {formatPrice(finalTotal)}
+                  </Text>
+                </View>
+
+                {/* Deposit Info - Show if tour has deposit percentage */}
+                {(() => {
+                  const depositPercent = selectedVoucherPreview?.depositPercentage 
+                    ? Number(selectedVoucherPreview.depositPercentage) * 100 
+                    : tour.depositPercentage;
+                  const depositAmount = selectedVoucherPreview?.finalDepositAmount !== undefined
+                    ? Number(selectedVoucherPreview.finalDepositAmount)
+                    : depositPercent && depositPercent > 0 && depositPercent < 100
+                    ? Math.round(finalTotal * (depositPercent / 100))
+                    : null;
+
+                  if (depositAmount !== null && depositAmount > 0 && depositPercent && depositPercent < 100) {
+                    return (
+                      <>
+                        <View style={styles.priceDivider} />
+                        <View style={styles.depositInfoSection}>
+                          <View style={styles.depositInfoRow}>
+                            <Text style={styles.depositInfoLabel}>
+                              {t("tour.booking.depositRequired") ||
+                                "Tiền cọc cần thanh toán"}
+                            </Text>
+                            <Text style={styles.depositInfoValue}>
+                              {formatPriceKRW(depositAmount)}
+                            </Text>
+                          </View>
+                          <Text style={styles.depositInfoNote}>
+                            {depositPercent
+                              ? `${Math.round(depositPercent)}% deposit payment required`
+                              : t("tour.booking.depositRequired")}
+                          </Text>
+                        </View>
+                      </>
+                    );
+                  }
+                  return null;
+                })()}
+              </View>
             </View>
 
-            <BookingButton onPress={handleBooking} disabled={creatingBooking} />
+            {/* Book Now Button - Only show after Continue */}
+            <BookingButton onPress={handleBooking} disabled={creatingBooking || !showVoucherAndPrice} />
+              </>
+            )}
 
             <View style={{ height: 100 }} />
           </View>
         </ScrollView>
       </View>
+      <Modal
+        visible={showVoucherModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowVoucherModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {t("tour.confirm.availableVouchers")}
+                </Text>
+                <TouchableOpacity
+                onPress={() => {
+                  setShowVoucherModal(false);
+                  setSelectedVoucherId(null);
+                }}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#333" />
+                </TouchableOpacity>
+              </View>
+
+            <ScrollView style={styles.modalScrollView}>
+              {loadingVouchers ? (
+                <View style={styles.voucherLoadingContainer}>
+                  <ActivityIndicator size="small" color="#007AFF" />
+                  <Text style={styles.voucherLoadingText}>
+                    {t("tour.confirm.loadingVouchers")}
+                    </Text>
+                </View>
+              ) : previewVoucherResponses.length > 0 ? (
+                previewVoucherResponses.map((pv) => {
+                  // Tìm voucher tương ứng từ availableVouchers để lấy thông tin đầy đủ
+                  const v = availableVouchers.find(
+                    (av) => av.code === pv.voucherCode || av.voucherId === pv.voucherId
+                  ) || {
+                    voucherId: pv.voucherId || 0,
+                    code: pv.voucherCode || "",
+                    name: "",
+                    discountType: pv.discountType || VoucherDiscountType.FIXED,
+                    discountValue: pv.discountValue || 0,
+                  };
+
+                  return (
+                    <TouchableOpacity
+                      key={pv.voucherId || pv.voucherCode || `voucher-${Math.random()}`}
+                      style={[
+                        styles.voucherOptionCard,
+                        selectedVoucherId === v.voucherId &&
+                          styles.voucherOptionCardSelected,
+                      ]}
+                      onPress={() => setSelectedVoucherId(v.voucherId)}
+                    >
+                      <View style={styles.voucherOptionRow}>
+                        <View style={styles.radioButtonContainer}>
+                          <View
+                            style={[
+                              styles.radioButton,
+                              selectedVoucherId === v.voucherId &&
+                                styles.radioButtonSelected,
+                            ]}
+                          >
+                            {selectedVoucherId === v.voucherId && (
+                              <View style={styles.radioButtonInner} />
+                            )}
+                          </View>
+                        </View>
+                        <View style={styles.voucherOptionIcon}>
+                          <Ionicons name="ticket-outline" size={20} color="#8BC5FF" />
+                        </View>
+                        <Text style={styles.voucherOptionCode}>
+                          {(pv.voucherCode || v.code || "").toUpperCase()}
+                        </Text>
+                        <Text style={styles.voucherOptionDetailValue}>
+                          {pv.discountType === VoucherDiscountType.PERCENT
+                            ? `${pv.discountValue}%`
+                            : formatPriceKRW(pv.discountValue || 0)}
+                        </Text>
+                      </View>
+                      {(pv.voucherCode || v.name) && (
+                        <Text style={styles.voucherOptionName}>
+                          {v.name || pv.voucherCode || ""}
+                        </Text>
+                      )}
+                      {pv.discountAmount !== undefined && (
+                        <Text style={[styles.voucherOptionName, { fontSize: 12, color: "#666", marginTop: 4 }]}>
+                          Discount: {formatPriceKRW(pv.discountAmount)}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })
+              ) : availableVouchers.length > 0 ? (
+                availableVouchers.map((v) => (
+                    <TouchableOpacity
+                    key={v.voucherId}
+                    style={[
+                      styles.voucherOptionCard,
+                      selectedVoucherId === v.voucherId &&
+                        styles.voucherOptionCardSelected,
+                    ]}
+                    onPress={() => setSelectedVoucherId(v.voucherId)}
+                  >
+                    <View style={styles.voucherOptionRow}>
+                      <View style={styles.radioButtonContainer}>
+                        <View
+                          style={[
+                            styles.radioButton,
+                            selectedVoucherId === v.voucherId &&
+                              styles.radioButtonSelected,
+                          ]}
+                        >
+                          {selectedVoucherId === v.voucherId && (
+                            <View style={styles.radioButtonInner} />
+                  )}
+                </View>
+                      </View>
+                    <View style={styles.voucherOptionIcon}>
+                      <Ionicons name="ticket-outline" size={20} color="#8BC5FF" />
+                      </View>
+                      <Text style={styles.voucherOptionCode}>
+                        {v.code.toUpperCase()}
+                      </Text>
+                      <Text style={styles.voucherOptionDetailValue}>
+                        {v.discountType === VoucherDiscountType.PERCENT
+                          ? `${v.discountValue}%`
+                          : formatPriceKRW(v.discountValue)}
+                  </Text>
+                </View>
+                    {v.name && (
+                      <Text style={styles.voucherOptionName}>{v.name}</Text>
+                    )}
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View style={styles.voucherEmptyContainer}>
+                  <Ionicons name="ticket-outline" size={48} color="#ccc" />
+                  <Text style={styles.voucherEmptyText}>
+                    {voucherError || t("tour.confirm.noVoucherAvailable")}
+                  </Text>
+            </View>
+              )}
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => {
+                  setShowVoucherModal(false);
+                  setSelectedVoucherId(null);
+                }}
+              >
+                <Text style={styles.modalCancelButtonText}>
+                  {t("tour.confirm.close")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalConfirmButton,
+                  creatingBooking && styles.modalConfirmButtonDisabled,
+                ]}
+                onPress={async () => {
+                  if (selectedVoucherId) {
+                    const selectedVoucher = availableVouchers.find(
+                      (v) => v.voucherId === selectedVoucherId
+                    );
+                    if (selectedVoucher) {
+                      setVoucher(selectedVoucher);
+                      
+                      // Tìm preview response tương ứng với voucher được chọn
+                      const previewResponse = previewVoucherResponses.find(
+                        (pv) => pv.voucherCode === selectedVoucher.code || pv.voucherId === selectedVoucher.voucherId
+                      );
+                      if (previewResponse) {
+                        setSelectedVoucherPreview(previewResponse);
+                      } else {
+                        // Nếu không tìm thấy preview response, reset về null
+                        setSelectedVoucherPreview(null);
+                      }
+                      
+                      setShowVoucherModal(false);
+                      setSelectedVoucherId(null);
+                      
+                      // Chỉ lưu voucher vào state, không tạo booking ngay
+                      // Booking sẽ được tạo khi user nhấn "Book Now"
+                    }
+                  } else {
+                    // Nếu không chọn voucher, chỉ đóng modal
+                    setShowVoucherModal(false);
+                    setSelectedVoucherId(null);
+                  }
+                }}
+                disabled={false}
+              >
+                {creatingBooking ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.modalConfirmButtonText}>
+                    {selectedVoucherId ? t("tour.confirm.select") : (t("tour.confirm.skip") || "Skip")}
+                  </Text>
+                )}
+              </TouchableOpacity>
+          </View>
+      </View>
+        </View>
+      </Modal>
     </MainLayout>
   );
 }
@@ -2012,6 +2612,7 @@ const DateField: React.FC<DateFieldProps> = ({
           animationType="fade"
           visible={showPicker}
           onRequestClose={() => setShowPicker(false)}
+          presentationStyle="overFullScreen"
         >
           <Pressable
             style={styles.iosDateOverlay}
@@ -2020,6 +2621,7 @@ const DateField: React.FC<DateFieldProps> = ({
             <Pressable
               style={styles.iosDateCard}
               onPress={(e) => e.stopPropagation()}
+              onStartShouldSetResponder={() => true}
             >
               <Text style={styles.iosDateTitle}>
                 {t("tour.booking.departureDate")}
@@ -2034,11 +2636,41 @@ const DateField: React.FC<DateFieldProps> = ({
                   value={selectedDate}
                   mode="date"
                   display="compact"
-                  onChange={handleDateChange}
+                  onChange={(event, selected) => {
+                    if (selected) {
+                      setSelectedDate(selected);
+                    }
+                    if (event?.type === "dismissed") {
+                      setShowPicker(false);
+                    }
+                  }}
                   minimumDate={minimumDate || new Date()}
                   maximumDate={maximumDate || undefined}
                   style={styles.iosDatePicker}
                 />
+              </View>
+              <View style={styles.iosDateActions}>
+                <TouchableOpacity
+                  style={[styles.modalCancelButton, { marginRight: 8 }]}
+                  onPress={() => setShowPicker(false)}
+                >
+                  <Text style={styles.modalCancelButtonText}>
+                    {t("common.cancel") || "Cancel"}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalConfirmButton}
+                  onPress={() => {
+                    onChange(formatDate(selectedDate));
+                    setTimeout(() => {
+                      setShowPicker(false);
+                    }, 200);
+                  }}
+                >
+                  <Text style={styles.modalConfirmButtonText}>
+                    {t("common.done") || "Done"}
+                  </Text>
+                </TouchableOpacity>
               </View>
             </Pressable>
           </Pressable>
@@ -2132,6 +2764,7 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
           animationType="fade"
           visible={showPicker}
           onRequestClose={() => setShowPicker(false)}
+          presentationStyle="overFullScreen"
         >
           <Pressable
             style={styles.iosDateOverlay}
@@ -2140,6 +2773,7 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
             <Pressable
               style={styles.iosDateCard}
               onPress={(e) => e.stopPropagation()}
+              onStartShouldSetResponder={() => true}
             >
               <Text style={styles.iosDateTitle}>
                 {t("tour.booking.dateOfBirth")}
@@ -2154,10 +2788,40 @@ const DobField: React.FC<DobFieldProps> = ({ value, onChange }) => {
                   value={selectedDate}
                   mode="date"
                   display="compact"
-                  onChange={handleDateChange}
+                  onChange={(event, selected) => {
+                    if (selected) {
+                      setSelectedDate(selected);
+                    }
+                    if (event?.type === "dismissed") {
+                      setShowPicker(false);
+                    }
+                  }}
                   maximumDate={new Date()}
                   style={styles.iosDatePicker}
                 />
+              </View>
+              <View style={styles.iosDateActions}>
+                <TouchableOpacity
+                  style={[styles.modalCancelButton, { marginRight: 8 }]}
+                  onPress={() => setShowPicker(false)}
+                >
+                  <Text style={styles.modalCancelButtonText}>
+                    {t("common.cancel") || "Cancel"}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalConfirmButton}
+                  onPress={() => {
+                    onChange(formatDate(selectedDate));
+                    setTimeout(() => {
+                      setShowPicker(false);
+                    }, 200);
+                  }}
+                >
+                  <Text style={styles.modalConfirmButtonText}>
+                    {t("common.done") || "Done"}
+                  </Text>
+                </TouchableOpacity>
               </View>
             </Pressable>
           </Pressable>

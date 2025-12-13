@@ -33,6 +33,7 @@ import {
   getTourThumbnailUrl,
   normalizeHtmlImageSrc,
 } from "../../../src/utils/media";
+import { formatPriceKRW } from "../../../src/utils/currency";
 
 type VoucherPreviewItem = {
   id: number;
@@ -76,28 +77,23 @@ export default function TourDetail() {
     const loadTour = async () => {
       try {
         setLoading(true);
-        const res = await tourEndpoints.getById(tourId);
-        console.log("[TourDetail] Tour data loaded:", {
-          tourId,
-          tour: res.data,
-          description: res.data?.description,
-          contents: res.data?.contents,
-          contentsLength: res.data?.contents?.length,
-        });
-        if (res.data?.contents) {
-          res.data.contents.forEach((content: any, idx: number) => {
-            console.log(`[TourDetail] Content ${idx}:`, {
-              id: content.id,
-              title: content.title,
-              description: content.description,
-              descriptionLength: content.description?.length,
-              descriptionPreview: content.description?.substring(0, 200),
-            });
-          });
+        console.log("[Tour Detail] Loading tour with ID:", tourId);
+        if (!tourId || isNaN(tourId) || tourId <= 0) {
+          console.error("[Tour Detail] Invalid tourId:", tourId);
+          Alert.alert(t("common.error"), t("tour.errors.loadFailed"));
+          return;
         }
+        const res = await tourEndpoints.getById(tourId);
+        console.log("[Tour Detail] Tour loaded successfully:", res.data?.id, res.data?.tourName);
         setTour(res.data);
         setCurrentImageIndex(0);
-      } catch {
+      } catch (error: any) {
+        console.error("[Tour Detail] Error loading tour:", {
+          tourId,
+          error: error?.message,
+          response: error?.response?.data,
+          status: error?.response?.status
+        });
         Alert.alert(t("common.error"), t("tour.errors.loadFailed"));
       } finally {
         setLoading(false);
@@ -132,7 +128,7 @@ export default function TourDetail() {
     if (voucher.discountType === VoucherDiscountType.PERCENT) {
       return `-${value}%`;
     }
-    return `-${value.toLocaleString()} Đ`;
+    return `-${formatPriceKRW(value)}`;
   }, []);
 
   const formatVoucherExpiry = useCallback((value?: string) => {
@@ -593,9 +589,7 @@ export default function TourDetail() {
                   adjustsFontSizeToFit
                   minimumFontScale={0.85}
                 >
-                  {tour.adultPrice
-                    ? `${tour.adultPrice.toLocaleString()} Đ`
-                    : ""}
+                  {tour.adultPrice ? formatPriceKRW(tour.adultPrice) : ""}
                 </Text>
               </View>
               <View style={styles.infoDivider} />
@@ -622,9 +616,7 @@ export default function TourDetail() {
                   adjustsFontSizeToFit
                   minimumFontScale={0.85}
                 >
-                  {tour.childrenPrice
-                    ? `${tour.childrenPrice.toLocaleString()} Đ`
-                    : ""}
+                  {tour.childrenPrice ? formatPriceKRW(tour.childrenPrice) : ""}
                 </Text>
               </View>
               <View style={styles.infoDivider} />
@@ -651,7 +643,7 @@ export default function TourDetail() {
                   adjustsFontSizeToFit
                   minimumFontScale={0.85}
                 >
-                  {tour.babyPrice ? `${tour.babyPrice.toLocaleString()} Đ` : ""}
+                  {tour.babyPrice ? formatPriceKRW(tour.babyPrice) : ""}
                 </Text>
               </View>
             </View>
@@ -708,14 +700,6 @@ export default function TourDetail() {
                   if (!html || typeof html !== "string") return null;
 
                   try {
-                    console.log(
-                      `[TourDetail] renderHtmlDescription - Content ${idx}:`,
-                      {
-                        htmlLength: html.length,
-                        htmlPreview: html.substring(0, 500),
-                      }
-                    );
-
                     // Tách danh sách ảnh từ toàn bộ HTML
                     const imgRegex = /<img[^>]*src=["']([^"']+)["'][^>]*>/gi;
                     const images: string[] = [];
@@ -725,32 +709,10 @@ export default function TourDetail() {
 
                     while ((imgMatch = imgRegex.exec(html))) {
                       const rawSrc = imgMatch[1];
-                      console.log(
-                        `[TourDetail] Found image ${imgCount} in content ${idx}:`,
-                        {
-                          rawSrc,
-                          fullMatch: imgMatch[0],
-                        }
-                      );
                       const resolved = normalizeHtmlImageSrc(rawSrc);
-                      console.log(
-                        `[TourDetail] Resolved image ${imgCount} in content ${idx}:`,
-                        {
-                          rawSrc,
-                          resolved,
-                        }
-                      );
                       if (resolved) images.push(resolved);
                       imgCount++;
                     }
-
-                    console.log(
-                      `[TourDetail] Total images found in content ${idx}:`,
-                      {
-                        count: images.length,
-                        images,
-                      }
-                    );
 
                     // Loại bỏ thẻ <img> khỏi phần text
                     workingHtml = workingHtml.replace(
@@ -821,7 +783,9 @@ export default function TourDetail() {
                               marginTop: 8,
                               backgroundColor: "#f8f9fa",
                             }}
-                            resizeMode="contain"
+                            contentFit="contain"
+                            cachePolicy="disk"
+                            transition={200}
                           />
                         ))}
                       </View>
@@ -958,10 +922,7 @@ export default function TourDetail() {
                               :
                             </Text>
                             <Text style={styles.voucherOptionDetailValue}>
-                              {Number(
-                                voucher.minOrderValue || 0
-                              ).toLocaleString()}{" "}
-                              Đ
+                              {formatPriceKRW(voucher.minOrderValue)}
                             </Text>
                           </View>
                         )}

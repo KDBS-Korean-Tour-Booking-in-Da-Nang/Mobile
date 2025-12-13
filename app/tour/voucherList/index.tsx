@@ -20,6 +20,7 @@ import {
 } from "../../../src/types/response/voucher.response";
 import styles from "./styles";
 import { voucherEndpoints } from "../../../services/endpoints/voucher";
+import { formatPriceKRW } from "../../../src/utils/currency";
 
 const toNumber = (value: any): number => {
   if (value === null || value === undefined) return 0;
@@ -227,7 +228,7 @@ export default function VoucherList() {
                     <Text style={styles.voucherDetailValue}>
                       {voucher.discountType === VoucherDiscountType.PERCENT
                         ? `${voucher.discountValue}%`
-                        : `${voucher.discountValue.toLocaleString()} VND`}
+                        : formatPriceKRW(voucher.discountValue)}
                     </Text>
                   </View>
 

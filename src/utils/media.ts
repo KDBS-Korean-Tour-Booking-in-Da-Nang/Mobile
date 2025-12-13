@@ -58,49 +58,24 @@ const buildUploadUrl = (
 
   // Check if path is already a full URL (http/https/blob storage) before processing
   if (isAbsoluteUrl(trimmedPath)) {
-    console.log("[buildUploadUrl] Already absolute URL (returning as-is):", {
-      original: path,
-      trimmed: trimmedPath,
-      scope,
-    });
     return trimmedPath;
   }
 
   // Remove leading slash if path starts with http/https (edge case: /https://...)
   const cleanedPath = trimmedPath.replace(/^\/+(https?:\/\/)/i, "$1");
   if (isAbsoluteUrl(cleanedPath)) {
-    console.log("[buildUploadUrl] Cleaned absolute URL:", {
-      original: path,
-      trimmed: trimmedPath,
-      cleaned: cleanedPath,
-      scope,
-    });
     return cleanedPath;
   }
 
   const normalized = normalizeUploadPath(cleanedPath, scope);
   if (!normalized) return fallback;
   if (isAbsoluteUrl(normalized)) {
-    console.log("[buildUploadUrl] Normalized to absolute URL:", {
-      original: path,
-      normalized,
-      scope,
-    });
     return normalized;
   }
   const origin = getApiOrigin();
   if (!origin) return normalized;
   const ensured = normalized.startsWith("/") ? normalized : `/${normalized}`;
   const finalUrl = `${origin}${ensured}`;
-  console.log("[buildUploadUrl] Built URL:", {
-    original: path,
-    trimmed: trimmedPath,
-    cleaned: cleanedPath,
-    normalized,
-    origin,
-    final: finalUrl,
-    scope,
-  });
   return finalUrl;
 };
 
@@ -121,8 +96,33 @@ export const mapContentImages = (images?: (string | null)[]): string[] => {
 };
 
 export const normalizeHtmlImageSrc = (src?: string | null): string => {
-  console.log("[normalizeHtmlImageSrc] Input src:", src);
-  const result = getContentImageUrl(src);
-  console.log("[normalizeHtmlImageSrc] Output URL:", result);
+  if (!src) {
+    return "";
+  }
+
+  // Decode HTML entities (e.g., &amp; -> &, &lt; -> <, etc.)
+  // This is important for URLs that come from HTML content
+  let decodedSrc = src
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+
+  // Check if it's already an absolute URL (including blob storage)
+  if (isAbsoluteUrl(decodedSrc)) {
+    return decodedSrc;
+  }
+
+  // Remove leading slash if path starts with http/https (edge case: /https://...)
+  const cleanedSrc = decodedSrc.replace(/^\/+(https?:\/\/)/i, "$1");
+  if (isAbsoluteUrl(cleanedSrc)) {
+    return cleanedSrc;
+  }
+
+  // If not absolute, try to build URL using getContentImageUrl
+  const result = getContentImageUrl(cleanedSrc);
   return result;
 };

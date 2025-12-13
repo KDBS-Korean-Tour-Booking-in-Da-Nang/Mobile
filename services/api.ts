@@ -20,7 +20,7 @@ const api = axios.create({
 });
 export const apiForm = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 20000,
+  timeout: 60000, // 60 seconds for file uploads
 });
 
 api.interceptors.request.use(
@@ -51,8 +51,15 @@ api.interceptors.request.use(
         const pathVar = pathParts[2];
         const nextPathVar = pathParts[3];
 
+        // Chỉ kiểm tra userId cho endpoint transactions nếu pathVar là số (userId)
+        // Bỏ qua các endpoint như change-status, create, etc.
         if (endpoint === "transactions" && pathVar) {
-          if (/[a-zA-Z]/.test(pathVar)) {
+          // Bỏ qua các endpoint không có userId trong path
+          const skipValidationEndpoints = ["change-status", "create", "update"];
+          if (skipValidationEndpoints.includes(pathVar)) {
+            // Không cần kiểm tra userId cho các endpoint này
+          } else if (/[a-zA-Z]/.test(pathVar)) {
+            // Chỉ kiểm tra nếu pathVar có chữ cái và không phải là endpoint đặc biệt
             console.error("[API Interceptor] Invalid userId in URL path:", {
               url,
               endpoint,
@@ -116,6 +123,17 @@ apiForm.interceptors.request.use(
 );
 
 api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      await AsyncStorage.removeItem("authToken");
+      await AsyncStorage.removeItem("userData");
+    }
+    return Promise.reject(error);
+  }
+);
+
+apiForm.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401 || error.response?.status === 403) {

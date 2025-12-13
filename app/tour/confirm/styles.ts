@@ -213,6 +213,16 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#111",
   },
+  depositLabel: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#111",
+  },
+  depositValue: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#2F9E44",
+  },
   discountLabel: {
     fontSize: 14,
     fontWeight: "600",
@@ -230,8 +240,18 @@ const styles = StyleSheet.create({
   },
   totalValue: {
     fontSize: 18,
-    color: "#2F9E44",
+    color: "#111",
     fontWeight: "800",
+  },
+  remainingLabel: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#111",
+  },
+  remainingValue: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#2F9E44",
   },
 
   // Confirm Button Styles
@@ -463,6 +483,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  depositNote: {
+    marginTop: 6,
+    fontSize: 12,
+    color: "#666",
+  },
 
   // Voucher Styles
   sectionHeader: {
@@ -581,31 +606,45 @@ const styles = StyleSheet.create({
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContent: {
     backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderRadius: 28,
     maxHeight: "80%",
-    paddingBottom: 20,
+    paddingBottom: 0,
+    width: "92%",
+    alignSelf: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 8,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 20,
+    padding: 24,
+    paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "#F5F5F5",
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "#111",
+    fontWeight: "600",
+    color: "#333",
+    letterSpacing: -0.3,
   },
   modalCloseButton: {
-    padding: 4,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: "#F8F8F8",
   },
   modalScrollView: {
     paddingHorizontal: 20,
@@ -736,40 +775,41 @@ const styles = StyleSheet.create({
   },
   modalFooter: {
     flexDirection: "row",
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
+    padding: 24,
+    paddingTop: 20,
     gap: 12,
     borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: "#F5F5F5",
   },
   modalCancelButton: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: "#f8f9fa",
+    borderRadius: 24,
+    backgroundColor: "#FAFAFA",
+    borderWidth: 1.5,
+    borderColor: "#E8E8E8",
     alignItems: "center",
     justifyContent: "center",
   },
   modalCancelButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
     color: "#666",
   },
   modalConfirmButton: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: "#007AFF",
+    borderRadius: 24,
+    backgroundColor: "#5BA3FF",
     alignItems: "center",
     justifyContent: "center",
   },
   modalConfirmButtonDisabled: {
-    backgroundColor: "#ccc",
+    backgroundColor: "#B8D9FF",
   },
   modalConfirmButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 15,
+    fontWeight: "600",
     color: "#fff",
   },
 });

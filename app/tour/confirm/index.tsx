@@ -1,28 +1,31 @@
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Modal,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import MainLayout from "../../../components/MainLayout";
 import { useNavigation } from "../../../navigation/navigation";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { useAuthContext } from "../../../src/contexts/authContext";
-import { useTranslation } from "react-i18next";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { tourEndpoints } from "../../../services/endpoints/tour";
 import { voucherEndpoints } from "../../../services/endpoints/voucher";
+import { useAuthContext } from "../../../src/contexts/authContext";
 import { TourResponse } from "../../../src/types/response/tour.response";
 import {
-  VoucherResponse,
+  ApplyVoucherResponse,
   VoucherDiscountType,
-  VoucherStatus,
+  VoucherResponse,
 } from "../../../src/types/response/voucher.response";
+import {
+  formatPriceKRW,
+  formatPriceKRWNumber,
+} from "../../../src/utils/currency";
 import styles from "./styles";
 
 export default function ConfirmTour() {
@@ -39,6 +42,22 @@ export default function ConfirmTour() {
           : (params.bookingData as string)
       )
     : null;
+  const voucherDataParam = params.voucherData
+    ? Array.isArray(params.voucherData)
+      ? params.voucherData[0]
+      : params.voucherData
+    : "";
+
+  const voucherFromParams: VoucherResponse | null = React.useMemo(() => {
+    if (!voucherDataParam) return null;
+    try {
+      const parsed = JSON.parse(String(voucherDataParam));
+      if (parsed && parsed.code) {
+        return parsed as VoucherResponse;
+      }
+    } catch {}
+    return null;
+  }, [voucherDataParam]);
   const bookingIdParam = Array.isArray(params.bookingId)
     ? params.bookingId[0]
     : params.bookingId;
@@ -72,16 +91,10 @@ export default function ConfirmTour() {
   const [tour, setTour] = React.useState<TourResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [confirming, setConfirming] = React.useState(false);
-  const [voucher, setVoucher] = React.useState<VoucherResponse | null>(null);
-  const [showVoucherModal, setShowVoucherModal] = React.useState(false);
-  const [availableVouchers, setAvailableVouchers] = React.useState<
-    VoucherResponse[]
-  >([]);
-  const [selectedVoucherId, setSelectedVoucherId] = React.useState<
-    number | null
-  >(null);
-  const [loadingVouchers, setLoadingVouchers] = React.useState(false);
-  const [voucherError, setVoucherError] = React.useState<string | null>(null);
+  const [bookingStatus, setBookingStatus] = React.useState<string>("");
+  const [voucherPreview, setVoucherPreview] =
+    React.useState<ApplyVoucherResponse | null>(null);
+  const [bookingResponse, setBookingResponse] = React.useState<any | null>(null);
 
   React.useEffect(() => {
     try {
@@ -121,119 +134,6 @@ export default function ConfirmTour() {
     [normalizeDateString]
   );
 
-  const loadVouchers = React.useCallback(
-    async (bookingId: number) => {
-      if (!bookingId) {
-        setAvailableVouchers([]);
-        setSelectedVoucherId(null);
-        setVoucher(null);
-        return;
-      }
-      try {
-        setLoadingVouchers(true);
-        setVoucherError(null);
-        const response = await voucherEndpoints.previewAllAvailable(bookingId);
-
-        const data = Array.isArray(response.data) ? response.data : [];
-        const normalized = data
-          .map((raw: any) => {
-            try {
-              const toNumber = (val: any) => {
-                if (val === null || val === undefined) return 0;
-                const num = Number(val);
-                return Number.isNaN(num) ? 0 : num;
-              };
-
-              const normalizedType =
-                String(raw.discountType || "").toUpperCase() === "PERCENT"
-                  ? VoucherDiscountType.PERCENT
-                  : VoucherDiscountType.FIXED;
-
-              return {
-                voucherId: Number(raw.voucherId ?? raw.id ?? 0),
-                companyId: Number(raw.companyId ?? 0),
-                code: raw.voucherCode || raw.code || "",
-                name: raw.name || raw.voucherName || "",
-                discountType: normalizedType,
-                discountValue: toNumber(raw.discountValue),
-                minOrderValue: toNumber(raw.minOrderValue),
-                totalQuantity: toNumber(raw.totalQuantity),
-                remainingQuantity: toNumber(raw.remainingQuantity),
-                startDate: raw.startDate || "",
-                endDate: raw.endDate || "",
-                status: raw.status ?? VoucherStatus.ACTIVE,
-                createdAt: raw.createdAt || "",
-                updatedAt: raw.updatedAt || "",
-                tourId: raw.tourId ? Number(raw.tourId) : undefined,
-                companyUsername: raw.companyUsername ?? undefined,
-                tourName: raw.tourName ?? undefined,
-                tourIds: Array.isArray(raw.tourIds)
-                  ? raw.tourIds
-                      .map((id: any) => Number(id))
-                      .filter((n: number) => !Number.isNaN(n))
-                  : undefined,
-              } as VoucherResponse;
-            } catch {
-              return null;
-            }
-          })
-          .filter((v): v is VoucherResponse => !!v && !!v.code);
-
-        if (normalized.length === 0) {
-          setVoucherError(t("tour.confirm.noVoucherAvailable"));
-        } else {
-          setVoucherError(null);
-        }
-
-        setAvailableVouchers(normalized);
-        if (voucher) {
-          const stillExists = normalized.find(
-            (item) => item.code === voucher.code
-          );
-          if (!stillExists) {
-            setVoucher(null);
-            setSelectedVoucherId(null);
-          }
-        }
-        if (normalized.length === 0) {
-          setSelectedVoucherId(null);
-          setVoucher(null);
-        }
-      } catch (error) {
-        setVoucherError(t("tour.confirm.voucherLoadFailed"));
-        setAvailableVouchers([]);
-        setSelectedVoucherId(null);
-        setVoucher(null);
-      } finally {
-        setLoadingVouchers(false);
-      }
-    },
-    [t, voucher]
-  );
-
-  const applyVoucherToBooking = React.useCallback(
-    async (bookingId: number) => {
-      if (!voucher?.code) return true;
-      try {
-        await voucherEndpoints.applyVoucher({
-          bookingId,
-          voucherCode: voucher.code,
-        });
-        return true;
-      } catch (err: any) {
-        const message =
-          err?.response?.data?.message ||
-          err?.message ||
-          t("tour.confirm.voucherApplyFailed");
-        Alert.alert(t("common.error"), message);
-        setVoucher(null);
-        setSelectedVoucherId(null);
-        return false;
-      }
-    },
-    [voucher, t]
-  );
-
   const originalTotal = React.useMemo(() => {
     if (!bookingData || !tour) return 0;
     const adultTotal =
@@ -246,20 +146,106 @@ export default function ConfirmTour() {
   }, [bookingData, tour]);
 
   const computedDiscount = React.useMemo(() => {
-    if (!voucher) return 0;
+    if (!voucherFromParams) return 0;
     const base = originalTotal || 0;
     if (base <= 0) return 0;
-    if (voucher.discountType === VoucherDiscountType.PERCENT) {
-      return Math.floor((base * Number(voucher.discountValue || 0)) / 100);
+    const discountTypeStr = String(voucherFromParams.discountType || "").toUpperCase();
+    if (discountTypeStr === "PERCENT" || discountTypeStr === VoucherDiscountType.PERCENT) {
+      return Math.floor(
+        (base * Number(voucherFromParams.discountValue || 0)) / 100
+      );
     }
-    return Number(voucher.discountValue || 0);
-  }, [voucher, originalTotal]);
+    return Number(voucherFromParams.discountValue || 0);
+  }, [voucherFromParams, originalTotal]);
 
-  const discountAmount = Math.min(
+  const discountAmount = React.useMemo(() => {
+    if (voucherPreview?.discountAmount !== undefined) {
+      return Math.max(Number(voucherPreview.discountAmount || 0), 0);
+    }
+    return Math.min(
     Math.max(computedDiscount, 0),
     Math.max(originalTotal, 0)
   );
-  const finalTotal = Math.max(originalTotal - discountAmount, 0);
+  }, [voucherPreview, computedDiscount, originalTotal]);
+
+  const finalTotal = React.useMemo(() => {
+    // Ưu tiên totalDiscountAmount từ booking response (khi vào từ history booking)
+    if (bookingResponse?.totalDiscountAmount !== undefined && bookingResponse.totalDiscountAmount > 0) {
+      return Math.max(Number(bookingResponse.totalDiscountAmount), 0);
+    }
+    if (voucherPreview?.finalTotal !== undefined) {
+      return Math.max(Number(voucherPreview.finalTotal || 0), 0);
+    }
+    return Math.max(originalTotal - discountAmount, 0);
+  }, [voucherPreview, originalTotal, discountAmount, bookingResponse]);
+
+  const displayTotal = finalTotal;
+
+  const normalizedBookingStatus = React.useMemo(
+    () => String(bookingStatus || "").toUpperCase(),
+    [bookingStatus]
+  );
+
+  const depositPercentage = React.useMemo(() => {
+    // Ưu tiên depositPercentage từ voucherPreview nếu có
+    if (voucherPreview?.depositPercentage !== undefined) {
+      const raw = Number(voucherPreview.depositPercentage) * 100;
+      if (!Number.isNaN(raw)) {
+        return Math.min(Math.max(raw, 0), 100);
+      }
+    }
+    const raw = Number(tour?.depositPercentage ?? 100);
+    if (Number.isNaN(raw)) return 100;
+    return Math.min(Math.max(raw, 0), 100);
+  }, [tour?.depositPercentage, voucherPreview?.depositPercentage]);
+
+  const amountDueNow = React.useMemo(() => {
+    // Ưu tiên depositDiscountAmount từ booking response (khi vào từ history booking)
+    // Đây là giá trị chính xác nhất vì đã được tính từ backend với voucher discount
+    if (bookingResponse?.depositDiscountAmount !== undefined && bookingResponse.depositDiscountAmount > 0) {
+      return Math.max(Math.round(Number(bookingResponse.depositDiscountAmount)), 0);
+    }
+    // Ưu tiên finalDepositAmount từ voucherPreview (đã được tính đúng với voucher)
+    if (voucherPreview?.finalDepositAmount !== undefined) {
+      return Math.max(Number(voucherPreview.finalDepositAmount || 0), 0);
+    }
+    if (finalTotal <= 0) return 0;
+    if (depositPercentage > 0 && depositPercentage < 100) {
+      return Math.round(finalTotal * (depositPercentage / 100));
+    }
+    return finalTotal;
+  }, [depositPercentage, finalTotal, voucherPreview, bookingResponse]);
+
+  const remainingBalance = React.useMemo(() => {
+    if (voucherPreview?.finalRemainingAmount !== undefined) {
+      return Math.max(Number(voucherPreview.finalRemainingAmount || 0), 0);
+    }
+    return Math.max(finalTotal - amountDueNow, 0);
+  }, [finalTotal, amountDueNow, voucherPreview]);
+
+  React.useEffect(() => {
+    const loadVoucherPreview = async () => {
+      if (!currentBookingId) return;
+      try {
+        // Try to get voucher preview from booking
+        // If booking has voucherCode (đã được apply khi tạo booking), it will return preview với đầy đủ thông tin
+        try {
+          const res = await voucherEndpoints.previewApply(currentBookingId);
+          if (res.data) {
+            setVoucherPreview(res.data);
+            return;
+          }
+        } catch {
+          // Booking chưa có voucherCode, không cần làm gì
+          // Voucher đã được apply khi tạo booking nên sẽ có trong response
+          setVoucherPreview(null);
+        }
+      } catch {
+        setVoucherPreview(null);
+      }
+    };
+    loadVoucherPreview();
+  }, [currentBookingId]);
 
   React.useEffect(() => {
     const loadBooking = async () => {
@@ -268,6 +254,9 @@ export default function ConfirmTour() {
         const response = (await tourEndpoints.getBookingById(currentBookingId))
           .data;
         if (!response) return;
+
+        // Lưu booking response để dùng depositDiscountAmount và totalDiscountAmount
+        setBookingResponse(response);
 
         if (response.tourId && response.tourId !== currentTourId) {
           setCurrentTourId(response.tourId);
@@ -304,6 +293,11 @@ export default function ConfirmTour() {
 
         setBookingData(normalized);
 
+        // Store booking status to determine payment type
+        if (response.bookingStatus) {
+          setBookingStatus(String(response.bookingStatus));
+        }
+
         const tourKey = String(response.tourId ?? currentTourId ?? "na");
         const pendingKeyCache = `pendingBooking:${userEmailKey}:${tourKey}`;
         try {
@@ -311,10 +305,10 @@ export default function ConfirmTour() {
             pendingKeyCache,
             JSON.stringify({ bookingId: response.bookingId, ts: Date.now() })
           );
-        } catch (err) {
+        } catch {
           // Unable to cache booking
         }
-      } catch (error) {
+      } catch {
         // Load booking failed
       }
     };
@@ -331,7 +325,7 @@ export default function ConfirmTour() {
   React.useEffect(() => {
     const restorePendingBooking = async () => {
       if (currentBookingId) return;
-      
+
       if (currentTourId && resolvedEmail) {
         try {
           const cached = await AsyncStorage.getItem(pendingKey);
@@ -342,7 +336,7 @@ export default function ConfirmTour() {
               return;
             }
           }
-        } catch (err) {}
+        } catch {}
       }
 
       if (resolvedEmail && !currentTourId) {
@@ -353,7 +347,8 @@ export default function ConfirmTour() {
           );
 
           if (pendingKeys.length > 0) {
-            let latestBooking: { bookingId: number; tourId: number } | null = null;
+            let latestBooking: { bookingId: number; tourId: number } | null =
+              null;
             let latestTs = 0;
 
             for (const key of pendingKeys) {
@@ -373,7 +368,7 @@ export default function ConfirmTour() {
                     }
                   }
                 }
-              } catch (err) {}
+              } catch {}
             }
 
             if (latestBooking) {
@@ -421,18 +416,24 @@ export default function ConfirmTour() {
                     cacheKey,
                     JSON.stringify({ bookingId, ts: Date.now() })
                   );
-                } catch (err) {}
+                } catch {}
               }
             }
-          } catch (err: any) {
+          } catch {
             // Silently handle errors
           }
-        } catch (err) {}
+        } catch {}
       }
     };
 
     restorePendingBooking();
-  }, [currentBookingId, currentTourId, pendingKey, resolvedEmail, userEmailKey]);
+  }, [
+    currentBookingId,
+    currentTourId,
+    pendingKey,
+    resolvedEmail,
+    userEmailKey,
+  ]);
 
   React.useEffect(() => {
     const loadTour = async () => {
@@ -456,14 +457,6 @@ export default function ConfirmTour() {
 
     loadTour();
   }, [currentTourId, t, goBack]);
-
-  React.useEffect(() => {
-    if (!currentBookingId) {
-      setAvailableVouchers([]);
-      return;
-    }
-    loadVouchers(currentBookingId);
-  }, [currentBookingId, loadVouchers]);
 
   const handleScroll = React.useCallback((event: any) => {
     const currentScrollY = event.nativeEvent.contentOffset.y;
@@ -498,27 +491,47 @@ export default function ConfirmTour() {
     try {
       setConfirming(true);
 
-      const applied = await applyVoucherToBooking(bookingId);
-      if (!applied) {
-        setConfirming(false);
-        return;
-      }
-
       try {
         await AsyncStorage.setItem(
           pendingKey,
           JSON.stringify({ bookingId, ts: Date.now() })
         );
-      } catch (err) {}
+    } catch {}
+
+      const normalizedStatus = String(bookingStatus || "").toUpperCase();
+      const bookingStatusForPayment =
+        normalizedStatus === "PENDING_BALANCE_PAYMENT"
+          ? "PENDING_BALANCE_PAYMENT"
+          : depositPercentage > 0 && depositPercentage < 100
+          ? "PENDING_DEPOSIT_PAYMENT"
+          : bookingStatus || "PENDING_PAYMENT";
+
+      // Đảm bảo số tiền được tính đúng với voucher đã apply
+      const paymentAmount = amountDueNow;
+      
+      console.log("[CONFIRM] Payment amount calculated:", {
+        amountDueNow: paymentAmount,
+        finalTotal: finalTotal,
+        depositPercentage: depositPercentage,
+        voucherPreview: voucherPreview ? {
+          finalDepositAmount: voucherPreview.finalDepositAmount,
+          finalTotal: voucherPreview.finalTotal,
+          discountAmount: voucherPreview.discountAmount,
+        } : null,
+      });
 
       router.push({
         pathname: "/payment" as any,
         params: {
           bookingId: String(bookingId),
           userEmail: userEmailKey || bookingData.customerEmail || "",
-          amount: finalTotal.toString(),
-          voucherCode: voucher?.code || "",
-          orderInfo: `Booking payment for tour: ${tour.tourName}`,
+          bookingStatus: bookingStatusForPayment,
+          amount: String(Math.round(paymentAmount)), // Đảm bảo là số nguyên và string
+          voucherCode: voucherPreview?.voucherCode || "",
+          orderInfo:
+            depositPercentage > 0 && depositPercentage < 100
+              ? `Deposit payment for tour: ${tour.tourName}`
+              : `Booking payment for tour: ${tour.tourName}`,
         },
       });
     } catch (error: any) {
@@ -822,79 +835,6 @@ export default function ConfirmTour() {
           </View>
 
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
-                {t("tour.confirm.voucher")}
-              </Text>
-              <TouchableOpacity
-                style={[
-                  styles.selectVoucherButton,
-                  !currentBookingId && styles.selectVoucherButtonDisabled,
-                ]}
-                onPress={() => {
-                  if (!currentBookingId) {
-                    Alert.alert(
-                      t("common.info") || "Thông tin",
-                      t("tour.confirm.createBookingFirst")
-                    );
-                    return;
-                  }
-                  setSelectedVoucherId(voucher?.voucherId || null);
-                  setShowVoucherModal(true);
-                }}
-                disabled={!currentBookingId}
-              >
-                <Text
-                  style={[
-                    styles.selectVoucherButtonText,
-                    !currentBookingId && styles.selectVoucherButtonTextDisabled,
-                  ]}
-                >
-                  {t("tour.confirm.selectVoucher")}
-                </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={!currentBookingId ? "#ccc" : "#007AFF"}
-                />
-              </TouchableOpacity>
-            </View>
-
-            {voucher ? (
-              <View style={styles.voucherCard}>
-                <View style={styles.voucherHeader}>
-                  <View style={styles.voucherIcon}>
-                    <Ionicons name="ticket" size={14} color="#34C759" />
-                  </View>
-                  <Text style={styles.voucherCode}>
-                    {voucher.code.toUpperCase()}
-                  </Text>
-                  <Text style={styles.voucherDetailValue}>
-                    {voucher.discountType === VoucherDiscountType.PERCENT
-                      ? `${voucher.discountValue}%`
-                      : `${voucher.discountValue.toLocaleString()} VND`}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => setVoucher(null)}
-                    style={styles.removeVoucherButton}
-                  >
-                    <Ionicons name="close-circle" size={18} color="#999" />
-                  </TouchableOpacity>
-                </View>
-                {voucher.name && (
-                  <Text style={styles.voucherName}>{voucher.name}</Text>
-                )}
-              </View>
-            ) : (
-              <View style={styles.noVoucherCard}>
-                <Text style={styles.noVoucherText}>
-                  {t("tour.confirm.noVoucher")}
-                </Text>
-              </View>
-            )}
-          </View>
-
-          <View style={styles.section}>
             <Text style={styles.sectionTitle}>
               {t("tour.confirm.priceSummary")}
             </Text>
@@ -907,14 +847,13 @@ export default function ConfirmTour() {
                       {bookingData.adultCount} {t("tour.booking.adultCount")}
                     </Text>
                     <Text style={styles.priceItemUnit}>
-                      {tour.adultPrice?.toLocaleString()} VND/person
+                      {formatPriceKRWNumber(tour.adultPrice)} KRW/person
                     </Text>
                   </View>
                   <Text style={styles.priceItemValue}>
-                    {(
+                    {formatPriceKRW(
                       bookingData.adultCount * (tour.adultPrice || 0)
-                    ).toLocaleString()}{" "}
-                    VND
+                    )}
                   </Text>
                 </View>
 
@@ -926,14 +865,13 @@ export default function ConfirmTour() {
                         {t("tour.booking.childrenCount")}
                       </Text>
                       <Text style={styles.priceItemUnit}>
-                        {tour.childrenPrice?.toLocaleString()} VND/person
+                        {formatPriceKRWNumber(tour.childrenPrice)} KRW/person
                       </Text>
                     </View>
                     <Text style={styles.priceItemValue}>
-                      {(
+                      {formatPriceKRW(
                         bookingData.childrenCount * (tour.childrenPrice || 0)
-                      ).toLocaleString()}{" "}
-                      VND
+                      )}
                     </Text>
                   </View>
                 )}
@@ -945,37 +883,72 @@ export default function ConfirmTour() {
                         {bookingData.babyCount} {t("tour.booking.babyCount")}
                       </Text>
                       <Text style={styles.priceItemUnit}>
-                        {tour.babyPrice?.toLocaleString()} VND/person
+                        {formatPriceKRWNumber(tour.babyPrice)} KRW/person
                       </Text>
                     </View>
                     <Text style={styles.priceItemValue}>
-                      {(
+                      {formatPriceKRW(
                         bookingData.babyCount * (tour.babyPrice || 0)
-                      ).toLocaleString()}{" "}
-                      VND
+                      )}
                     </Text>
                   </View>
                 )}
               </View>
 
-              <View style={styles.priceDivider} />
               {discountAmount > 0 && (
+                <>
                 <View style={styles.totalRow}>
                   <Text style={styles.discountLabel}>
                     {t("tour.confirm.discount")}
                   </Text>
                   <Text style={styles.discountValue}>
-                    -{discountAmount.toLocaleString()} VND
+                    -{formatPriceKRW(discountAmount)}
                   </Text>
                 </View>
+                  <View style={styles.priceDivider} />
+                </>
               )}
 
               <View style={styles.totalSection}>
                 <Text style={styles.totalLabel}>{t("tour.confirm.total")}</Text>
                 <Text style={styles.totalValue}>
-                  {finalTotal.toLocaleString()} VND
+                  {formatPriceKRW(displayTotal)}
                 </Text>
               </View>
+
+              {depositPercentage > 0 && depositPercentage < 100 && (
+                <>
+                  {normalizedBookingStatus === "PENDING_BALANCE_PAYMENT" ? (
+                    <View style={styles.totalRow}>
+                      <Text style={styles.remainingLabel}>
+                        {t("tour.booking.remainingAmount") ||
+                          "Remaining amount"}
+                      </Text>
+                      <Text style={styles.remainingValue}>
+                        {formatPriceKRW(remainingBalance)}
+                      </Text>
+                    </View>
+                  ) : (
+                    <>
+                      <View style={styles.totalRow}>
+                        <Text style={styles.depositLabel}>
+                          {t("tour.booking.depositRequired") ||
+                            "Deposit to pay now"}
+                        </Text>
+                        <Text style={styles.depositValue}>
+                          {formatPriceKRW(amountDueNow)}
+                        </Text>
+                      </View>
+                      <Text style={styles.depositNote}>
+                        {tour?.depositPercentage
+                          ? `${tour.depositPercentage}% ${t("tour.booking.depositRequired") ||
+                              "deposit payment required"}`
+                          : t("tour.booking.depositRequired")}
+                      </Text>
+                    </>
+                  )}
+                </>
+              )}
             </View>
           </View>
 
@@ -999,129 +972,6 @@ export default function ConfirmTour() {
         </View>
       </ScrollView>
 
-      {/* Voucher Selection Modal */}
-      <Modal
-        visible={showVoucherModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowVoucherModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {t("tour.confirm.availableVouchers")}
-              </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowVoucherModal(false);
-                  setSelectedVoucherId(null);
-                }}
-                style={styles.modalCloseButton}
-              >
-                <Ionicons name="close" size={24} color="#333" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalScrollView}>
-              {loadingVouchers ? (
-                <View style={styles.voucherLoadingContainer}>
-                  <ActivityIndicator size="small" color="#007AFF" />
-                  <Text style={styles.voucherLoadingText}>
-                    {t("tour.confirm.loadingVouchers")}
-                  </Text>
-                </View>
-              ) : availableVouchers.length > 0 ? (
-                availableVouchers.map((v) => (
-                  <TouchableOpacity
-                    key={v.voucherId}
-                    style={[
-                      styles.voucherOptionCard,
-                      selectedVoucherId === v.voucherId &&
-                        styles.voucherOptionCardSelected,
-                    ]}
-                    onPress={() => setSelectedVoucherId(v.voucherId)}
-                  >
-                    <View style={styles.voucherOptionRow}>
-                      <View style={styles.radioButtonContainer}>
-                        <View
-                          style={[
-                            styles.radioButton,
-                            selectedVoucherId === v.voucherId &&
-                              styles.radioButtonSelected,
-                          ]}
-                        >
-                          {selectedVoucherId === v.voucherId && (
-                            <View style={styles.radioButtonInner} />
-                          )}
-                        </View>
-                      </View>
-                      <View style={styles.voucherOptionIcon}>
-                        <Ionicons name="ticket" size={18} color="#34C759" />
-                      </View>
-                      <Text style={styles.voucherOptionCode}>
-                        {v.code.toUpperCase()}
-                      </Text>
-                      <Text style={styles.voucherOptionDetailValue}>
-                        {v.discountType === VoucherDiscountType.PERCENT
-                          ? `${v.discountValue}%`
-                          : `${v.discountValue.toLocaleString()} VND`}
-                      </Text>
-                    </View>
-                    {v.name && (
-                      <Text style={styles.voucherOptionName}>{v.name}</Text>
-                    )}
-                  </TouchableOpacity>
-                ))
-              ) : (
-                <View style={styles.voucherEmptyContainer}>
-                  <Ionicons name="ticket-outline" size={48} color="#ccc" />
-                  <Text style={styles.voucherEmptyText}>
-                    {voucherError || t("tour.confirm.noVoucherAvailable")}
-                  </Text>
-                </View>
-              )}
-            </ScrollView>
-
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={() => {
-                  setShowVoucherModal(false);
-                  setSelectedVoucherId(null);
-                }}
-              >
-                <Text style={styles.modalCancelButtonText}>
-                  {t("tour.confirm.close")}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.modalConfirmButton,
-                  !selectedVoucherId && styles.modalConfirmButtonDisabled,
-                ]}
-                onPress={() => {
-                  if (selectedVoucherId) {
-                    const selectedVoucher = availableVouchers.find(
-                      (v) => v.voucherId === selectedVoucherId
-                    );
-                    if (selectedVoucher) {
-                      setVoucher(selectedVoucher);
-                      setShowVoucherModal(false);
-                      setSelectedVoucherId(null);
-                    }
-                  }
-                }}
-                disabled={!selectedVoucherId}
-              >
-                <Text style={styles.modalConfirmButtonText}>
-                  {t("tour.confirm.select")}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </MainLayout>
   );
 }

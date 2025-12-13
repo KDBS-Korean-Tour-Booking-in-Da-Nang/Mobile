@@ -35,6 +35,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
   },
+  amountText: {
+    fontSize: 25,
+    fontWeight: "600",
+    color: "#000",
+    textAlign: "center",
+    marginTop: 8,
+    marginBottom: 8,
+  },
   detailsContainer: {
     backgroundColor: "#fff",
     borderRadius: 12,

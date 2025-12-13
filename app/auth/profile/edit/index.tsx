@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   TextInput,
   Alert,
   Platform,
+  Modal,
+  Pressable,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,19 +26,63 @@ import * as ImagePicker from "expo-image-picker";
 
 export default function EditProfile() {
   const { goBack } = useNavigation();
-  const { user } = useAuthContext();
+  const { user, checkAuthStatus } = useAuthContext();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const buttonOffset = Math.max(56, insets.bottom + 60);
+
+  // Helper functions to get initial values from user
+  const getUserInitialGender = React.useCallback(() => {
+    const userGender = (user as any)?.gender || "";
+    if (userGender === "M" || userGender === "MALE") return "male";
+    if (userGender === "F" || userGender === "FEMALE") return "female";
+    if (userGender === "O" || userGender === "OTHER") return "other";
+    return null;
+  }, [user]);
+
+  const getUserDob = React.useCallback(() => {
+    const dob = (user as any)?.dob || (user as any)?.birthDate || "";
+    if (dob && /^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+      return dob;
+    }
+    return "";
+  }, [user]);
+
   const [selectedGender, setSelectedGender] = useState<
     "male" | "female" | "other" | null
-  >(null);
+  >(getUserInitialGender());
   const [fullName, setFullName] = useState<string>(user?.username || "");
   const [phone, setPhone] = useState<string>((user as any)?.phone || "");
-  const [birthDate, setBirthDate] = useState<string>(
-    ((user as any)?.birthDate as string) || ""
-  );
+  const [birthDate, setBirthDate] = useState<string>(getUserDob());
   const [address, setAddress] = useState<string>((user as any)?.address || "");
+
+  // Store initial values for change detection
+  const initialValuesRef = useRef({
+    fullName: user?.username || "",
+    phone: (user as any)?.phone || "",
+    birthDate: getUserDob(),
+    gender: getUserInitialGender(),
+    address: (user as any)?.address || "",
+  });
+
+  // Update initial values when user data changes
+  useEffect(() => {
+    if (user) {
+      const dob = getUserDob();
+      const gender = getUserInitialGender();
+      initialValuesRef.current = {
+        fullName: user?.username || "",
+        phone: (user as any)?.phone || "",
+        birthDate: dob,
+        gender: gender,
+        address: (user as any)?.address || "",
+      };
+      setFullName(user?.username || "");
+      setPhone((user as any)?.phone || "");
+      setBirthDate(dob);
+      setSelectedGender(gender);
+      setAddress((user as any)?.address || "");
+    }
+  }, [user, getUserDob, getUserInitialGender]);
 
   // Final sanitizer used before save (not used in onChange anymore)
   const sanitizeName = React.useCallback((text: string) => {
@@ -80,13 +126,21 @@ export default function EditProfile() {
     uri: string;
     name?: string;
     type?: string;
+    size?: number;
   } | null>(null);
+  const [nameError, setNameError] = useState("");
+  const [dobError, setDobError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [avatarError, setAvatarError] = useState("");
 
+  // Improved name validation - must start with letter, allow Unicode
   const isNameValid = React.useCallback((name: string) => {
-    const nameRegex = new RegExp(
-      /^(?:[\p{Lu}][\p{L}]*)(?: [\p{Lu}][\p{L}]*)*$/u
-    );
-    return nameRegex.test(name.trim());
+    const trimmed = (name || "").trim();
+    if (!trimmed || trimmed.length === 0) return false;
+    if (trimmed.length < 2) return false;
+    if (trimmed.length > 30) return false;
+    const usernameRegex = /^\p{L}[\p{L}\p{M}\p{N}\s]*$/u;
+    return usernameRegex.test(trimmed);
   }, []);
 
   const sanitizePhone = React.useCallback((text: string) => {
@@ -94,43 +148,179 @@ export default function EditProfile() {
     return digits;
   }, []);
 
+  // Improved phone validation - more flexible like Frontend
   const isPhoneValid = React.useCallback((text: string) => {
-    const digits = (text || "").replace(/\D+/g, "");
-    return /^\d{10}$/.test(digits);
+    if (!text || !text.trim()) return true; // Phone is optional
+    const cleanPhone = (text || "").replace(/\s/g, "");
+    if (cleanPhone.length === 0) return true; // Empty phone is allowed
+    if (cleanPhone.length > 20) return false;
+    // Allow Vietnamese format or international format
+    const vietnameseRegex = /^(\+84|0)[0-9]{9,10}$/;
+    const internationalRegex = /^\+[1-9]\d{1,14}$/; // E.164 format
+    if (
+      vietnameseRegex.test(cleanPhone) ||
+      internationalRegex.test(cleanPhone)
+    ) {
+      return true;
+    }
+    // Only show error if clearly invalid (too short or has invalid chars)
+    if (cleanPhone.length < 7 || !/^[\d+]+$/.test(cleanPhone)) {
+      return false;
+    }
+    return true; // Allow it (might be valid format we didn't anticipate)
   }, []);
 
+  // Improved DOB validation with age check (>= 13 years old)
   const isBirthDateValid = React.useCallback((s: string) => {
+    // DOB is optional - allow empty
+    if (!s || !s.trim()) return true;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
     const [y, m, d] = s.split("-").map((x) => Number(x));
     const dt = new Date(Date.UTC(y, m - 1, d));
-    return (
-      dt.getUTCFullYear() === y &&
-      dt.getUTCMonth() + 1 === m &&
-      dt.getUTCDate() === d
-    );
+    if (
+      dt.getUTCFullYear() !== y ||
+      dt.getUTCMonth() + 1 !== m ||
+      dt.getUTCDate() !== d
+    ) {
+      return false;
+    }
+    // Check age - must be at least 13 years old
+    const today = new Date();
+    let age = today.getFullYear() - dt.getFullYear();
+    const monthDiff = today.getMonth() - dt.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dt.getDate())) {
+      age--;
+    }
+    // Must be in the past
+    if (dt.getTime() >= today.getTime()) return false;
+    // Must be at least 13 years old
+    if (age < 13) return false;
+    // Reasonable upper limit
+    if (age > 150) return false;
+    return true;
   }, []);
 
-  const handleSave = async () => {
+  // Check if form has any changes
+  const hasProfileChanges = React.useCallback(() => {
+    const initial = initialValuesRef.current;
     const finalName = sanitizeName(fullName);
 
+    if ((initial.fullName || "") !== (finalName || "")) return true;
+    if ((initial.phone || "") !== (sanitizePhone(phone) || "")) return true;
+    if ((initial.birthDate || "") !== (birthDate || "")) return true;
+    if (initial.gender !== selectedGender) return true;
+    if ((initial.address || "") !== (address || "")) return true;
+    if (avatarFile) return true; // Any newly selected avatar file counts as a change
+    return false;
+  }, [
+    fullName,
+    phone,
+    birthDate,
+    selectedGender,
+    address,
+    avatarFile,
+    sanitizeName,
+    sanitizePhone,
+  ]);
+
+  // Validate avatar file
+  const validateAvatarFile = async (file: {
+    uri: string;
+    name?: string;
+    type?: string;
+    size?: number;
+  }) => {
+    setAvatarError("");
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
+
+    // Check file size
+    if (file.size !== undefined && file.size > maxSize) {
+      setAvatarError(
+        t("profile.errors.avatarSize") || "Image size must not exceed 5MB"
+      );
+      return false;
+    }
+
+    // Note: If size is not available from ImagePicker, we'll let the backend validate
+    // This is acceptable as backend will reject files that are too large
+
+    // Check file type
+    if (file.type && !allowedTypes.includes(file.type)) {
+      setAvatarError(
+        t("profile.errors.avatarFormat") || "Image format not supported"
+      );
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSave = async () => {
+    // Clear previous errors
+    setNameError("");
+    setDobError("");
+    setPhoneError("");
+    setAvatarError("");
+
+    const finalName = sanitizeName(fullName);
+
+    // Validate name (required)
     if (!finalName.trim() || !isNameValid(finalName)) {
-      Alert.alert("Error", "Full name is invalid");
+      const errorMsg =
+        t("profile.errors.invalidName") || "Full name is invalid";
+      setNameError(errorMsg);
+      Alert.alert(t("common.error") || "Error", errorMsg);
       return;
     }
-    if (!isPhoneValid(phone)) {
-      Alert.alert("Error", "Phone number is invalid");
+
+    // Validate phone (optional but if provided, should be valid)
+    if (phone && phone.trim() && !isPhoneValid(phone)) {
+      const errorMsg =
+        t("profile.errors.invalidPhone") || "Phone number is invalid";
+      setPhoneError(errorMsg);
+      Alert.alert(t("common.error") || "Error", errorMsg);
       return;
     }
-    if (!birthDate || !isBirthDateValid(birthDate)) {
-      Alert.alert("Error", "Birth date is invalid");
+
+    // Validate DOB (optional but if provided, should be valid)
+    if (birthDate && birthDate.trim() && !isBirthDateValid(birthDate)) {
+      let errorMsg =
+        t("booking.errors.dobInvalidFormat") || "Birth date is invalid";
+      if (birthDate && /^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+        const [y, m, d] = birthDate.split("-").map((x) => Number(x));
+        const dt = new Date(Date.UTC(y, m - 1, d));
+        const today = new Date();
+        let age = today.getFullYear() - dt.getFullYear();
+        const monthDiff = today.getMonth() - dt.getMonth();
+        if (
+          monthDiff < 0 ||
+          (monthDiff === 0 && today.getDate() < dt.getDate())
+        ) {
+          age--;
+        }
+        if (age < 13) {
+          errorMsg =
+            t("profile.errors.mustBe13") || "You must be at least 13 years old";
+        }
+      }
+      setDobError(errorMsg);
+      Alert.alert(t("common.error") || "Error", errorMsg);
       return;
     }
-    if (!selectedGender) {
-      Alert.alert("Error", "Gender is required");
-      return;
-    }
-    if (!address.trim()) {
-      Alert.alert("Error", "Address is required");
+
+    // Validate avatar (if selected)
+    if (avatarFile && !(await validateAvatarFile(avatarFile))) {
+      Alert.alert(
+        t("common.error") || "Error",
+        avatarError || "Avatar validation failed"
+      );
       return;
     }
 
@@ -139,28 +329,71 @@ export default function EditProfile() {
       const email =
         (user as any)?.email || (user as any)?.userEmail || (user as any)?.mail;
       const username = finalName;
+
       await usersEndpoints.updateUser({
         email,
         username,
-        phone: sanitizePhone(phone),
-        birthDate,
-        address: address.trim(),
-        gender:
-          selectedGender === "male"
+        phone: phone.trim() ? sanitizePhone(phone) : undefined,
+        birthDate: birthDate.trim() || undefined,
+        address: address.trim() || undefined,
+        gender: selectedGender
+          ? selectedGender === "male"
             ? "M"
             : selectedGender === "female"
             ? "F"
-            : "O",
+            : "O"
+          : undefined,
         ...(avatarFile ? { avatarImg: avatarFile } : {}),
       } as any);
-      Alert.alert("Success", "Profile updated successfully");
+
+      // Refresh user data after successful update
+      try {
+        await checkAuthStatus();
+      } catch (refreshError) {
+        console.error("Error refreshing user data:", refreshError);
+      }
+
+      Alert.alert(
+        t("common.success") || "Success",
+        t("profile.toast.updateSuccess") || "Profile updated successfully"
+      );
       goBack();
     } catch (e: any) {
-      const msg =
-        e?.response?.data?.message ||
-        e?.message ||
+      console.error("[EditProfile] Update error:", {
+        message: e?.message,
+        response: e?.response?.data,
+        status: e?.response?.status,
+        code: e?.code,
+        stack: e?.stack,
+      });
+
+      let msg =
+        t("profile.errors.updateFailed") ||
         "Failed to update profile. Please try again.";
-      Alert.alert("Error", String(msg));
+
+      if (e?.response?.data?.message) {
+        msg = e.response.data.message;
+      } else if (e?.message) {
+        // Check for network errors
+        if (
+          e.message.includes("Network Error") ||
+          e.message.includes("network")
+        ) {
+          msg =
+            t("profile.errors.networkError") ||
+            "Network error. Please check your connection and try again.";
+        } else if (e.message.includes("timeout")) {
+          msg =
+            t("profile.errors.timeout") || "Request timeout. Please try again.";
+        } else {
+          msg = e.message;
+        }
+      } else if (e?.code === "ECONNABORTED") {
+        msg =
+          t("profile.errors.timeout") || "Request timeout. Please try again.";
+      }
+
+      Alert.alert(t("common.error") || "Error", String(msg));
     } finally {
       setSaving(false);
     }
@@ -176,7 +409,12 @@ export default function EditProfile() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.content} 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled={true}
+        >
           <Text style={styles.pageTitle}>{t("profileEdit.title")}</Text>
 
           <View style={styles.section}>
@@ -198,22 +436,28 @@ export default function EditProfile() {
                   style={styles.addPhotoButton}
                   onPress={async () => {
                     try {
+                      setAvatarError("");
                       const perm =
                         await ImagePicker.requestMediaLibraryPermissionsAsync();
                       if (perm.status !== "granted") {
-                        Alert.alert("Error", "Permission denied");
+                        Alert.alert(
+                          t("common.error") || "Error",
+                          t("profile.errors.permissionDenied") ||
+                            "Permission denied"
+                        );
                         return;
                       }
                       const result = await ImagePicker.launchImageLibraryAsync({
                         mediaTypes: ImagePicker.MediaTypeOptions.Images,
                         quality: 0.9,
                         allowsMultipleSelection: false,
+                        allowsEditing: true,
+                        aspect: [1, 1],
                       });
                       if (result.canceled) return;
                       const asset = result.assets && result.assets[0];
                       if (!asset?.uri) return;
                       const uri = asset.uri;
-                      setAvatarPreviewUri(uri);
                       const guessName = uri.split("/").pop() || "avatar.jpg";
                       const ext = (
                         guessName.split(".").pop() || "jpg"
@@ -223,9 +467,34 @@ export default function EditProfile() {
                           ? "image/png"
                           : ext === "jpg" || ext === "jpeg"
                           ? "image/jpeg"
-                          : "application/octet-stream";
-                      setAvatarFile({ uri, name: guessName, type });
-                    } catch {}
+                          : ext === "gif"
+                          ? "image/gif"
+                          : ext === "webp"
+                          ? "image/webp"
+                          : "image/jpeg";
+
+                      const fileData = {
+                        uri,
+                        name: guessName,
+                        type,
+                        size: asset.fileSize,
+                      };
+
+                      // Validate file
+                      const isValid = await validateAvatarFile(fileData);
+                      if (!isValid) {
+                        return; // Error already set by validateAvatarFile
+                      }
+
+                      setAvatarPreviewUri(uri);
+                      setAvatarFile(fileData);
+                    } catch (err: any) {
+                      console.error("Error picking image:", err);
+                      Alert.alert(
+                        t("common.error") || "Error",
+                        err?.message || "Failed to pick image"
+                      );
+                    }
                   }}
                 >
                   <Ionicons name="add" size={16} color="#fff" />
@@ -252,13 +521,28 @@ export default function EditProfile() {
                     {t("profileEdit.fullName")}
                   </Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[
+                      styles.textInput,
+                      nameError
+                        ? { borderColor: "#e11d48", borderWidth: 1 }
+                        : {},
+                    ]}
                     placeholder={t("profileEdit.fullNamePlaceholder")}
                     placeholderTextColor="#999"
                     value={fullName}
-                    onChangeText={(text) => setFullName(formatLiveName(text))}
+                    onChangeText={(text) => {
+                      setFullName(formatLiveName(text));
+                      setNameError("");
+                    }}
                     autoCapitalize="none"
                   />
+                  {nameError ? (
+                    <Text
+                      style={{ color: "#e11d48", fontSize: 12, marginTop: 4 }}
+                    >
+                      {nameError}
+                    </Text>
+                  ) : null}
                 </View>
 
                 <View style={styles.inputGroup}>
@@ -313,13 +597,28 @@ export default function EditProfile() {
                     {t("profileEdit.phone")}
                   </Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[
+                      styles.textInput,
+                      phoneError
+                        ? { borderColor: "#e11d48", borderWidth: 1 }
+                        : {},
+                    ]}
                     placeholder={t("profileEdit.phonePlaceholder")}
                     placeholderTextColor="#999"
                     value={phone}
                     keyboardType="phone-pad"
-                    onChangeText={(text) => setPhone(sanitizePhone(text))}
+                    onChangeText={(text) => {
+                      setPhone(sanitizePhone(text));
+                      setPhoneError("");
+                    }}
                   />
+                  {phoneError ? (
+                    <Text
+                      style={{ color: "#e11d48", fontSize: 12, marginTop: 4 }}
+                    >
+                      {phoneError}
+                    </Text>
+                  ) : null}
                 </View>
 
                 <View style={styles.inputGroup}>
@@ -333,14 +632,21 @@ export default function EditProfile() {
                           value:
                             birthDate && /^\d{4}-\d{2}-\d{2}$/.test(birthDate)
                               ? new Date(birthDate)
-                              : new Date(),
+                              : new Date(
+                                  new Date().setFullYear(
+                                    new Date().getFullYear() - 18
+                                  )
+                                ),
                           mode: "date",
+                          maximumDate: new Date(), // Cannot select future date
+                          minimumDate: new Date(1900, 0, 1), // Minimum date
                           onChange: (_e, d) => {
                             if (d) {
                               const y = d.getFullYear();
                               const m = `${d.getMonth() + 1}`.padStart(2, "0");
                               const da = `${d.getDate()}`.padStart(2, "0");
                               setBirthDate(`${y}-${m}-${da}`);
+                              setDobError(""); // Clear error when date is selected
                             }
                           },
                         });
@@ -362,26 +668,118 @@ export default function EditProfile() {
                       />
                     </View>
                   </TouchableOpacity>
-                  {Platform.OS === "ios" && showDobPicker && (
-                    <DateTimePicker
-                      value={
-                        birthDate && /^\d{4}-\d{2}-\d{2}$/.test(birthDate)
-                          ? new Date(birthDate)
-                          : new Date()
-                      }
-                      mode="date"
-                      display="spinner"
-                      onChange={(_e: any, d?: Date) => {
-                        if (d) {
-                          const y = d.getFullYear();
-                          const m = `${d.getMonth() + 1}`.padStart(2, "0");
-                          const da = `${d.getDate()}`.padStart(2, "0");
-                          setBirthDate(`${y}-${m}-${da}`);
-                        }
-                        setShowDobPicker(false);
-                      }}
-                    />
+                  {Platform.OS === "ios" && (
+                    <Modal
+                      transparent
+                      animationType="fade"
+                      visible={showDobPicker}
+                      onRequestClose={() => setShowDobPicker(false)}
+                      presentationStyle="overFullScreen"
+                    >
+                      <Pressable
+                        style={{
+                          flex: 1,
+                          backgroundColor: "rgba(0, 0, 0, 0.5)",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          padding: 20,
+                        }}
+                        onPress={() => setShowDobPicker(false)}
+                      >
+                        <Pressable
+                          style={{
+                            backgroundColor: "#fff",
+                            borderRadius: 20,
+                            padding: 28,
+                            width: "100%",
+                            maxWidth: 420,
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 8 },
+                            shadowOpacity: 0.3,
+                            shadowRadius: 16,
+                            elevation: 10,
+                          }}
+                          onPress={(e) => e.stopPropagation()}
+                          onStartShouldSetResponder={() => true}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 22,
+                              fontWeight: "700",
+                              color: "#212529",
+                              marginBottom: 16,
+                              textAlign: "center",
+                              letterSpacing: 0.3,
+                            }}
+                          >
+                            {t("profileEdit.birthDate") || "Date of Birth"}
+                          </Text>
+                          {birthDate && (
+                            <Text
+                              style={{
+                                fontSize: 32,
+                                fontWeight: "700",
+                                color: "#007AFF",
+                                marginBottom: 20,
+                                textAlign: "center",
+                              }}
+                            >
+                              {birthDate}
+                            </Text>
+                          )}
+                          <View
+                            style={{
+                              width: "100%",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginTop: 8,
+                            }}
+                          >
+                            <DateTimePicker
+                              value={
+                                birthDate && /^\d{4}-\d{2}-\d{2}$/.test(birthDate)
+                                  ? new Date(birthDate)
+                                  : new Date(
+                                      new Date().setFullYear(
+                                        new Date().getFullYear() - 18
+                                      )
+                                    )
+                              }
+                              mode="date"
+                              display="compact"
+                              maximumDate={new Date()} // Cannot select future date
+                              minimumDate={new Date(1900, 0, 1)} // Minimum date
+                              onChange={(_e: any, d?: Date) => {
+                                if (d) {
+                                  const y = d.getFullYear();
+                                  const m = `${d.getMonth() + 1}`.padStart(2, "0");
+                                  const da = `${d.getDate()}`.padStart(2, "0");
+                                  setBirthDate(`${y}-${m}-${da}`);
+                                  setDobError(""); // Clear error when date is selected
+                                  setTimeout(() => {
+                                    setShowDobPicker(false);
+                                  }, 300);
+                                } else if (_e?.type === "dismissed") {
+                                  setShowDobPicker(false);
+                                }
+                              }}
+                              style={{
+                                width: "100%",
+                                alignSelf: "center",
+                              }}
+                            />
+                          </View>
+                        </Pressable>
+                      </Pressable>
+                    </Modal>
                   )}
+                  {dobError ? (
+                    <Text
+                      style={{ color: "#e11d48", fontSize: 12, marginTop: 4 }}
+                    >
+                      {dobError}
+                    </Text>
+                  ) : null}
                 </View>
 
                 <View style={styles.inputGroup}>
@@ -404,7 +802,22 @@ export default function EditProfile() {
             </View>
           </View>
 
-          <View style={{ height: Math.max(160, insets.bottom + 120) }} />
+          {avatarError ? (
+            <View
+              style={{
+                padding: 16,
+                backgroundColor: "#fef2f2",
+                margin: 16,
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: "#e11d48", fontSize: 14 }}>
+                {avatarError}
+              </Text>
+            </View>
+          ) : null}
+
+          <View style={{ height: 180 }} />
         </ScrollView>
 
         <View
@@ -414,7 +827,7 @@ export default function EditProfile() {
               position: "absolute",
               left: 20,
               right: 20,
-              bottom: buttonOffset,
+              bottom: insets.bottom + (Platform.OS === "android" ? 140 : 60),
               paddingBottom: 0,
               backgroundColor: "transparent",
             },
@@ -427,11 +840,9 @@ export default function EditProfile() {
               saving ||
               !fullName.trim() ||
               !isNameValid(fullName) ||
-              !isPhoneValid(phone) ||
-              !birthDate ||
-              !isBirthDateValid(birthDate) ||
-              !address.trim() ||
-              !selectedGender
+              (phone.trim() && !isPhoneValid(phone)) ||
+              (birthDate.trim() && !isBirthDateValid(birthDate)) ||
+              !hasProfileChanges()
             }
           >
             <Text style={styles.saveButtonText}>

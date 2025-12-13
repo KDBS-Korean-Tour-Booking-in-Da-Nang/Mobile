@@ -1,4 +1,4 @@
-import { StyleSheet, Platform } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { typography } from "../../../constants/theme";
 
 const styles = StyleSheet.create({
@@ -75,7 +75,9 @@ const styles = StyleSheet.create({
     color: "#111",
     textAlign: "center",
   },
-
+  section: {
+    marginBottom: 20,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
@@ -490,9 +492,10 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   modalTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111",
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#333",
+    letterSpacing: -0.3,
     marginBottom: 8,
   },
   quickRow: { flexDirection: "row", justifyContent: "space-between" },
@@ -517,8 +520,12 @@ const styles = StyleSheet.create({
 
   // Total Section Styles
   totalSection: {
-    marginTop: 20,
-    marginBottom: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 8,
+    marginBottom: 8,
   },
   totalTitle: {
     fontSize: 20,
@@ -538,11 +545,9 @@ const styles = StyleSheet.create({
     marginLeft: "70%",
   },
   totalLabel: {
-    fontSize: 16,
-    color: "#666",
-    fontWeight: "600",
-    width: 60,
-    textAlign: "left",
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#007AFF",
   },
   totalCount: {
     fontSize: 16,
@@ -555,6 +560,81 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#111",
     textAlign: "right",
+  },
+  // Price Card Styles (from confirm page)
+  priceCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  priceItems: {
+    gap: 12,
+  },
+  priceItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  priceItemLeft: {
+    flex: 1,
+  },
+  priceItemLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 4,
+  },
+  priceItemUnit: {
+    fontSize: 12,
+    color: "#666",
+  },
+  priceItemValue: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#333",
+  },
+  priceDivider: {
+    height: 1,
+    backgroundColor: "#e0e0e0",
+    marginVertical: 12,
+  },
+  totalValue: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#007AFF",
+  },
+  depositInfoSection: {
+    backgroundColor: "#FFF9E6",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  depositInfoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  depositInfoLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FF9500",
+  },
+  depositInfoValue: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FF9500",
+  },
+  depositInfoNote: {
+    fontSize: 12,
+    color: "#666",
+    fontStyle: "italic",
   },
   loadingContainer: {
     flex: 1,
@@ -592,6 +672,298 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+
+  // Voucher & modal styles (reuse from confirm)
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  selectVoucherButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#007AFF",
+    backgroundColor: "#E8F1FF",
+  },
+  selectVoucherButtonText: {
+    color: "#007AFF",
+    fontWeight: "700",
+    marginRight: 6,
+  },
+  voucherCard: {
+    backgroundColor: "#f8f9fa",
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderStyle: "solid",
+    marginTop: 12,
+  },
+  voucherHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  voucherIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#E8F1FF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
+  voucherCode: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#007AFF",
+    letterSpacing: 0.5,
+    flex: 1,
+  },
+  voucherDetailValue: {
+    fontSize: 16,
+    color: "#007AFF",
+    fontWeight: "700",
+    marginRight: 8,
+  },
+  removeVoucherButton: {
+    padding: 2,
+    marginLeft: "auto",
+  },
+  voucherName: {
+    fontSize: 10,
+    color: "#666",
+    fontWeight: "500",
+    marginTop: 4,
+    paddingLeft: 36,
+  },
+  noVoucherCard: {
+    backgroundColor: "#f8f9fa",
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  noVoucherText: {
+    fontSize: 14,
+    color: "#999",
+    fontStyle: "italic",
+  },
+  discountLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FF3B30",
+  },
+  discountValue: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FF3B30",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 28,
+    maxHeight: "80%",
+    paddingBottom: 0,
+    width: "92%",
+    alignSelf: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 24,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F5F5F5",
+  },
+  modalCloseButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: "#F8F8F8",
+  },
+  modalScrollView: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  voucherOptionCard: {
+    backgroundColor: "#FAFAFA",
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: "#F0F0F0",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  voucherOptionCardSelected: {
+    backgroundColor: "#F0F7FF",
+    borderColor: "#B8D9FF",
+    borderWidth: 2,
+  },
+  voucherOptionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  voucherOptionContent: {
+    marginBottom: 12,
+  },
+  voucherOptionLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  radioButtonContainer: {
+    marginRight: 0,
+  },
+  radioButton: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: "#D0D0D0",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  radioButtonSelected: {
+    borderColor: "#8BC5FF",
+  },
+  radioButtonInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#8BC5FF",
+  },
+  voucherOptionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F0F7FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  voucherOptionInfo: {
+    flex: 1,
+  },
+  voucherOptionCode: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#6BA3FF",
+    letterSpacing: 0.3,
+    flex: 1,
+    marginRight: 8,
+  },
+  voucherOptionName: {
+    fontSize: 12,
+    color: "#888",
+    fontWeight: "500",
+    marginTop: 6,
+    paddingLeft: 64,
+  },
+  voucherOptionDetails: {
+    gap: 6,
+    paddingLeft: 36,
+  },
+  voucherOptionDetailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  voucherOptionDetailLabel: {
+    fontSize: 13,
+    color: "#666",
+    fontWeight: "500",
+  },
+  voucherOptionDetailValue: {
+    fontSize: 15,
+    color: "#6BA3FF",
+    fontWeight: "600",
+    marginRight: 0,
+  },
+  voucherLoadingContainer: {
+    paddingVertical: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  voucherLoadingText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  voucherEmptyContainer: {
+    paddingVertical: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  voucherEmptyText: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
+  },
+  modalFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: 24,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderColor: "#F5F5F5",
+    gap: 12,
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    borderColor: "#E8E8E8",
+    backgroundColor: "#FAFAFA",
+    alignItems: "center",
+  },
+  modalCancelButtonText: {
+    color: "#666",
+    fontWeight: "600",
+    fontSize: 15,
+  },
+  modalConfirmButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 24,
+    backgroundColor: "#5BA3FF",
+    alignItems: "center",
+  },
+  modalConfirmButtonDisabled: {
+    backgroundColor: "#B8D9FF",
+  },
+  modalConfirmButtonText: {
+    color: "#fff",
+    fontWeight: "700",
   },
 });
 

@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 import { colors } from "../../../constants/theme";
 
-export default StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
@@ -202,13 +202,14 @@ export default StyleSheet.create({
   },
   commentsSection: {
     marginTop: 32,
-    marginHorizontal: -16, // Offset articleContent padding
-    paddingTop: 24,
+    marginHorizontal: 16,
+    paddingTop: 28,
     paddingHorizontal: 20,
     paddingBottom: 32,
     borderTopWidth: 1,
-    borderTopColor: "#E5E5E5",
+    borderTopColor: "#F5F5F5",
     backgroundColor: "#FFFFFF",
+    borderRadius: 28,
   },
   commentsHeader: {
     marginBottom: 20,
@@ -216,62 +217,63 @@ export default StyleSheet.create({
   },
   commentsTitle: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "#212529",
+    fontWeight: "600",
+    color: "#111",
     marginBottom: 4,
+    letterSpacing: -0.3,
   },
   commentInputContainer: {
     marginBottom: 28,
     marginHorizontal: 0,
   },
   commentInputWrapper: {
-    backgroundColor: "#F5F5F5",
-    borderRadius: 12,
+    backgroundColor: "#FAFAFA",
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: "#E5E5E5",
-    marginBottom: 12,
+    borderColor: "#F0F0F0",
+    marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  commentInput: {
-    padding: 14,
-    fontSize: 16,
-    color: "#212529",
-    minHeight: 90,
-    maxHeight: 130,
-    lineHeight: 22,
-  },
-  commentSubmitButton: {
-    alignSelf: "flex-end",
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 28,
-    paddingVertical: 12,
-    borderRadius: 8,
-    shadowColor: "#007AFF",
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  commentInput: {
+    padding: 16,
+    fontSize: 15,
+    color: "#111",
+    minHeight: 100,
+    maxHeight: 140,
+    lineHeight: 22,
+  },
+  commentSubmitButton: {
+    alignSelf: "flex-end",
+    backgroundColor: "#5BA3FF",
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 24,
+    shadowColor: "#5BA3FF",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
   },
   commentSubmitButtonDisabled: {
-    backgroundColor: "#E5E5E5",
+    backgroundColor: "#F0F0F0",
   },
   commentSubmitButtonText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
   },
   commentSubmitButtonTextDisabled: {
-    color: "#999",
+    color: "#CCC",
   },
   commentsLoadingContainer: {
     paddingVertical: 32,
@@ -280,7 +282,7 @@ export default StyleSheet.create({
   noCommentsContainer: {
     alignItems: "center",
     paddingVertical: 48,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
   },
   noCommentsText: {
     marginTop: 16,
@@ -295,40 +297,41 @@ export default StyleSheet.create({
   },
   commentItem: {
     flexDirection: "row",
-    marginBottom: 20,
+    marginBottom: 16,
     marginHorizontal: 0,
     paddingTop: 8,
   },
   commentAvatarContainer: {
-    marginRight: 10,
-    marginLeft: 4,
+    marginRight: 12,
+    marginLeft: 0,
     marginTop: 2,
   },
   commentAvatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: "#F5F5F5",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#FAFAFA",
     borderWidth: 2,
-    borderColor: "#FFFFFF",
+    borderColor: "#F5F5F5",
   },
   commentAvatarPlaceholder: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: "#E5E5E5",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F0F0F0",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "#FFFFFF",
+    borderColor: "#F5F5F5",
   },
   commentContent: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
-    borderRadius: 12,
-    padding: 14,
-    paddingHorizontal: 16,
-    marginLeft: 4,
+    backgroundColor: "#FAFAFA",
+    borderRadius: 24,
+    padding: 16,
+    marginLeft: 0,
+    borderWidth: 1,
+    borderColor: "#F0F0F0",
   },
   commentHeader: {
     flexDirection: "row",
@@ -339,21 +342,92 @@ export default StyleSheet.create({
   commentUserName: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#212529",
+    color: "#111",
     marginRight: 8,
   },
   commentDate: {
     fontSize: 12,
-    color: colors.text.secondary,
+    color: "#999",
     marginTop: 2,
   },
   commentText: {
     fontSize: 14,
-    color: "#212529",
+    color: "#333",
     lineHeight: 22,
-    marginTop: 2,
+    marginTop: 4,
+  },
+  suggestToursSection: {
+    marginTop: 28,
+    marginHorizontal: 16,
+    paddingTop: 28,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    borderTopWidth: 1,
+    borderTopColor: "#F5F5F5",
+    borderRadius: 28,
+  },
+  suggestToursHeader: {
+    marginBottom: 16,
+  },
+  suggestToursTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#111",
+    letterSpacing: -0.3,
+  },
+  suggestToursLoading: {
+    paddingVertical: 20,
+    alignItems: "center",
+  },
+  suggestToursList: {
+    marginHorizontal: -20,
+    paddingHorizontal: 4,
+  },
+  suggestTourCard: {
+    width: 200,
+    marginLeft: 16,
+    backgroundColor: "#FAFAFA",
+    borderRadius: 24,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#F0F0F0",
+  },
+  suggestTourImage: {
+    width: "100%",
+    height: 120,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+  },
+  suggestTourContent: {
+    padding: 14,
+  },
+  suggestTourName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#212529",
+    marginBottom: 8,
+  },
+  suggestTourPrice: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.primary.main,
+  },
+  suggestToursEmpty: {
+    paddingVertical: 20,
+    alignItems: "center",
+  },
+  suggestToursEmptyText: {
+    fontSize: 14,
+    color: colors.text.secondary,
   },
 });
+
+export default styles;
 
 export const contentHtmlCss = `
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; padding: 0; margin: 0; color: #212529; }
