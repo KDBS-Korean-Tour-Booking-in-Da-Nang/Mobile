@@ -19,6 +19,7 @@ import CommentSection from "./CommentSection";
 import { useTranslation } from "react-i18next";
 import { useNavigation } from "../navigation/navigation";
 import { geminiEndpoints } from "../services/endpoints/gemini";
+import usersEndpoints from "../services/endpoints/users";
 
 interface PostCardProps {
   post: PostResponse;
@@ -59,6 +60,8 @@ const PostCard: React.FC<PostCardProps> = ({
     null
   );
   const [isShowingTranslated, setIsShowingTranslated] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [postUserId, setPostUserId] = useState<number | null>(null);
 
   useEffect(() => {
     if (
@@ -69,6 +72,55 @@ const PostCard: React.FC<PostCardProps> = ({
       onLoadFullDetails(post.id);
     }
   }, [post.id, post.imageUrls.length, post.hashtags.length, onLoadFullDetails]);
+
+  // Load userId from username when needed
+  useEffect(() => {
+    const loadUserId = async () => {
+      if (!post.username || postUserId) return;
+      try {
+        const usersResponse = await usersEndpoints.getAll();
+        let allUsers: any[] = [];
+        if (Array.isArray(usersResponse.data)) {
+          allUsers = usersResponse.data;
+        } else if (usersResponse.data && Array.isArray(usersResponse.data.result)) {
+          allUsers = usersResponse.data.result;
+        } else if (usersResponse.data && Array.isArray(usersResponse.data.content)) {
+          allUsers = usersResponse.data.content;
+        } else if (usersResponse.data && Array.isArray(usersResponse.data.data)) {
+          allUsers = usersResponse.data.data;
+        }
+        
+        const foundUser = allUsers.find((u: any) => 
+          (u.username || u.name || "").trim().toLowerCase() === post.username.trim().toLowerCase()
+        );
+        if (foundUser) {
+          setPostUserId(foundUser.userId || foundUser.id);
+        }
+      } catch (error) {
+        console.error("Error loading userId:", error);
+      }
+    };
+    
+    if (showUserDropdown && !postUserId) {
+      loadUserId();
+    }
+  }, [post.username, showUserDropdown, postUserId]);
+
+  const handleUserPress = () => {
+    // Don't show dropdown if it's the current user's own post
+    if (isOwner) {
+      return;
+    }
+    setShowUserDropdown(!showUserDropdown);
+    setShowMenu(false); // Close post menu if open
+  };
+
+  const handleChatPress = () => {
+    if (postUserId) {
+      setShowUserDropdown(false);
+      navigate(`/chat/user?userId=${postUserId}`);
+    }
+  };
 
   const isOwner =
     (user?.username || "").trim().toLowerCase() ===
@@ -559,81 +611,127 @@ const PostCard: React.FC<PostCardProps> = ({
   };
 
   return (
-    <TouchableWithoutFeedback onPress={() => setShowMenu(false)}>
+    <TouchableWithoutFeedback 
+      onPress={() => {
+        setShowMenu(false);
+        setShowUserDropdown(false);
+      }}
+    >
       <View style={styles.container}>
         <View style={styles.header}>
           <View style={styles.userInfo}>
-            <Image
-              source={{
-                uri:
-                  post.userAvatar ||
-                  "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.pinterest.com%2Fpin%2F300404237650498609%2F&psig=AOvVaw2FuMEvODdlA_lCA6G3gQp9&ust=1757299985491000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCIiX4t3SxY8DFQAAAAAdAAAAABAE ",
-              }}
-              style={styles.avatar}
-              contentFit="cover"
-            />
+            <TouchableOpacity 
+              onPress={handleUserPress} 
+              activeOpacity={isOwner ? 1 : 0.7}
+              disabled={isOwner}
+            >
+              <Image
+                source={{
+                  uri:
+                    post.userAvatar ||
+                    "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.pinterest.com%2Fpin%2F300404237650498609%2F&psig=AOvVaw2FuMEvODdlA_lCA6G3gQp9&ust=1757299985491000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCIiX4t3SxY8DFQAAAAAdAAAAABAE ",
+                }}
+                style={styles.avatar}
+                contentFit="cover"
+              />
+            </TouchableOpacity>
             <View style={styles.userDetails}>
               <View style={styles.usernameRow}>
-                <Text style={styles.username}>{post.username}</Text>
+                <TouchableOpacity 
+                  onPress={handleUserPress} 
+                  activeOpacity={isOwner ? 1 : 0.7}
+                  disabled={isOwner}
+                >
+                  <Text style={styles.username}>{post.username}</Text>
+                </TouchableOpacity>
                 <Text style={styles.timestamp}>
                   • {formatDate(post.createdAt)}
                 </Text>
               </View>
               <View style={styles.titleRow}>
                 <Text style={styles.title}>{post.title}</Text>
-                {post.content && post.content.trim().length > 0 && (
-                  <TouchableOpacity
-                    style={styles.translateChip}
-                    onPress={toggleShowTranslated}
-                    disabled={isTranslating}
-                  >
-                    <Ionicons
-                      name="language-outline"
-                      size={14}
-                      color="#007AFF"
-                    />
-                    <Text style={styles.translateChipText}>
-                      {isTranslating
-                        ? t("common.loading")
-                        : isShowingTranslated
-                        ? t("forum.hideTranslation")
-                        : t("forum.translate")}
-                    </Text>
-                  </TouchableOpacity>
-                )}
               </View>
             </View>
           </View>
 
-          {/* Menu Button */}
-          <TouchableOpacity
-            onPress={() => setShowMenu(!showMenu)}
-            style={styles.menuButton}
-          >
-            <Ionicons name="ellipsis-vertical" size={20} color="#666" />
-          </TouchableOpacity>
+          {/* Menu Button and Translate Button Container */}
+          <View style={styles.headerRightContainer}>
+            {/* Menu Button */}
+            <TouchableOpacity
+              onPress={() => {
+                setShowMenu(!showMenu);
+                setShowUserDropdown(false); // Close user dropdown if open
+              }}
+              style={styles.menuButton}
+            >
+              <Ionicons name="ellipsis-vertical-outline" size={20} color="#7A8A99" />
+            </TouchableOpacity>
+            
+            {/* Translate Button - Below menu button */}
+            {post.content && post.content.trim().length > 0 && (
+              <TouchableOpacity
+                style={styles.translateChip}
+                onPress={toggleShowTranslated}
+                disabled={isTranslating}
+              >
+                <Ionicons
+                  name="language-outline"
+                  size={14}
+                  color="#B8D4E3"
+                />
+                <Text style={styles.translateChipText}>
+                  {isTranslating
+                    ? t("common.loading")
+                    : isShowingTranslated
+                    ? t("forum.hideTranslation")
+                    : t("forum.translate")}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
+        {/* User Dropdown - Only show if not owner */}
+        {showUserDropdown && !isOwner && (
+          <View style={styles.userDropdown}>
+            <TouchableOpacity
+              style={styles.userDropdownItem}
+              onPress={handleChatPress}
+              disabled={!postUserId}
+            >
+              <Ionicons name="chatbubble-outline" size={18} color="#B8D4E3" />
+              <Text style={styles.userDropdownText}>
+                {(() => {
+                  const translated = t("chat.chat");
+                  return translated && translated !== "chat.chat" ? translated : "Chat";
+                })()}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View style={styles.content}>
-          {(() => {
-            const rawContent = stripTourLinks(post.content || "");
-            return (
-              <>
-                <Text style={styles.body}>
-                  {showFullContent
-                    ? rawContent
-                    : getTruncatedContent(rawContent)}
-                </Text>
-                {isShowingTranslated && translatedContent && (
-                  <Text style={styles.translatedBody}>
+          <View style={styles.contentWrapper}>
+            {(() => {
+              const rawContent = stripTourLinks(post.content || "");
+              return (
+                <>
+                  <Text style={styles.body}>
                     {showFullContent
-                      ? translatedContent
-                      : getTruncatedContent(translatedContent)}
+                      ? rawContent
+                      : getTruncatedContent(rawContent)}
                   </Text>
-                )}
-              </>
-            );
-          })()}
+                  {isShowingTranslated && translatedContent && (
+                    <Text style={styles.translatedBody}>
+                      {showFullContent
+                        ? translatedContent
+                        : getTruncatedContent(translatedContent)}
+                    </Text>
+                  )}
+                </>
+              );
+            })()}
+          </View>
           {stripTourLinks(post.content || "").length > 100 &&
             !showFullContent && (
               <TouchableOpacity onPress={() => setShowFullContent(true)}>
@@ -788,7 +886,7 @@ const PostCard: React.FC<PostCardProps> = ({
                     onEdit?.(post);
                   }}
                 >
-                  <Ionicons name="create-outline" size={18} color="#666" />
+                  <Ionicons name="create-outline" size={18} color="#7A8A99" />
                   <Text style={styles.menuItemText}>{t("common.edit")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -801,7 +899,7 @@ const PostCard: React.FC<PostCardProps> = ({
                   <Ionicons
                     name={isSaved ? "bookmark" : "bookmark-outline"}
                     size={18}
-                    color={isSaved ? "#FFD700" : "#666"}
+                    color={isSaved ? "#8B6A9F" : "#7A8A99"}
                   />
                   <Text
                     style={[
@@ -819,7 +917,7 @@ const PostCard: React.FC<PostCardProps> = ({
                     handleDelete();
                   }}
                 >
-                  <Ionicons name="trash-outline" size={18} color="#ff4444" />
+                  <Ionicons name="trash-outline" size={18} color="#F5B8C4" />
                   <Text style={styles.menuItemTextDanger}>
                     {t("common.delete")}
                   </Text>
@@ -837,7 +935,7 @@ const PostCard: React.FC<PostCardProps> = ({
                   <Ionicons
                     name={isSaved ? "bookmark" : "bookmark-outline"}
                     size={18}
-                    color={isSaved ? "#FFD700" : "#666"}
+                    color={isSaved ? "#8B6A9F" : "#7A8A99"}
                   />
                   <Text
                     style={[
@@ -856,7 +954,7 @@ const PostCard: React.FC<PostCardProps> = ({
                       handleReport();
                     }}
                   >
-                    <Ionicons name="flag-outline" size={18} color="#ff4444" />
+                    <Ionicons name="flag-outline" size={18} color="#F5B8C4" />
                     <Text style={styles.menuItemTextDanger}>
                       {t("forum.report")}
                     </Text>
@@ -876,9 +974,9 @@ const PostCard: React.FC<PostCardProps> = ({
             <Ionicons
               name={isLiked ? "arrow-up" : "arrow-up-outline"}
               size={20}
-              color={isLiked ? "#007AFF" : "#666"}
+              color={isLiked ? "#B8D4E3" : "#7A8A99"}
             />
-            <Text style={[styles.actionText, isLiked && { color: "#007AFF" }]}>
+            <Text style={[styles.actionText, isLiked && { color: "#5A6C7D" }]}>
               {likeCount}
             </Text>
           </TouchableOpacity>
@@ -891,10 +989,10 @@ const PostCard: React.FC<PostCardProps> = ({
             <Ionicons
               name={isDisliked ? "arrow-down" : "arrow-down-outline"}
               size={20}
-              color={isDisliked ? "#ff4444" : "#666"}
+              color={isDisliked ? "#F5B8C4" : "#7A8A99"}
             />
             <Text
-              style={[styles.actionText, isDisliked && { color: "#ff4444" }]}
+              style={[styles.actionText, isDisliked && { color: "#8B4A5A" }]}
             >
               {dislikeCount}
             </Text>
@@ -904,7 +1002,7 @@ const PostCard: React.FC<PostCardProps> = ({
             style={styles.actionButton}
             onPress={toggleComments}
           >
-            <Ionicons name="chatbubbles-outline" size={20} color="#666" />
+            <Ionicons name="chatbubbles-outline" size={20} color="#7A8A99" />
             <Text style={styles.actionText}>{commentCount}</Text>
           </TouchableOpacity>
         </View>
@@ -995,19 +1093,19 @@ const PostCard: React.FC<PostCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
     marginVertical: 8,
     marginHorizontal: 16,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 28,
+    padding: 20,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   header: {
     flexDirection: "row",
@@ -1019,11 +1117,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    marginRight: 8,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     marginRight: 12,
   },
   userDetails: {
@@ -1036,66 +1135,71 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333",
+    color: "#2C3E50",
+    letterSpacing: 0.2,
   },
   timestamp: {
     fontSize: 12,
-    color: "#666",
+    color: "#7A8A99",
     marginLeft: 4,
   },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 2,
+    marginTop: 4,
+  },
+  headerRightContainer: {
+    alignItems: "flex-end",
+    gap: 8,
   },
   menuButton: {
-    padding: 8,
-    paddingTop: 0,
-    marginLeft: 8,
-    marginTop: 0,
+    padding: 6,
+    borderRadius: 20,
   },
   menuDropdown: {
     position: "absolute",
     top: 50,
     right: 10,
-    backgroundColor: "#ffffff",
-    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: "#e9ecef",
+    borderColor: "#E8EDF2",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 8,
     zIndex: 1000,
-    minWidth: 120,
+    minWidth: 140,
+    overflow: "hidden",
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#f8f9fa",
+    borderBottomColor: "#F0F4F8",
   },
   menuItemDanger: {
     borderBottomWidth: 0,
   },
   menuItemText: {
-    marginLeft: 8,
+    marginLeft: 10,
     fontSize: 14,
-    color: "#333",
+    color: "#2C3E50",
     flex: 1,
+    fontWeight: "500",
   },
   menuItemTextActive: {
-    color: "#FFD700",
+    color: "#8B6A9F",
   },
   menuItemTextDanger: {
-    marginLeft: 8,
+    marginLeft: 10,
     fontSize: 14,
-    color: "#ff4444",
+    color: "#8B4A5A",
     flex: 1,
+    fontWeight: "500",
   },
   actionButton: {
     flexDirection: "row",
@@ -1106,23 +1210,29 @@ const styles = StyleSheet.create({
   },
   content: {
     marginBottom: 12,
+    position: "relative",
+  },
+  contentWrapper: {
+    flex: 1,
+    paddingRight: 0,
   },
   title: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
-    color: "#333",
+    color: "#2C3E50",
     flex: 1,
-    marginRight: 8,
+    letterSpacing: 0.2,
   },
   body: {
     fontSize: 14,
-    color: "#666",
+    color: "#2C3E50",
     lineHeight: 20,
     marginBottom: 8,
+    flexWrap: "wrap",
   },
   seeMoreText: {
     fontSize: 14,
-    color: "#007AFF",
+    color: "#B8D4E3",
     fontWeight: "500",
     marginTop: 4,
   },
@@ -1133,13 +1243,14 @@ const styles = StyleSheet.create({
   },
   hashtag: {
     fontSize: 12,
-    color: "#000000",
-    backgroundColor: "#a1d3ff",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    color: "#5A6C7D",
+    backgroundColor: "#D5E3ED",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
     marginRight: 6,
     marginBottom: 4,
+    fontWeight: "500",
   },
   imagesContainer: {
     marginTop: 8,
@@ -1155,34 +1266,70 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
+    borderTopColor: "#F0F4F8",
   },
   actionText: {
     fontSize: 12,
-    color: "#666",
+    color: "#7A8A99",
     marginLeft: 4,
+    fontWeight: "500",
   },
   translatedBody: {
-    fontSize: 14,
-    color: "#444",
-    lineHeight: 20,
-    marginTop: 4,
+    fontSize: 13,
+    color: "#7A8A99",
+    lineHeight: 18,
+    marginTop: 6,
     marginBottom: 6,
+    fontStyle: "italic",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "#F8F9FA",
+    borderRadius: 20,
   },
   translateChip: {
-    marginLeft: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#007AFF",
+    borderColor: "#B8D4E3",
+    backgroundColor: "#F0F4F8",
     flexDirection: "row",
     alignItems: "center",
+    alignSelf: "flex-end",
   },
   translateChipText: {
     marginLeft: 4,
     fontSize: 11,
-    color: "#007AFF",
+    color: "#5A6C7D",
+    fontWeight: "500",
+  },
+  userDropdown: {
+    position: "absolute",
+    top: 60,
+    left: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#E8EDF2",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 8,
+    zIndex: 1000,
+    minWidth: 140,
+    overflow: "hidden",
+  },
+  userDropdownItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  userDropdownText: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: "#2C3E50",
     fontWeight: "500",
   },
 });

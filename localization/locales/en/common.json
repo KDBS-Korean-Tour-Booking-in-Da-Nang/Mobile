@@ -224,6 +224,7 @@
     "forum": "Forum",
     "tour": "Tour",
     "article": "Article",
+    "message": "Message",
     "profile": "Profile"
   },
   "onboarding": {
@@ -646,10 +647,12 @@
       "loading": "Loading transaction...",
       "success": "Payment Successful",
       "failed": "Payment Failed",
+      "cancelled": "Payment Cancelled",
       "pending": "Payment Pending",
       "pendingPayment": "Pending Payment",
       "successMessage": "Your payment was completed successfully.",
       "failedMessage": "Your payment could not be completed.",
+      "cancelledMessage": "You cancelled the payment. You can try again later.",
       "pendingMessage": "Your payment is being processed.",
       "details": "Booking History",
       "orderId": "Order ID",
@@ -832,6 +835,8 @@
     "typeMessage": "Type a message",
     "aiAssistant": "AI Assistant",
     "aiassitant": "AI Assistant",
-    "startConversation": "Start a conversation with AI"
+    "startConversation": "Start a conversation with AI",
+    "loading": "Loading...",
+    "userNotFound": "User not found"
   }
 }

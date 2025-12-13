@@ -148,7 +148,7 @@ export default function VoucherList() {
     return (
       <MainLayout>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color="#B8D4E3" />
           <Text style={styles.loadingText}>{t("tour.loading")}</Text>
         </View>
       </MainLayout>
@@ -175,7 +175,7 @@ export default function VoucherList() {
         </View>
 
         <View style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={18} color="#6c757d" />
+          <Ionicons name="search-outline" size={18} color="#7A8A99" />
           <TextInput
             style={styles.searchInput}
             value={keyword}
@@ -183,12 +183,12 @@ export default function VoucherList() {
             placeholder={
               t("tour.voucher.list.searchPlaceholder") || "Tìm kiếm voucher..."
             }
-            placeholderTextColor="#9aa0a6"
+            placeholderTextColor="#7A8A99"
             returnKeyType="search"
           />
           {keyword ? (
             <TouchableOpacity onPress={() => setKeyword("")}>
-              <Ionicons name="close-circle" size={18} color="#9aa0a6" />
+              <Ionicons name="close-circle-outline" size={18} color="#7A8A99" />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -209,7 +209,7 @@ export default function VoucherList() {
               >
                 <View style={styles.voucherCardHeader} pointerEvents="box-none">
                   <View style={styles.voucherIconContainer}>
-                    <Ionicons name="ticket" size={32} color="#FF6B6B" />
+                    <Ionicons name="ticket-outline" size={32} color="#F5B8C4" />
                   </View>
                   <View style={styles.voucherHeaderInfo}>
                     <Text style={styles.voucherCode}>{voucher.code}</Text>
@@ -221,7 +221,7 @@ export default function VoucherList() {
 
                 <View style={styles.voucherDetails} pointerEvents="box-none">
                   <View style={styles.voucherDetailRow}>
-                    <Ionicons name="pricetag" size={16} color="#666" />
+                    <Ionicons name="pricetag-outline" size={16} color="#7A8A99" />
                     <Text style={styles.voucherDetailLabel}>
                       {t("tour.confirm.discount")}:
                     </Text>
@@ -234,7 +234,7 @@ export default function VoucherList() {
 
                   {voucher.companyUsername && (
                     <View style={styles.voucherDetailRow}>
-                      <Ionicons name="business" size={16} color="#666" />
+                      <Ionicons name="business-outline" size={16} color="#7A8A99" />
                       <Text style={styles.voucherDetailLabel}>
                         {t("tour.voucher.company")}:
                       </Text>
@@ -245,7 +245,7 @@ export default function VoucherList() {
                   )}
 
                   <View style={styles.voucherDetailRow}>
-                    <Ionicons name="basket-outline" size={16} color="#666" />
+                    <Ionicons name="basket-outline" size={16} color="#7A8A99" />
                     <Text style={styles.voucherDetailLabel}>
                       {t("tour.confirm.remaining")}:
                     </Text>
@@ -266,7 +266,7 @@ export default function VoucherList() {
             ))
           ) : (
             <View style={styles.emptyContainer}>
-              <Ionicons name="ticket-outline" size={64} color="#ccc" />
+              <Ionicons name="ticket-outline" size={64} color="#B8D4E3" />
               <Text style={styles.emptyTitle}>
                 {t("tour.voucher.list.empty")}
               </Text>

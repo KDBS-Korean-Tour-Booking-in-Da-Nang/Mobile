@@ -5,3 +5,11 @@ export interface Conversation {
   lastMessage?: string;
   updatedAt?: string;
 }
+
+export interface ChatMessageResponse {
+  messageId: number;
+  senderId: number;
+  receiverId: number;
+  content: string;
+  timestamp: string;
+}

@@ -4,7 +4,7 @@ import { typography } from "../../../constants/theme";
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#FFF9F5",
   },
 
   // Header Styles
@@ -14,7 +14,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 16,
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
   },
 
   // Header Image Styles
@@ -36,10 +36,10 @@ const styles = StyleSheet.create({
     left: 12,
   },
   backCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#fff",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F8F9FA",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -76,24 +76,27 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   guestSectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
-    color: "#333",
+    color: "#2C3E50",
     marginBottom: 12,
+    letterSpacing: 0.2,
   },
   guestCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    padding: 20,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#E8EDF2",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   guestHeader: {
     flexDirection: "row",
@@ -103,8 +106,9 @@ const styles = StyleSheet.create({
   guestName: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333",
+    color: "#2C3E50",
     marginLeft: 8,
+    letterSpacing: 0.2,
   },
   guestDetails: {
     gap: 8,
@@ -116,13 +120,14 @@ const styles = StyleSheet.create({
   },
   guestDetailLabel: {
     fontSize: 14,
-    color: "#666",
+    color: "#7A8A99",
     flex: 1,
+    fontWeight: "500",
   },
   guestDetailValue: {
     fontSize: 14,
-    color: "#333",
-    fontWeight: "500",
+    color: "#2C3E50",
+    fontWeight: "600",
     flex: 1,
     textAlign: "right",
   },
@@ -133,18 +138,27 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
+    fontWeight: "600",
+    color: "#2C3E50",
     marginBottom: 12,
+    letterSpacing: 0.2,
   },
 
   // Info Card Styles
   infoCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    padding: 20,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#E8EDF2",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   infoRow: {
     flexDirection: "row",
@@ -172,11 +186,19 @@ const styles = StyleSheet.create({
 
   // Price Card Styles
   priceCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    padding: 20,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#E8EDF2",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   priceRow: {
     flexDirection: "row",
@@ -198,7 +220,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: "#F0F4F8",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -206,72 +228,82 @@ const styles = StyleSheet.create({
   subtotalLabel: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#111",
+    color: "#2C3E50",
   },
   subtotalValue: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#111",
+    color: "#2C3E50",
   },
   depositLabel: {
     fontSize: 16,
-    fontWeight: "700",
-    color: "#111",
+    fontWeight: "600",
+    color: "#2C3E50",
   },
   depositValue: {
     fontSize: 20,
-    fontWeight: "800",
-    color: "#2F9E44",
+    fontWeight: "700",
+    color: "#5A6C7D",
   },
   discountLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#FF3B30",
+    color: "#F5B8C4",
   },
   discountValue: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#FF3B30",
+    color: "#F5B8C4",
   },
   totalLabel: {
     fontSize: 16,
-    color: "#111",
-    fontWeight: "700",
+    color: "#2C3E50",
+    fontWeight: "600",
   },
   totalValue: {
     fontSize: 18,
-    color: "#111",
-    fontWeight: "800",
+    color: "#2C3E50",
+    fontWeight: "700",
   },
   remainingLabel: {
     fontSize: 16,
-    fontWeight: "700",
-    color: "#111",
+    fontWeight: "600",
+    color: "#2C3E50",
   },
   remainingValue: {
     fontSize: 20,
-    fontWeight: "800",
-    color: "#2F9E44",
+    fontWeight: "700",
+    color: "#5A6C7D",
   },
 
   // Confirm Button Styles
   confirmButton: {
-    backgroundColor: "#2F9E44",
-    borderRadius: 12,
+    backgroundColor: "#B8D4E3",
+    borderRadius: 28,
     paddingVertical: 16,
     paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
     marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
   },
   confirmButtonDisabled: {
-    backgroundColor: "#9ca3af",
+    backgroundColor: "#D5E3ED",
+    opacity: 0.6,
   },
   confirmButtonText: {
-    color: "#fff",
+    color: "#2C3E50",
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "600",
+    letterSpacing: 0.2,
   },
 
   // Loading and Error Styles
@@ -279,36 +311,38 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#FFF9F5",
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: "#666",
+    color: "#7A8A99",
+    fontWeight: "500",
   },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#FFF9F5",
     padding: 20,
   },
   errorTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#333",
+    color: "#2C3E50",
     marginTop: 16,
     textAlign: "center",
+    letterSpacing: 0.2,
   },
   retryButton: {
     marginTop: 20,
-    backgroundColor: "#007AFF",
+    backgroundColor: "#B8D4E3",
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 24,
   },
   retryButtonText: {
-    color: "#fff",
+    color: "#2C3E50",
     fontSize: 16,
     fontWeight: "600",
   },
@@ -319,10 +353,11 @@ const styles = StyleSheet.create({
   },
   tourName: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "#1a1a1a",
+    fontWeight: "600",
+    color: "#2C3E50",
     marginBottom: 12,
     lineHeight: 26,
+    letterSpacing: 0.2,
   },
   tourMeta: {
     flexDirection: "row",
@@ -335,7 +370,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 14,
-    color: "#666",
+    color: "#7A8A99",
     fontWeight: "500",
   },
   tourDetails: {
@@ -348,7 +383,7 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 12,
-    color: "#999",
+    color: "#7A8A99",
     fontWeight: "500",
     marginBottom: 4,
     textTransform: "uppercase",
@@ -358,7 +393,7 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontSize: 16,
-    color: "#333",
+    color: "#2C3E50",
     fontWeight: "600",
     flexShrink: 1,
     flexWrap: "wrap",
@@ -384,13 +419,14 @@ const styles = StyleSheet.create({
   },
   contactName: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#1a1a1a",
+    fontWeight: "600",
+    color: "#2C3E50",
     marginBottom: 4,
+    letterSpacing: 0.2,
   },
   contactPhone: {
     fontSize: 14,
-    color: "#007AFF",
+    color: "#5A6C7D",
     fontWeight: "600",
   },
   contactDetails: {
@@ -403,7 +439,7 @@ const styles = StyleSheet.create({
   },
   contactText: {
     fontSize: 14,
-    color: "#666",
+    color: "#7A8A99",
     flex: 1,
   },
 
@@ -459,23 +495,24 @@ const styles = StyleSheet.create({
   priceItemLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1a1a1a",
+    color: "#2C3E50",
     marginBottom: 4,
+    letterSpacing: 0.2,
   },
   priceItemUnit: {
     fontSize: 12,
-    color: "#666",
+    color: "#7A8A99",
     fontWeight: "500",
   },
   priceItemValue: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#1a1a1a",
+    color: "#2C3E50",
     textAlign: "right",
   },
   priceDivider: {
     height: 1,
-    backgroundColor: "#e5e7eb",
+    backgroundColor: "#F0F4F8",
     marginVertical: 16,
   },
   totalSection: {
@@ -486,7 +523,7 @@ const styles = StyleSheet.create({
   depositNote: {
     marginTop: 6,
     fontSize: 12,
-    color: "#666",
+    color: "#7A8A99",
   },
 
   // Voucher Styles

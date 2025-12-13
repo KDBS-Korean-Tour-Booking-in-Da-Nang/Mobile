@@ -96,15 +96,15 @@ export default function BookingDetail() {
           setRemainingAmount(Math.max(finalTotal - depositValue, 0));
         } else {
           // Fallback: tính từ depositPercentage nếu không có depositDiscountAmount
-          const dp = Number(tour.depositPercentage ?? 0);
-          if (!Number.isNaN(dp)) {
-            const depositValue =
+        const dp = Number(tour.depositPercentage ?? 0);
+        if (!Number.isNaN(dp)) {
+          const depositValue =
               dp > 0 && dp < 100 ? Math.round((finalTotal * dp) / 100) : finalTotal;
-            setDepositAmount(depositValue);
+          setDepositAmount(depositValue);
             setRemainingAmount(Math.max(finalTotal - depositValue, 0));
-          } else {
-            setDepositAmount(null);
-            setRemainingAmount(null);
+        } else {
+          setDepositAmount(null);
+          setRemainingAmount(null);
           }
         }
       } catch {
@@ -127,7 +127,7 @@ export default function BookingDetail() {
     return (
       <MainLayout>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color="#B8D4E3" />
         </View>
       </MainLayout>
     );
@@ -321,9 +321,18 @@ export default function BookingDetail() {
     if (!normalized) {
       return t("common.na");
     }
-    const key = `tour.booking.status.${normalized}`;
+    // Replace underscores with dots for i18n key
+    const keyWithoutUnderscores = normalized.replace(/_/g, ".");
+    const key = `tour.booking.status.${keyWithoutUnderscores}`;
     const translated = t(key);
-    return translated === key ? normalized : translated;
+    // If translation not found, format the status text nicely (remove underscores and add spaces)
+    if (translated === key) {
+      return normalized.replace(/_/g, " ").toLowerCase()
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    }
+    return translated;
   };
 
   const getStatusText = () => translateBookingStatus(bookingStatus);
@@ -625,13 +634,17 @@ export default function BookingDetail() {
 
   return (
     <MainLayout>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+        showsVerticalScrollIndicator={true}
+      >
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => router.back()}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color="#000" />
+            <Ionicons name="chevron-back-outline" size={22} color="#7A8A99" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t("tour.confirm.tourInfo")}</Text>
           <View style={styles.headerSpacer} />
@@ -669,7 +682,7 @@ export default function BookingDetail() {
                 onPress={handleOpenUpdateModal}
                 disabled={updating}
               >
-                <Ionicons name="create-outline" size={20} color="#fff" />
+                <Ionicons name="create-outline" size={18} color="#5A6C7D" />
                 <Text style={styles.updateInfoButtonText}>
                   {t("tour.booking.updateInfo") || "Cập nhật thông tin"}
                 </Text>
@@ -734,7 +747,7 @@ export default function BookingDetail() {
               style={styles.continuePaymentButton}
               onPress={handleContinuePayment}
             >
-              <Ionicons name="card" size={18} color="#fff" />
+              <Ionicons name="card-outline" size={18} color="#2C3E50" />
               <Text style={styles.continuePaymentButtonText}>
                 {t("payment.continuePayment")}
               </Text>
@@ -748,10 +761,10 @@ export default function BookingDetail() {
                   disabled={loadingCancelPreview}
                 >
                   {loadingCancelPreview ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <ActivityIndicator size="small" color="#8B4A5A" />
                   ) : (
                     <>
-                      <Ionicons name="close-circle" size={18} color="#fff" />
+                      <Ionicons name="close-circle-outline" size={18} color="#8B4A5A" />
                       <Text style={styles.cancelButtonText}>
                         {t("tour.booking.cancelAction")}
                       </Text>
@@ -771,7 +784,7 @@ export default function BookingDetail() {
               >
                 {confirmingCompletion ? (
                   <>
-                    <ActivityIndicator size="small" color="#fff" />
+                    <ActivityIndicator size="small" color="#2C3E50" />
                     <Text style={styles.confirmCompletionButtonText}>
                       {t("tour.booking.confirmCompletionProcessing") ||
                         "Đang xác nhận..."}
@@ -779,7 +792,7 @@ export default function BookingDetail() {
                   </>
                 ) : (
                   <>
-                    <Ionicons name="checkmark-done" size={18} color="#fff" />
+                    <Ionicons name="checkmark-done-outline" size={18} color="#2C3E50" />
                     <Text style={styles.confirmCompletionButtonText}>
                       {t("tour.booking.confirmCompletion") ||
                         "Xác nhận tour đã hoàn thành"}
@@ -792,7 +805,7 @@ export default function BookingDetail() {
                 onPress={handleOpenComplaint}
                 disabled={submittingComplaint}
               >
-                <Ionicons name="alert-circle-outline" size={18} color="#fff" />
+                <Ionicons name="alert-circle-outline" size={18} color="#8B4A5A" />
                 <Text style={styles.complaintButtonText}>
                   {t("tour.booking.complaint") || "Khiếu nại"}
                 </Text>
@@ -819,7 +832,7 @@ export default function BookingDetail() {
                 onPress={() => setShowUpdateModal(false)}
                 style={styles.modalCloseButton}
               >
-                <Ionicons name="close-outline" size={20} color="#999" />
+                <Ionicons name="close-outline" size={20} color="#7A8A99" />
               </TouchableOpacity>
             </View>
 
@@ -1133,7 +1146,7 @@ export default function BookingDetail() {
                 disabled={updating}
               >
                 {updating ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color="#2C3E50" size="small" />
                 ) : (
                   <Text style={styles.confirmModalConfirmText}>
                     {t("common.confirm")}
@@ -1162,7 +1175,7 @@ export default function BookingDetail() {
                 onPress={() => setShowComplaintModal(false)}
                 style={styles.modalCloseButton}
               >
-                <Ionicons name="close-outline" size={20} color="#999" />
+                <Ionicons name="close-outline" size={20} color="#7A8A99" />
               </TouchableOpacity>
             </View>
 
@@ -1223,7 +1236,7 @@ export default function BookingDetail() {
                 onPress={() => setShowCancelPreview(false)}
                 style={styles.modalCloseButton}
               >
-                <Ionicons name="close-outline" size={20} color="#999" />
+                <Ionicons name="close-outline" size={20} color="#7A8A99" />
               </TouchableOpacity>
             </View>
 
@@ -1277,7 +1290,7 @@ export default function BookingDetail() {
                 </>
               ) : (
                 <View style={styles.modalField}>
-                  <ActivityIndicator size="small" color="#007AFF" />
+                  <ActivityIndicator size="small" color="#B8D4E3" />
                 </View>
               )}
             </ScrollView>
@@ -1297,7 +1310,7 @@ export default function BookingDetail() {
                 disabled={confirmingCancel}
               >
                 {confirmingCancel ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color="#2C3E50" size="small" />
                 ) : (
                   <Text style={styles.modalSubmitButtonText}>
                     {t("tour.booking.cancelAction")}
@@ -1326,7 +1339,7 @@ export default function BookingDetail() {
                 onPress={() => setShowCancelSuccessModal(false)}
                 style={styles.modalCloseButton}
               >
-                <Ionicons name="close-outline" size={20} color="#999" />
+                <Ionicons name="close-outline" size={20} color="#7A8A99" />
               </TouchableOpacity>
             </View>
 
@@ -1356,7 +1369,7 @@ export default function BookingDetail() {
                 </>
               ) : (
                 <View style={styles.modalField}>
-                  <ActivityIndicator size="small" color="#007AFF" />
+                  <ActivityIndicator size="small" color="#B8D4E3" />
                 </View>
               )}
             </ScrollView>
@@ -1406,7 +1419,7 @@ export default function BookingDetail() {
                 disabled={submittingComplaint}
               >
                 {submittingComplaint ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color="#2C3E50" size="small" />
                 ) : (
                   <Text style={styles.confirmModalConfirmText}>
                     {t("common.confirm")}

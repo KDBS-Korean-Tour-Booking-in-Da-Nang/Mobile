@@ -23,12 +23,14 @@ import {
 import { useTranslation } from "react-i18next";
 import api from "../../../../services/api";
 import { useNotificationContext } from "../../../../src/contexts/notificationContext";
+import { useAuthContext } from "../../../../src/contexts/authContext";
 
 type TabType = "all" | "unread";
 
 export default function Notifications() {
   const { goBack, goToForum, navigate } = useNavigation();
   const { t } = useTranslation();
+  const { user } = useAuthContext();
   const {
     unreadCount: contextUnreadCount,
     notifications: contextNotifications,
@@ -73,7 +75,8 @@ export default function Notifications() {
         }
         // When "all", don't include isRead param at all to get everything
 
-        const response = await getNotifications(params);
+        const userEmail = (user as any)?.email || (user as any)?.userEmail;
+        const response = await getNotifications(params, userEmail);
 
         if (reset || pageNum === 0) {
           setNotifications(response.notifications.content);
@@ -88,41 +91,23 @@ export default function Notifications() {
         setHasMore(pageNum + 1 < response.notifications.totalPages);
         setPage(pageNum);
       } catch (error: any) {
-        // Chỉ hiện alert cho lỗi thật sự (network error, server error), không phải empty response
-        if (error.response?.status >= 400 && error.response?.status < 500) {
-          // Client error - có thể là 401, 403, etc.
-          Alert.alert(
-            t("notifications.error") || "Error",
-            error.response?.data?.message ||
-              t("notifications.loadError") ||
-              "Failed to load notifications"
-          );
-        } else if (error.response?.status >= 500) {
-          // Server error
-          Alert.alert(
-            t("notifications.error") || "Error",
-            error.response?.data?.message ||
-              t("notifications.serverError") ||
-              "Server error. Please try again later."
-          );
-        } else if (!error.response) {
-          // Network error
-          Alert.alert(
-            t("notifications.error") || "Error",
-            t("notifications.networkError") ||
-              "Network error. Please check your connection."
-          );
+        // Silently handle errors (like web frontend)
+        // Only show alert for critical errors
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          // Authentication errors - might need to handle separately
+          console.error("[Notifications] Auth error:", error);
         }
-        // Nếu không có lỗi nghiêm trọng, set empty list
+        // Set empty list on error (like web frontend)
         if (reset || pageNum === 0) {
           setNotifications([]);
+          setUnreadCount(0);
         }
       } finally {
         setLoading(false);
         setLoadingMore(false);
       }
     },
-    [activeTab, t]
+    [activeTab, user]
   );
 
   // Refresh context notifications when entering the page
@@ -149,8 +134,11 @@ export default function Notifications() {
 
   const handleMarkAsRead = useCallback(
     async (notificationId: number) => {
+      if (!user) return;
+      const userEmail = (user as any)?.email || (user as any)?.userEmail;
       try {
-        await markNotificationAsRead(notificationId);
+        await markNotificationAsRead(notificationId, userEmail);
+        // Optimistic update (like web frontend)
         setNotifications((prev) =>
           prev.map((notif) =>
             notif.notificationId === notificationId
@@ -161,16 +149,13 @@ export default function Notifications() {
         setUnreadCount((prev) => Math.max(0, prev - 1));
         setShowMenuModal(false);
         setSelectedNotificationId(null);
-      } catch (error: any) {
-        Alert.alert(
-          t("notifications.error") || "Error",
-          error.response?.data?.message ||
-            t("notifications.loadError") ||
-            "Failed to mark as read"
-        );
+      } catch {
+        // Silently handle errors (like web frontend)
+        // Re-fetch to sync with server
+        await loadNotifications(page, false);
       }
     },
-    [t]
+    [user, loadNotifications, page]
   );
 
   // Refresh notifications when context updates
@@ -249,20 +234,40 @@ export default function Notifications() {
   );
 
   const handleDelete = async (notificationId: number) => {
+    if (!user) return;
+    const userEmail = (user as any)?.email || (user as any)?.userEmail;
+    
     Alert.alert(
-      t("notifications.deleteConfirm"),
-      t("notifications.deleteMessage"),
+      (() => {
+        const translated = t("notifications.deleteConfirm");
+        return translated && translated !== "notifications.deleteConfirm" 
+          ? translated 
+          : "Delete notification";
+      })(),
+      (() => {
+        const translated = t("notifications.deleteMessage");
+        return translated && translated !== "notifications.deleteMessage"
+          ? translated
+          : "Are you sure you want to delete this notification?";
+      })(),
       [
         {
-          text: t("common.cancel"),
+          text: (() => {
+            const translated = t("common.cancel");
+            return translated && translated !== "common.cancel" ? translated : "Cancel";
+          })(),
           style: "cancel",
         },
         {
-          text: t("notifications.delete"),
+          text: (() => {
+            const translated = t("notifications.delete");
+            return translated && translated !== "notifications.delete" ? translated : "Delete";
+          })(),
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteNotification(notificationId);
+              await deleteNotification(notificationId, userEmail);
+              // Optimistic update (like web frontend - client-side only)
               const wasUnread =
                 notifications.find((n) => n.notificationId === notificationId)
                   ?.isRead === false;
@@ -274,13 +279,8 @@ export default function Notifications() {
               }
               setShowMenuModal(false);
               setSelectedNotificationId(null);
-            } catch (error: any) {
-              Alert.alert(
-                t("notifications.error") || "Error",
-                error.response?.data?.message ||
-                  t("notifications.loadError") ||
-                  "Failed to delete notification"
-              );
+            } catch {
+              // Silently handle errors (like web frontend)
             }
           },
         },
@@ -289,24 +289,26 @@ export default function Notifications() {
   };
 
   const handleMarkAllAsRead = async () => {
+    if (!user) return;
+    const userEmail = (user as any)?.email || (user as any)?.userEmail;
+    const unreadNotifications = notifications.filter((n) => !n.isRead);
+    if (unreadNotifications.length === 0) return;
+    
     try {
-      // Mark all unread notifications as read
-      const unreadNotifications = notifications.filter((n) => !n.isRead);
+      // Mark all unread notifications as read (like web frontend)
       await Promise.all(
-        unreadNotifications.map((n) => markNotificationAsRead(n.notificationId))
+        unreadNotifications.map((n) => markNotificationAsRead(n.notificationId, userEmail))
       );
+      // Optimistic update
       setNotifications((prev) =>
         prev.map((notif) => ({ ...notif, isRead: true }))
       );
       setUnreadCount(0);
       setShowHeaderMenu(false);
-    } catch (error: any) {
-      Alert.alert(
-        t("notifications.error") || "Error",
-        error.response?.data?.message ||
-          t("notifications.loadError") ||
-          "Failed to mark all as read"
-      );
+    } catch {
+      // Silently handle errors (like web frontend)
+      // Re-fetch to sync with server
+      await loadNotifications(page, false);
     }
   };
 
@@ -345,41 +347,74 @@ export default function Notifications() {
     switch (type) {
       case "LIKE_POST":
       case "LIKE_COMMENT":
-        return "#FF3B30";
+        return "#FFB3BA";
       case "COMMENT_POST":
       case "REPLY_COMMENT":
-        return "#34C759";
+        return "#B5EAD7";
       case "NEW_BOOKING":
       case "BOOKING_CONFIRMED":
-        return "#007AFF";
+        return "#B3D9FF";
       case "BOOKING_UPDATE_REQUEST":
       case "BOOKING_UPDATED_BY_USER":
-        return "#FF9500";
+        return "#FFD9B3";
       case "TOUR_APPROVED":
-        return "#5856D6";
+        return "#D4C5F9";
       case "NEW_RATING":
-        return "#FFCC00";
+        return "#FFE5B4";
       case "BOOKING_REJECTED":
-        return "#FF3B30";
+        return "#FFB3BA";
       default:
-        return "#8E8E93";
+        return "#E0E0E0";
     }
   };
 
   const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    const diffInDays = Math.floor(diffInHours / 24);
+    if (!dateString) {
+      const translated = t("notifications.justNow");
+      return translated && translated !== "notifications.justNow" ? translated : "Just now";
+    }
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        const translated = t("notifications.justNow");
+        return translated && translated !== "notifications.justNow" ? translated : "Just now";
+      }
+      const now = new Date();
+      const diffInMs = now.getTime() - date.getTime();
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      const diffInDays = Math.floor(diffInHours / 24);
 
-    if (diffInMinutes < 1) return t("notifications.justNow");
-    if (diffInMinutes < 60)
-      return `${diffInMinutes} ${t("notifications.minutes")}`;
-    if (diffInHours < 24) return `${diffInHours} ${t("notifications.hours")}`;
-    if (diffInDays < 7) return `${diffInDays} ${t("notifications.days")}`;
-    return date.toLocaleDateString("vi-VN");
+      if (diffInMinutes < 1) {
+        const translated = t("notifications.justNow");
+        return translated && translated !== "notifications.justNow" ? translated : "Just now";
+      }
+      if (diffInMinutes < 60) {
+        const minutesTranslated = t("notifications.minutes");
+        const minutesText = minutesTranslated && minutesTranslated !== "notifications.minutes" 
+          ? minutesTranslated 
+          : "minutes";
+        return `${diffInMinutes} ${minutesText}`;
+      }
+      if (diffInHours < 24) {
+        const hoursTranslated = t("notifications.hours");
+        const hoursText = hoursTranslated && hoursTranslated !== "notifications.hours"
+          ? hoursTranslated
+          : "hours";
+        return `${diffInHours} ${hoursText}`;
+      }
+      if (diffInDays < 7) {
+        const daysTranslated = t("notifications.days");
+        const daysText = daysTranslated && daysTranslated !== "notifications.days"
+          ? daysTranslated
+          : "days";
+        return `${diffInDays} ${daysText}`;
+      }
+      return date.toLocaleDateString("vi-VN");
+    } catch {
+      const translated = t("notifications.justNow");
+      return translated && translated !== "notifications.justNow" ? translated : "Just now";
+    }
   };
 
   const toAbsoluteUrl = (path: string): string => {
@@ -398,14 +433,19 @@ export default function Notifications() {
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <TouchableOpacity onPress={goBack} style={styles.backButton}>
-              <Ionicons name="chevron-back" size={24} color="#000" />
+              <Ionicons name="chevron-back" size={20} color="#2D2D2D" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>{t("notifications.title")}</Text>
+            <Text style={styles.headerTitle}>
+              {(() => {
+                const translated = t("notifications.title");
+                return translated && translated !== "notifications.title" ? translated : "Notifications";
+              })()}
+            </Text>
             <TouchableOpacity
               onPress={() => setShowHeaderMenu(!showHeaderMenu)}
               style={styles.menuButton}
             >
-              <Ionicons name="ellipsis-horizontal" size={24} color="#000" />
+              <Ionicons name="ellipsis-horizontal" size={20} color="#2D2D2D" />
             </TouchableOpacity>
           </View>
 
@@ -429,7 +469,7 @@ export default function Notifications() {
                     handleMarkAllAsRead();
                   }}
                 >
-                  <Ionicons name="checkmark-done" size={20} color="#000" />
+                  <Ionicons name="checkmark-done" size={18} color="#81C784" />
                   <Text style={styles.menuItemText}>
                     {t("notifications.markAllAsRead")}
                   </Text>
@@ -450,7 +490,10 @@ export default function Notifications() {
                   activeTab === "all" && styles.tabTextActive,
                 ]}
               >
-                {t("notifications.all")}
+                {(() => {
+                  const translated = t("notifications.all");
+                  return translated && translated !== "notifications.all" ? translated : "All";
+                })()}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -463,7 +506,10 @@ export default function Notifications() {
                   activeTab === "unread" && styles.tabTextActive,
                 ]}
               >
-                {t("notifications.unread")}
+                {(() => {
+                  const translated = t("notifications.unread");
+                  return translated && translated !== "notifications.unread" ? translated : "Unread";
+                })()}
               </Text>
             </TouchableOpacity>
           </View>
@@ -484,12 +530,17 @@ export default function Notifications() {
         {/* Notifications List */}
         {loading && notifications.length === 0 ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007AFF" />
+            <ActivityIndicator size="large" color="#FFB3BA" />
           </View>
         ) : notifications.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="notifications-off" size={64} color="#8E8E93" />
-            <Text style={styles.emptyText}>{t("notifications.empty")}</Text>
+            <Ionicons name="notifications-off" size={56} color="#C8C8C8" />
+            <Text style={styles.emptyText}>
+              {(() => {
+                const translated = t("notifications.empty");
+                return translated && translated !== "notifications.empty" ? translated : "No notifications";
+              })()}
+            </Text>
           </View>
         ) : (
           <ScrollView
@@ -529,7 +580,7 @@ export default function Notifications() {
                         />
                       ) : (
                         <View style={styles.avatarPlaceholder}>
-                          <Ionicons name="person" size={24} color="#8E8E93" />
+                          <Ionicons name="person" size={22} color="#C8C8C8" />
                         </View>
                       )}
                       {/* Icon Overlay */}
@@ -549,8 +600,8 @@ export default function Notifications() {
                               notification.notificationType
                             ) as any
                           }
-                          size={12}
-                          color="#fff"
+                          size={10}
+                          color="#FFFFFF"
                         />
                       </View>
                     </View>
@@ -558,10 +609,10 @@ export default function Notifications() {
                     {/* Content */}
                     <View style={styles.notificationContent}>
                       <Text style={styles.notificationText}>
-                        {notification.message}
+                        {String(notification.message || "")}
                       </Text>
                       <Text style={styles.notificationTime}>
-                        {formatTimeAgo(notification.createdAt)}
+                        {formatTimeAgo(notification.createdAt || "")}
                       </Text>
                     </View>
                   </View>
@@ -578,8 +629,8 @@ export default function Notifications() {
                     >
                       <Ionicons
                         name="ellipsis-vertical"
-                        size={20}
-                        color="#8E8E93"
+                        size={18}
+                        color="#B8B8B8"
                       />
                     </TouchableOpacity>
                   </View>
@@ -589,7 +640,7 @@ export default function Notifications() {
 
             {loadingMore && (
               <View style={styles.loadingMoreContainer}>
-                <ActivityIndicator size="small" color="#007AFF" />
+                <ActivityIndicator size="small" color="#FFB3BA" />
               </View>
             )}
           </ScrollView>
@@ -623,8 +674,8 @@ export default function Notifications() {
                     >
                       <Ionicons
                         name="checkmark-circle"
-                        size={20}
-                        color="#000"
+                        size={18}
+                        color="#81C784"
                       />
                       <Text style={styles.menuItemText}>
                         {t("notifications.markAsRead")}
@@ -639,7 +690,7 @@ export default function Notifications() {
                       }
                     }}
                   >
-                    <Ionicons name="trash" size={20} color="#FF3B30" />
+                    <Ionicons name="trash" size={18} color="#FF8A9B" />
                     <Text
                       style={[styles.menuItemText, styles.menuItemTextDelete]}
                     >

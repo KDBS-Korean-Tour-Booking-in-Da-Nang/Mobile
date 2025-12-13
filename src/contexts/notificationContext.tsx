@@ -13,6 +13,7 @@ import {
   getUnreadCount,
 } from "../../services/endpoints/notifications";
 import { usePollingNotifications } from "../../hooks/usePollingNotifications";
+import { useAuthContext } from "./authContext";
 
 interface NotificationContextType {
   connected: boolean;
@@ -35,6 +36,8 @@ const NotificationContext = createContext<NotificationContextType | undefined>(
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
+  const { user } = useAuthContext();
+  const userEmail = (user as any)?.email || (user as any)?.userEmail;
   const [connected] = useState(true); // Always "connected" when using polling
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationResponse[]>(
@@ -91,31 +94,38 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
   // Load initial notifications and unread count
   // Only called manually when user opens notifications page
   const refreshNotifications = useCallback(async () => {
+    if (!userEmail) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
     try {
       const [notificationsResponse, unreadCountResponse] = await Promise.all([
         getNotifications({
-        page: 0,
-        size: 20,
-        sort: "createdAt,desc",
-        }),
-        getUnreadCount(),
+          page: 0,
+          size: 20,
+          sort: "createdAt,desc",
+        }, userEmail),
+        getUnreadCount(userEmail),
       ]);
       setNotifications(notificationsResponse.notifications.content);
       setUnreadCount(unreadCountResponse);
     } catch {
-      // Silently handle errors
+      // Silently handle errors (like web frontend)
       // Set empty state on error
       setNotifications([]);
       setUnreadCount(0);
     }
-  }, []);
+  }, [userEmail]);
 
   const markAsRead = useCallback(async (notificationId: number) => {
+    if (!userEmail) return;
     try {
       const { markNotificationAsRead } = await import(
         "../../services/endpoints/notifications"
       );
-      await markNotificationAsRead(notificationId);
+      await markNotificationAsRead(notificationId, userEmail);
+      // Optimistic update (like web frontend)
       setNotifications((prev) =>
         prev.map((n) =>
           n.notificationId === notificationId ? { ...n, isRead: true } : n
@@ -123,28 +133,32 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch {
-      // Silently handle errors
+      // Silently handle errors (like web frontend)
     }
-  }, []);
+  }, [userEmail]);
 
   const markAllAsRead = useCallback(async () => {
+    if (!userEmail) return;
+    const unreadNotifications = notifications.filter((n) => !n.isRead);
+    if (unreadNotifications.length === 0) return;
+    
     try {
-      // Mark all notifications as read by updating each one
-      const unreadNotifications = notifications.filter((n) => !n.isRead);
+      // Mark all notifications as read by updating each one (like web frontend)
+      const { markNotificationAsRead } = await import(
+        "../../services/endpoints/notifications"
+      );
       await Promise.all(
         unreadNotifications.map((n) =>
-          import("../../services/endpoints/notifications").then(
-            ({ markNotificationAsRead }) =>
-              markNotificationAsRead(n.notificationId)
-          )
+          markNotificationAsRead(n.notificationId, userEmail)
         )
       );
+      // Optimistic update
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch {
-      // Silently handle errors
+      // Silently handle errors (like web frontend)
     }
-  }, [notifications]);
+  }, [userEmail, notifications]);
 
   const value = useMemo(
     () => ({

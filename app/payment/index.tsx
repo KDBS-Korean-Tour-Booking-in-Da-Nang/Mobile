@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
+  Platform,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -44,15 +46,6 @@ export default function TossPaymentScreen() {
     amount = "",
   } = params;
 
-  console.log("[PAYMENT] Params received:", {
-    bookingId,
-    userEmail,
-    voucherCode,
-    bookingStatus,
-    amount: amount || "(empty)",
-    amountType: typeof amount,
-  });
-
   const createPayment = useCallback(async () => {
     if (paymentCreatedRef.current) {
       return;
@@ -85,24 +78,9 @@ export default function TossPaymentScreen() {
         voucherCode: voucherCode || undefined,
       };
 
-      console.log("[PAYMENT] Calling createBookingPayment - REQUEST BODY:", {
-        ...requestPayload,
-        voucherCode: requestPayload.voucherCode || "(empty/undefined)",
-        amountFromParams: amount || "(empty) - NOT SENT TO BE",
-      });
-
       const response = await tourEndpoints.createBookingPayment(requestPayload);
 
       const data = response.data || {};
-      
-      console.log("[PAYMENT] API Response received - RESPONSE BODY:", {
-        success: data.success,
-        amountFromBackend: data.amount,
-        amountFromBackendType: typeof data.amount,
-        orderId: data.orderId,
-        voucherCodeUsed: requestPayload.voucherCode || "(none)",
-        fullResponse: JSON.stringify(data),
-      });
 
       if (
         data.success &&
@@ -119,8 +97,6 @@ export default function TossPaymentScreen() {
           data.transactionId || data.transaction_id || data.id || null;
         transactionIdRef.current = txId ? Number(txId) : null;
 
-        // Ưu tiên dùng amount từ backend (đã được tính đúng với voucher và deposit)
-        // Backend đã tính toán chính xác số tiền cần thanh toán dựa trên booking và voucher
         let amountValue: string = "0";
         let savedAmount: number | null = null;
         
@@ -133,32 +109,15 @@ export default function TossPaymentScreen() {
             savedAmount = Math.round(backendAmount);
             amountValue = String(savedAmount);
             actualPaymentAmountRef.current = savedAmount;
-            console.log("[PAYMENT] Using amount from backend:", savedAmount);
           }
         }
         
-        // Nếu backend không có, dùng từ params
         if (!savedAmount && amount && String(amount).trim().length > 0 && !isNaN(Number(amount)) && Number(amount) > 0) {
           savedAmount = Math.round(Number(amount));
           amountValue = String(savedAmount);
           actualPaymentAmountRef.current = savedAmount;
-          console.log("[PAYMENT] Using amount from params:", savedAmount);
-        }
-        
-        // Nếu vẫn không có, dùng 0
-        if (!savedAmount) {
-          console.log("[PAYMENT] No valid amount, using 0");
         }
 
-        console.log("[PAYMENT] Amount processing:", {
-          amountFromParams: amount || "(empty)",
-          amountFromBackend: data.amount,
-          amountValue: amountValue,
-          amountValueType: typeof amountValue,
-          usingBackendAmount: data.amount != null,
-          usingParamsAmount: data.amount == null && amount && String(amount).trim().length > 0 && !isNaN(Number(amount)),
-          actualPaymentAmount: actualPaymentAmountRef.current,
-        });
         const html = `
 <!DOCTYPE html>
 <html>
@@ -171,15 +130,15 @@ export default function TossPaymentScreen() {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
         margin: 0; 
         padding: 16px; 
-        background-color: #f5f5f5;
+        background-color: #F8F9FA;
       }
       .wrap { 
         max-width: 720px; 
         margin: 0 auto; 
         background: #fff;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 24px;
+        border-radius: 28px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
       }
       #payment-method {
         margin-bottom: 16px;
@@ -190,31 +149,40 @@ export default function TossPaymentScreen() {
       #pay {
         margin-top: 24px;
         width: 100%;
-        height: 52px;
-        background: #007AFF;
+        height: 56px;
+        background: #B8D4E3;
         color: #fff;
         border: none;
-        border-radius: 12px;
+        border-radius: 28px;
         font-size: 16px;
-        font-weight: 600;
+        font-weight: 500;
         cursor: pointer;
-        transition: background 0.2s;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(184, 212, 227, 0.3);
+        letter-spacing: 0.3px;
       }
       #pay:hover {
-        background: #0051D5;
+        background: #A8C5D3;
+        box-shadow: 0 4px 12px rgba(184, 212, 227, 0.4);
+        transform: translateY(-1px);
       }
       #pay:active {
-        background: #0040A8;
+        background: #98B5C3;
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(184, 212, 227, 0.3);
       }
       #pay:disabled {
-        background: #ccc;
+        background: #E0E0E0;
+        color: #B0B0B0;
         cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
       }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <h2 style="margin-top: 0; margin-bottom: 20px; color: #333;">Thanh toán Toss</h2>
+      <h2 style="margin-top: 0; margin-bottom: 20px; color: #4A5568; font-weight: 500; letter-spacing: -0.3px;">Thanh toán Toss</h2>
       <div id="payment-method"></div>
       <div id="agreement"></div>
       <button id="pay">Thanh toán</button>
@@ -230,19 +198,10 @@ export default function TossPaymentScreen() {
           var amountStr = ${JSON.stringify(amountValue)};
           var amountNum = Number(amountStr);
           
-          console.log("[PAYMENT HTML] Amount values:", {
-            amountStr: amountStr,
-            amountNum: amountNum,
-            amountNumType: typeof amountNum,
-            isNaN: isNaN(amountNum),
-          });
-
           const tp = TossPayments(clientKey);
           const widgets = tp.widgets({ customerKey: customerKey });
 
           await widgets.setAmount({ currency: "KRW", value: amountNum });
-          
-          console.log("[PAYMENT HTML] Toss widget amount set:", amountNum);
 
           await Promise.all([
             widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" }),
@@ -303,39 +262,16 @@ export default function TossPaymentScreen() {
         const status = urlObj.searchParams.get("status");
         const amountParam = urlObj.searchParams.get("amount");
         
-        console.log("[PAYMENT] Success callback - amount from URL:", {
-          amountParam: amountParam || "(empty)",
-          orderId,
-          status,
-          actualPaymentAmountFromBackend: actualPaymentAmountRef.current,
-          actualPaymentAmountType: typeof actualPaymentAmountRef.current,
-        });
-
-        // Luôn dùng số tiền từ backend response (đã được tính đúng với voucher và deposit)
-        // Không dùng amountParam từ URL callback vì có thể không chính xác
-        // actualPaymentAmountRef.current đã được set từ data.amount (backend response) khi tạo payment
         let finalAmount = "";
         if (actualPaymentAmountRef.current !== null && actualPaymentAmountRef.current > 0) {
           finalAmount = String(Math.round(actualPaymentAmountRef.current));
         } else if (amount && String(amount).trim().length > 0 && !isNaN(Number(amount)) && Number(amount) > 0) {
           finalAmount = String(Math.round(Number(amount)));
         } else {
-          // Fallback: thử lấy từ URL nếu không có
           if (amountParam && String(amountParam).trim().length > 0 && !isNaN(Number(amountParam)) && Number(amountParam) > 0) {
             finalAmount = String(Math.round(Number(amountParam)));
           }
         }
-
-        console.log("[PAYMENT] Success callback - sending to transactionResult:", {
-          orderId,
-          status,
-          actualPaymentAmountFromBackend: actualPaymentAmountRef.current,
-          amountFromParams: amount,
-          amountFromUrl: amountParam,
-          finalAmount,
-          finalAmountType: typeof finalAmount,
-          usingBackendAmount: actualPaymentAmountRef.current !== null && actualPaymentAmountRef.current > 0,
-        });
 
         router.replace({
           pathname: "/transactionResult" as any,
@@ -462,7 +398,6 @@ export default function TossPaymentScreen() {
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Thanh toán Toss</Text>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007AFF" />
@@ -479,7 +414,6 @@ export default function TossPaymentScreen() {
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Payment Toss</Text>
         </View>
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={64} color="#FF3B30" />
@@ -506,7 +440,6 @@ export default function TossPaymentScreen() {
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Thanh toán Toss</Text>
         </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorTitle}>Không thể tải trang thanh toán</Text>
@@ -521,7 +454,6 @@ export default function TossPaymentScreen() {
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thanh toán Toss</Text>
       </View>
 
       <WebView
@@ -555,17 +487,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 8,
+    paddingTop: Platform.OS === "android" 
+      ? (StatusBar.currentHeight || 0) + 8 
+      : 50, // iOS safe area top padding
     borderBottomWidth: 1,
     borderBottomColor: "#E5E5EA",
   },
   backButton: {
     marginRight: 16,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#000",
   },
   loadingContainer: {
     flex: 1,
@@ -609,7 +539,7 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
-    marginTop: 60, // Thêm margin top để không che header
+    marginTop: 0, // Không cần margin top vì header đã có padding
   },
   webviewLoading: {
     position: "absolute",

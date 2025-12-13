@@ -11,19 +11,18 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 0,
-    minHeight: "100%",
+    paddingBottom: 80,
   },
   illustrationContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: 45,
-    paddingBottom: 20,
-    height: width * 0.65,
+    paddingTop: 20,
+    paddingBottom: 5,
+    height: width * 0.4,
   },
   illustration: {
-    width: width * 0.75,
-    height: width * 0.75,
+    width: width * 0.55,
+    height: width * 0.55,
   },
   formCard: {
     backgroundColor: "#fff",
@@ -31,8 +30,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 28,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
-    paddingBottom: 80,
-    marginTop: -20,
+    paddingBottom: 100,
+    marginTop: 0,
     flex: 1,
   },
   formTitle: {

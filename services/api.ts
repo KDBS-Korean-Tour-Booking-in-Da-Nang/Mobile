@@ -11,6 +11,61 @@ const API_BASE_URL_PROD = (expoProd ?? "").replace(/\/$/, "");
 
 const API_BASE_URL = __DEV__ ? API_BASE_URL_DEV : API_BASE_URL_PROD;
 
+// WebSocket URL configuration
+// NOTE: On mobile devices, use your computer's IP address instead of localhost
+// 
+// OPTIONAL: Only set these if WebSocket runs on different server/port than REST API
+// If not set, WebSocket will AUTOMATICALLY use the same base URL as API_BASE_URL
+// 
+// Example (only if needed):
+//   EXPO_PUBLIC_WS_URL_DEV=ws://192.168.1.100:8080/ws
+//   EXPO_PUBLIC_WS_URL_PROD=wss://your-domain.com/ws
+const expoWsDev = (typeof process !== "undefined" &&
+  (process.env as any)?.EXPO_PUBLIC_WS_URL_DEV) as string | undefined;
+const expoWsProd = (typeof process !== "undefined" &&
+  (process.env as any)?.EXPO_PUBLIC_WS_URL_PROD) as string | undefined;
+const expoWs = (typeof process !== "undefined" &&
+  (process.env as any)?.EXPO_PUBLIC_WS_URL) as string | undefined;
+
+// Helper function to convert WebSocket URL to HTTP base URL for SockJS
+function getWsBaseUrl(wsUrl?: string, apiBase?: string): string {
+  if (wsUrl) {
+    try {
+      // Remove trailing /ws if present, then convert ws:// to http://
+      const cleanUrl = wsUrl.replace(/\/ws\/?$/, "");
+      const url = new URL(cleanUrl);
+      // SockJS needs http/https, not ws/wss
+      if (url.protocol === "ws:") {
+        url.protocol = "http:";
+      } else if (url.protocol === "wss:") {
+        url.protocol = "https:";
+      }
+      return url.toString().replace(/\/$/, "");
+    } catch {
+      // If URL parsing fails, try manual conversion
+      const cleanUrl = wsUrl.replace(/\/ws\/?$/, "");
+      return cleanUrl.replace(/^ws:\/\//, "http://").replace(/^wss:\/\//, "https://").replace(/\/$/, "");
+    }
+  }
+  // Fallback: automatically use API_BASE_URL (which should already have the correct IP/domain)
+  // This ensures WebSocket uses the same server as the REST API
+  if (apiBase) {
+    try {
+      const url = new URL(apiBase);
+      return `${url.protocol}//${url.host}`;
+    } catch {
+      return apiBase.replace(/\/$/, "");
+    }
+  }
+  return "";
+}
+
+// Use WS_URL if provided, otherwise fallback to WS_URL_DEV/PROD, or automatically derive from API_BASE_URL
+// This way, if API_BASE_URL is set to http://192.168.1.100:8080, WebSocket will automatically use the same IP
+const WS_URL_DEV = getWsBaseUrl(expoWs || expoWsDev, API_BASE_URL_DEV);
+const WS_URL_PROD = getWsBaseUrl(expoWs || expoWsProd, API_BASE_URL_PROD);
+const WS_URL = __DEV__ ? WS_URL_DEV : WS_URL_PROD;
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 20000,
@@ -38,9 +93,13 @@ api.interceptors.request.use(
       }
 
       if (userData) {
-        const user = JSON.parse(userData);
-        const email: string | undefined = user?.email;
-        if (email) (config.headers as any)["User-Email"] = email;
+        try {
+          const user = JSON.parse(userData);
+          const email: string | undefined = user?.email || user?.userEmail;
+          if (email) (config.headers as any)["User-Email"] = email;
+        } catch (error) {
+          console.error("[API Interceptor] Error parsing userData:", error);
+        }
       }
 
       const urlPath = url.split("?")[0];
@@ -112,9 +171,13 @@ apiForm.interceptors.request.use(
         (config.headers as any).Authorization = `Bearer ${token}`;
       }
       if (userData) {
-        const user = JSON.parse(userData);
-        const email: string | undefined = user?.email;
-        if (email) (config.headers as any)["User-Email"] = email;
+        try {
+          const user = JSON.parse(userData);
+          const email: string | undefined = user?.email || user?.userEmail;
+          if (email) (config.headers as any)["User-Email"] = email;
+        } catch (error) {
+          console.error("[API Interceptor] Error parsing userData:", error);
+        }
       }
     } catch {}
     return config;
@@ -145,4 +208,5 @@ apiForm.interceptors.response.use(
 );
 
 export const API_BASE = API_BASE_URL;
+export const WS_BASE = WS_URL;
 export default api;

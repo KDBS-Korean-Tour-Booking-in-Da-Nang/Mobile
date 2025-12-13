@@ -232,6 +232,7 @@
     "forum": "Diễn đàn",
     "tour": "Tour",
     "article": "Bài viết",
+    "message": "Tin nhắn",
     "profile": "Cá nhân"
   },
   "onboarding": {
@@ -654,10 +655,12 @@
       "loading": "Đang tải giao dịch...",
       "success": "Thanh toán thành công",
       "failed": "Thanh toán thất bại",
+      "cancelled": "Thanh toán đã hủy",
       "pending": "Đang xử lý thanh toán",
       "pendingPayment": "Chờ thanh toán",
       "successMessage": "Thanh toán của bạn đã hoàn tất thành công.",
       "failedMessage": "Thanh toán của bạn không thể hoàn tất.",
+      "cancelledMessage": "Bạn đã hủy thanh toán. Bạn có thể thử lại sau.",
       "pendingMessage": "Thanh toán của bạn đang được xử lý.",
       "details": "Lịch sử đặt tour",
       "orderId": "Mã đơn hàng",
@@ -820,6 +823,8 @@
     "typeMessage": "Nhập tin nhắn",
     "aiAssistant": "Trợ lý AI",
     "aiassitant": "Trợ lý AI",
-    "startConversation": "Bắt đầu cuộc trò chuyện với AI"
+    "startConversation": "Bắt đầu cuộc trò chuyện với AI",
+    "loading": "Đang tải...",
+    "userNotFound": "Không tìm thấy người dùng"
   }
 }

@@ -1,24 +1,28 @@
 import api from "../api";
-import { Conversation } from "../../src/types/response/chat.response";
-import { ChatMessage } from "../../src/types/request/chat.request";
+import { ChatMessageRequest } from "../../src/types/request/chat.request";
+import { ChatMessageResponse } from "../../src/types/response/chat.response";
 
-export type { Conversation, ChatMessage };
+export type { ChatMessageRequest, ChatMessageResponse };
 
-export function getConversation(user1: string, user2: string) {
-  return api.get(
-    `/api/chat/conversation/${encodeURIComponent(user1)}/${encodeURIComponent(
-      user2
-    )}`
-  );
+// Get conversation between two users
+export function getConversation(user1: number, user2: number) {
+  return api.get(`/api/chat/conversation/${user1}/${user2}`);
 }
 
-export function getAllConversations(userId: number) {
+// Get all messages from a user (all conversations)
+export function getAllMessagesFromUser(userId: number) {
   return api.get(`/api/chat/all/${userId}`);
 }
 
-export function sendMessage(body: ChatMessage) {
-  return api.post("/app/chat.send", body);
+// Send message via REST API
+export function sendMessage(body: ChatMessageRequest) {
+  return api.post("/api/chat/send", body);
 }
 
-const chatEndpoints = { getConversation, getAllConversations, sendMessage };
+const chatEndpoints = { 
+  getConversation, 
+  getAllMessagesFromUser, 
+  sendMessage 
+};
+
 export default chatEndpoints;

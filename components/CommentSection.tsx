@@ -478,7 +478,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                         <Ionicons
                           name="create-outline"
                           size={16}
-                          color="#666"
+                          color="#7A8A99"
                         />
                       </TouchableOpacity>
                       <TouchableOpacity
@@ -490,7 +490,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                         <Ionicons
                           name="trash-outline"
                           size={16}
-                          color="#ff4444"
+                          color="#F5B8C4"
                         />
                       </TouchableOpacity>
                     </View>
@@ -502,7 +502,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                       }
                       style={styles.actionButton}
                     >
-                      <Ionicons name="flag-outline" size={16} color="#666" />
+                      <Ionicons name="flag-outline" size={16} color="#7A8A99" />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -654,7 +654,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                     }
                     size={16}
                     color={
-                      likedMap[comment.forumCommentId] ? "#ff4444" : "#666"
+                      likedMap[comment.forumCommentId] ? "#F5B8C4" : "#7A8A99"
                     }
                   />
                   <Text style={styles.commentActionText}>
@@ -675,7 +675,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                     }));
                   }}
                 >
-                  <Ionicons name="chatbubble-outline" size={16} color="#666" />
+                  <Ionicons name="chatbubble-outline" size={16} color="#7A8A99" />
                   <Text style={styles.commentActionText}>
                     {getTotalCommentCount(comment.forumCommentId)}
                   </Text>
@@ -690,7 +690,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                           <Ionicons
                             name="chatbubble-outline"
                             size={14}
-                            color="#666"
+                            color="#7A8A99"
                           />
                           <Text
                             style={[styles.commentAuthor, { marginLeft: 4 }]}
@@ -800,7 +800,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                   <Ionicons
                                     name="language-outline"
                                     size={12}
-                                    color="#007AFF"
+                                    color="#B8D4E3"
                                   />
                                   <Text style={styles.translateChipText}>
                                     {isTranslatingComments[reply.forumCommentId]
@@ -906,8 +906,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                             size={14}
                             color={
                               likedMap[reply.forumCommentId]
-                                ? "#ff4444"
-                                : "#666"
+                                ? "#F5B8C4"
+                                : "#7A8A99"
                             }
                           />
                           <Text
@@ -933,7 +933,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                           <Ionicons
                             name="chatbubble-outline"
                             size={14}
-                            color="#666"
+                            color="#7A8A99"
                           />
                           <Text
                             style={[styles.commentActionText, { fontSize: 12 }]}
@@ -1098,7 +1098,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                             <Ionicons
                                               name="language-outline"
                                               size={11}
-                                              color="#007AFF"
+                                              color="#B8D4E3"
                                             />
                                             <Text
                                               style={[
@@ -1233,8 +1233,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                       size={14}
                                       color={
                                         likedMap[nestedReply.forumCommentId]
-                                          ? "#ff4444"
-                                          : "#666"
+                                          ? "#F5B8C4"
+                                          : "#7A8A99"
                                       }
                                     />
                                     <Text
@@ -1461,7 +1461,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                     <Ionicons
                                                       name="language-outline"
                                                       size={10}
-                                                      color="#007AFF"
+                                                      color="#B8D4E3"
                                                     />
                                                     <Text
                                                       style={[
@@ -1515,7 +1515,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                             }}
                                             style={[
                                               styles.commentImage,
-                                              { width: 60, height: 60 },
+                                              { width: 60, height: 0 },
                                             ]}
                                             contentFit="cover"
                                           />
@@ -1618,8 +1618,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                 likedMap[
                                                   deepNestedReply.forumCommentId
                                                 ]
-                                                  ? "#ff4444"
-                                                  : "#666"
+                                                  ? "#F5B8C4"
+                                                  : "#7A8A99"
                                               }
                                             />
                                             <Text
@@ -1655,7 +1655,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                             <Ionicons
                                               name="chatbubble-outline"
                                               size={12}
-                                              color="#666"
+                                              color="#7A8A99"
                                             />
                                             <Text
                                               style={[
@@ -2080,7 +2080,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                   }
                                 }}
                               >
-                                <Ionicons name="send" size={16} color="#fff" />
+                                <Ionicons name="send-outline" size={16} color="#2C3E50" />
                               </TouchableOpacity>
                             </View>
                           </View>
@@ -2195,7 +2195,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                           }
                         }}
                       >
-                        <Ionicons name="send" size={18} color="#fff" />
+                        <Ionicons name="send-outline" size={18} color="#2C3E50" />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -2224,9 +2224,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({
           disabled={!newComment.trim() || isSubmitting}
         >
           <Ionicons
-            name="send"
+            name="send-outline"
             size={20}
-            color={!newComment.trim() || isSubmitting ? "#ccc" : "#007AFF"}
+            color={!newComment.trim() || isSubmitting ? "#D5E3ED" : "#2C3E50"}
           />
         </TouchableOpacity>
       </View>
@@ -2236,67 +2236,61 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: 8,
+    paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
+    borderTopColor: "#F0F4F8",
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
-    color: "#333",
+    color: "#2C3E50",
     marginBottom: 12,
+    letterSpacing: 0.2,
   },
   commentsList: {
-    // Remove maxHeight to allow full expansion
     flex: 1,
   },
   commentItem: {
-    marginBottom: 8,
-    paddingHorizontal: 0,
-    borderBottomWidth: 0,
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
-    paddingLeft: 12,
-    paddingRight: 12,
+    marginBottom: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowRadius: 8,
     elevation: 2,
   },
   commentHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 2,
+    marginBottom: 8,
   },
   commentHeaderRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingRight: 3,
+    gap: 6,
   },
   ownerActions: {
     flexDirection: "row",
     marginLeft: 4,
-    gap: 2,
+    gap: 4,
   },
   actionButton: {
     padding: 6,
-    borderRadius: 8,
+    borderRadius: 20,
   },
   commentAuthor: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#333",
-    paddingLeft: 0,
+    color: "#2C3E50",
+    letterSpacing: 0.2,
   },
   commentTime: {
-    fontSize: 11,
-    color: "#999",
+    fontSize: 12,
+    color: "#7A8A99",
   },
   commentContentRow: {
     flexDirection: "row",
@@ -2306,130 +2300,105 @@ const styles = StyleSheet.create({
   },
   commentContent: {
     fontSize: 14,
-    color: "#333",
+    color: "#2C3E50",
     lineHeight: 20,
-    marginBottom: 0,
-    paddingLeft: 3,
     flex: 1,
   },
   translatedCommentContent: {
     fontSize: 13,
-    color: "#666",
+    color: "#7A8A99",
     lineHeight: 18,
-    marginTop: 0,
-    marginBottom: 0,
-    paddingLeft: 3,
+    marginTop: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "#F8F9FA",
+    borderRadius: 20,
     fontStyle: "italic",
-    paddingHorizontal: 8,
-    paddingVertical: 0,
-    backgroundColor: "#f8f9fa",
-    borderRadius: 8,
   },
   translateChip: {
     marginLeft: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#007AFF",
-    backgroundColor: "#f0f8ff",
+    borderColor: "#B8D4E3",
+    backgroundColor: "#F0F4F8",
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
   },
   translateChipText: {
     marginLeft: 4,
-    fontSize: 10,
-    color: "#007AFF",
+    fontSize: 11,
+    color: "#5A6C7D",
     fontWeight: "500",
   },
   commentImage: {
     width: 100,
-    height: 100,
-    borderRadius: 12,
-    marginBottom: 0,
+    borderRadius: 24,
+    marginTop: 8,
   },
   commentActions: {
     flexDirection: "row",
-    marginTop: 0,
+    marginTop: 8,
   },
   commentAction: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: "#f8f9fa",
-    marginRight: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: "#F8F9FA",
+    marginRight: 6,
   },
   commentActionText: {
     fontSize: 12,
-    color: "#666",
+    color: "#7A8A99",
     marginLeft: 4,
     fontWeight: "500",
   },
   repliesContainer: {
-    marginTop: 10,
-    paddingLeft: 16,
-    borderLeftWidth: 0,
-    borderLeftColor: "transparent",
-    backgroundColor: "#f8f9ff",
-    borderRadius: 12,
-    padding: 10,
-    marginHorizontal: 4,
+    marginTop: 12,
+    backgroundColor: "#F8F9FA",
+    borderRadius: 24,
+    padding: 12,
   },
   replyItem: {
-    marginTop: 6,
-    paddingHorizontal: 0,
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    paddingTop: 10,
-    paddingBottom: 10,
-    paddingLeft: 10,
-    paddingRight: 10,
-    borderLeftWidth: 0,
-    borderLeftColor: "transparent",
-    marginBottom: 4,
+    marginTop: 8,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 12,
+    marginBottom: 6,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
-    shadowRadius: 2,
+    shadowRadius: 4,
     elevation: 1,
   },
   replyAuthorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingLeft: 3,
   },
   nestedRepliesContainer: {
     marginTop: 8,
-    paddingLeft: 12,
-    borderLeftWidth: 0,
-    borderLeftColor: "transparent",
-    backgroundColor: "#f0f8ff",
-    borderRadius: 12,
-    padding: 8,
-    marginHorizontal: 2,
+    backgroundColor: "#F0F4F8",
+    borderRadius: 20,
+    padding: 10,
   },
   nestedReplyItem: {
-    marginTop: 4,
-    paddingHorizontal: 0,
-    backgroundColor: "#ffffff",
-    borderRadius: 10,
-    paddingTop: 8,
-    paddingBottom: 8,
-    paddingLeft: 8,
-    paddingRight: 8,
-    borderLeftWidth: 0,
-    marginBottom: 3,
+    marginTop: 6,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 10,
+    marginBottom: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.02,
-    shadowRadius: 1,
+    shadowRadius: 2,
     elevation: 1,
   },
   nestedReplyInputContainer: {
-    marginTop: 6,
+    marginTop: 8,
   },
   nestedReplyInputRow: {
     flexDirection: "row",
@@ -2438,49 +2407,42 @@ const styles = StyleSheet.create({
   nestedReplyInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#cfe8ff",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    borderColor: "#E8EDF2",
+    borderRadius: 24,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     fontSize: 13,
-    marginRight: 4,
-    backgroundColor: "#fff",
+    marginRight: 6,
+    backgroundColor: "#FFFFFF",
   },
   nestedReplySend: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#007AFF",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#B8D4E3",
     alignItems: "center",
     justifyContent: "center",
   },
   deepNestedRepliesContainer: {
-    marginTop: 6,
-    paddingLeft: 8,
-    borderLeftWidth: 0,
-    borderLeftColor: "transparent",
-    backgroundColor: "#f0f8ff",
-    borderRadius: 10,
-    padding: 6,
+    marginTop: 8,
+    backgroundColor: "#F0F4F8",
+    borderRadius: 20,
+    padding: 8,
   },
   deepNestedReplyItem: {
-    marginTop: 3,
-    borderBottomWidth: 0,
-    backgroundColor: "#ffffff",
-    borderRadius: 8,
-    paddingTop: 6,
-    paddingBottom: 6,
-    paddingLeft: 6,
-    paddingRight: 6,
-    marginBottom: 2,
+    marginTop: 6,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 10,
+    marginBottom: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.02,
-    shadowRadius: 1,
+    shadowRadius: 2,
     elevation: 1,
   },
   deepNestedReplyInputContainer: {
-    marginTop: 4,
+    marginTop: 6,
   },
   deepNestedReplyInputRow: {
     flexDirection: "row",
@@ -2489,19 +2451,19 @@ const styles = StyleSheet.create({
   deepNestedReplyInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#cfe8ff",
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderColor: "#E8EDF2",
+    borderRadius: 24,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     fontSize: 12,
-    marginRight: 3,
-    backgroundColor: "#fff",
+    marginRight: 6,
+    backgroundColor: "#FFFFFF",
   },
   deepNestedReplySend: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#007AFF",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#B8D4E3",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -2510,32 +2472,34 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
+    borderTopColor: "#F0F4F8",
   },
   commentInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 20,
+    borderColor: "#E8EDF2",
+    borderRadius: 28,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     marginRight: 8,
     maxHeight: 80,
     fontSize: 14,
+    backgroundColor: "#F8F9FA",
+    color: "#2C3E50",
   },
   submitButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#f0f8ff",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#B8D4E3",
     justifyContent: "center",
     alignItems: "center",
   },
   submitButtonDisabled: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#E8EDF2",
   },
   replyInputContainer: {
-    marginTop: 8,
+    marginTop: 10,
   },
   replyInputRow: {
     flexDirection: "row",
@@ -2543,26 +2507,27 @@ const styles = StyleSheet.create({
   },
   selfReplyHint: {
     fontSize: 12,
-    color: "#007AFF",
+    color: "#B8D4E3",
     marginBottom: 4,
     fontStyle: "italic",
   },
   replyInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#cfe8ff",
-    borderRadius: 16,
-    paddingHorizontal: 12,
+    borderColor: "#E8EDF2",
+    borderRadius: 24,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     fontSize: 14,
     marginRight: 6,
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
+    color: "#2C3E50",
   },
   replySend: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#007AFF",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#B8D4E3",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -2571,36 +2536,41 @@ const styles = StyleSheet.create({
   },
   editInput: {
     borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderColor: "#E8EDF2",
+    borderRadius: 24,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     fontSize: 14,
-    marginBottom: 8,
+    marginBottom: 10,
     minHeight: 60,
     textAlignVertical: "top",
+    backgroundColor: "#F8F9FA",
+    color: "#2C3E50",
   },
   editActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    gap: 8,
+    gap: 10,
   },
   editButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: "#f5f5f5",
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 24,
+    backgroundColor: "#F8F9FA",
+    borderWidth: 1,
+    borderColor: "#E8EDF2",
   },
   saveButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#B8D4E3",
+    borderWidth: 0,
   },
   editButtonText: {
     fontSize: 14,
-    color: "#666",
+    color: "#7A8A99",
     fontWeight: "600",
   },
   saveButtonText: {
-    color: "#fff",
+    color: "#2C3E50",
   },
 });
 

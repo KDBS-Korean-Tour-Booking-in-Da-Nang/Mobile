@@ -312,7 +312,7 @@ export default function TourList() {
             onPress={handleGiftModalClose}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="close" size={16} color="#fff" />
+            <Ionicons name="close-outline" size={16} color="#7A8A99" />
           </TouchableOpacity>
         </View>
       )}
@@ -327,15 +327,13 @@ export default function TourList() {
         }
       >
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={goBack}>
-            <Ionicons name="chevron-back" size={24} color="#000" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t("tour.list.title")}</Text>
+          <View style={styles.headerLeft} />
+          <Text style={styles.headerTitle}>Tours List</Text>
           <TouchableOpacity
             style={styles.purchasedButton}
             onPress={() => navigate("/tour/historyBooking")}
           >
-            <Ionicons name="receipt-outline" size={18} color="#007AFF" />
+            <Ionicons name="receipt-outline" size={16} color="#5A6C7D" />
             <Text style={styles.purchasedButtonText}>
               {t("tour.list.historyBooking")}
             </Text>
@@ -343,7 +341,7 @@ export default function TourList() {
         </View>
 
         <View style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={18} color="#6c757d" />
+          <Ionicons name="search-outline" size={18} color="#7A8A99" />
           <TextInput
             style={styles.searchInput}
             value={keyword}
@@ -354,7 +352,7 @@ export default function TourList() {
           />
           {keyword ? (
             <TouchableOpacity onPress={() => setKeyword("")}>
-              <Ionicons name="close-circle" size={18} color="#9aa0a6" />
+              <Ionicons name="close-circle-outline" size={18} color="#7A8A99" />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -378,25 +376,27 @@ export default function TourList() {
                       activeOpacity={0.9}
                       style={{
                         position: "absolute",
-                        right: 8,
-                        top: 8,
+                        right: 12,
+                        top: 12,
                         backgroundColor: "rgba(255,255,255,0.95)",
-                        borderRadius: 16,
-                        width: 32,
-                        height: 32,
+                        borderRadius: 20,
+                        width: 36,
+                        height: 36,
                         alignItems: "center",
                         justifyContent: "center",
                         shadowColor: "#000",
-                        shadowOpacity: 0.15,
+                        shadowOpacity: 0.08,
                         shadowOffset: { width: 0, height: 2 },
-                        shadowRadius: 4,
-                        elevation: 3,
+                        shadowRadius: 8,
+                        elevation: 2,
+                        borderWidth: 1,
+                        borderColor: "#E8EDF2",
                       }}
                     >
                       <Ionicons
                         name="share-social-outline"
                         size={16}
-                        color="#111"
+                        color="#7A8A99"
                       />
                     </TouchableOpacity>
                   </View>
@@ -407,9 +407,9 @@ export default function TourList() {
                     <View style={styles.tourMeta}>
                       <View style={styles.locationContainer}>
                         <Ionicons
-                          name="location-outline"
-                          size={14}
-                          color="#6c757d"
+                        name="location-outline"
+                        size={14}
+                        color="#7A8A99"
                         />
                         <Text style={styles.locationText} numberOfLines={1}>
                           {tour.tourDeparturePoint}
@@ -417,9 +417,9 @@ export default function TourList() {
                       </View>
                       <View style={styles.durationContainer}>
                         <Ionicons
-                          name="time-outline"
-                          size={14}
-                          color="#6c757d"
+                        name="time-outline"
+                        size={14}
+                        color="#7A8A99"
                         />
                         <Text style={styles.durationText}>
                           {tour.tourDuration || "3N2D"}
@@ -446,7 +446,7 @@ export default function TourList() {
             ))
           ) : (
             <View style={styles.emptyContainer}>
-              <Ionicons name="airplane-outline" size={64} color="#ccc" />
+              <Ionicons name="airplane-outline" size={64} color="#D5E3ED" />
               <Text style={styles.emptyTitle}>{t("tour.list.empty")}</Text>
               <Text style={styles.emptySubtitle}>
                 {t("tour.list.emptySubtitle")}
@@ -631,11 +631,11 @@ export default function TourList() {
               style={styles.closeModalXButton}
               onPress={handleCloseModalCancel}
             >
-              <Ionicons name="close" size={24} color="#333" />
+              <Ionicons name="close-outline" size={20} color="#7A8A99" />
             </TouchableOpacity>
 
             <View style={styles.closeModalHeader}>
-              <Ionicons name="help-circle" size={40} color="#007AFF" />
+              <Ionicons name="help-circle-outline" size={40} color="#B8D4E3" />
               <Text style={styles.closeModalTitle}>
                 {t("tour.giftModal.dontShowTitle") || "Không hiển thị lại?"}
               </Text>

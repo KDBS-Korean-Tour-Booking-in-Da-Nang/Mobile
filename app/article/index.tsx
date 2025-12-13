@@ -255,17 +255,6 @@ export default function ArticleList() {
       <View
         style={[styles.container, Platform.OS === "ios" && styles.containerIos]}
       >
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigate("/home")}
-          >
-            <Ionicons name="arrow-back" size={24} color="#212529" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t("article.title")}</Text>
-          <View style={styles.headerRight} />
-        </View>
-
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={{
@@ -280,9 +269,9 @@ export default function ArticleList() {
           <View style={styles.searchContainer}>
             <View style={styles.searchInputContainer}>
               <Ionicons
-                name="search"
-                size={20}
-                color="#666"
+                name="search-outline"
+                size={18}
+                color="#7A8A99"
                 style={styles.searchIcon}
               />
               <TextInput
@@ -301,7 +290,7 @@ export default function ArticleList() {
                   onPress={() => setSearchQuery("")}
                   style={styles.clearSearchButton}
                 >
-                  <Ionicons name="close-circle" size={20} color="#666" />
+                  <Ionicons name="close-circle-outline" size={18} color="#7A8A99" />
                 </TouchableOpacity>
               )}
             </View>

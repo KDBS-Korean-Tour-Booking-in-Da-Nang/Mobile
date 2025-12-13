@@ -142,7 +142,7 @@ export default function TicketModal({ visible, onClose }: TicketModalProps) {
               style={styles.closeButton}
               disabled={submitting}
             >
-              <Ionicons name="close" size={24} color="#333" />
+              <Ionicons name="close" size={20} color="#2D2D2D" />
             </TouchableOpacity>
           </View>
 
@@ -183,8 +183,8 @@ export default function TicketModal({ visible, onClose }: TicketModalProps) {
                             {isSelected && (
                               <Ionicons
                                 name="checkmark"
-                                size={16}
-                                color="#fff"
+                                size={14}
+                                color="#FFFFFF"
                               />
                             )}
                           </View>

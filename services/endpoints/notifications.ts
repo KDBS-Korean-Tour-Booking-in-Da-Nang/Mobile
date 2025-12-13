@@ -50,7 +50,8 @@ export interface GetNotificationsParams {
 }
 
 export async function getNotifications(
-  params?: GetNotificationsParams
+  params?: GetNotificationsParams,
+  userEmail?: string
 ): Promise<NotificationSummaryResponse> {
   const queryParams: any = {
     page: params?.page ?? 0,
@@ -64,28 +65,54 @@ export async function getNotifications(
     queryParams.isRead = params.isRead;
   }
   
+  const headers: any = {};
+  if (userEmail) {
+    headers["User-Email"] = userEmail;
+  }
+  
   const response = await api.get<NotificationSummaryResponse>(
     "/api/notifications",
     {
       params: queryParams,
+      headers,
     }
   );
   return response.data;
 }
 
 export async function markNotificationAsRead(
-  notificationId: number
+  notificationId: number,
+  userEmail?: string
 ): Promise<void> {
-  await api.patch(`/api/notifications/${notificationId}/read`);
+  const headers: any = {};
+  if (userEmail) {
+    headers["User-Email"] = userEmail;
+  }
+  await api.patch(`/api/notifications/${notificationId}/read`, undefined, {
+    headers,
+  });
 }
 
-export async function getUnreadCount(): Promise<number> {
-  const response = await api.get<number>("/api/notifications/unread-count");
+export async function getUnreadCount(userEmail?: string): Promise<number> {
+  const headers: any = {};
+  if (userEmail) {
+    headers["User-Email"] = userEmail;
+  }
+  const response = await api.get<number>("/api/notifications/unread-count", {
+    headers,
+  });
   return response.data;
 }
 
 export async function deleteNotification(
-  notificationId: number
+  notificationId: number,
+  userEmail?: string
 ): Promise<void> {
-  await api.delete(`/api/notifications/${notificationId}`);
+  const headers: any = {};
+  if (userEmail) {
+    headers["User-Email"] = userEmail;
+  }
+  await api.delete(`/api/notifications/${notificationId}`, {
+    headers,
+  });
 }

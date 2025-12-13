@@ -1,0 +1,190 @@
+import { StyleSheet } from "react-native";
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F8F9FA",
+  },
+  header: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5EA",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#000",
+    letterSpacing: -0.5,
+  },
+  content: {
+    flex: 1,
+  },
+  aiChatItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#F0F0F0",
+  },
+  aiAvatarContainer: {
+    marginRight: 12,
+  },
+  aiAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: "#E3F2FD",
+  },
+  aiInfo: {
+    flex: 1,
+  },
+  aiName: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#000",
+    marginBottom: 4,
+    letterSpacing: 0.2,
+  },
+  aiDescription: {
+    fontSize: 14,
+    color: "#666",
+    lineHeight: 18,
+  },
+  chevronIcon: {
+    marginLeft: 8,
+  },
+  usersSection: {
+    marginTop: 24,
+    paddingHorizontal: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 12,
+    paddingHorizontal: 4,
+    letterSpacing: 0.3,
+  },
+  userItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 16,
+    marginBottom: 10,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#F5F5F5",
+  },
+  userAvatarContainer: {
+    marginRight: 12,
+    position: "relative",
+  },
+  userAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 2,
+    borderColor: "#F0F0F0",
+  },
+  userAvatarPlaceholder: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#E3F2FD",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#F0F0F0",
+  },
+  unreadBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#FF3B30",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+  },
+  unreadBadgeText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000",
+    marginBottom: 5,
+    letterSpacing: 0.1,
+  },
+  userLastMessage: {
+    fontSize: 14,
+    color: "#666",
+    lineHeight: 18,
+  },
+  userLastMessagePlaceholder: {
+    fontSize: 14,
+    color: "#999",
+    fontStyle: "italic",
+    lineHeight: 18,
+  },
+  userTime: {
+    fontSize: 12,
+    color: "#999",
+    marginRight: 8,
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: "center",
+  },
+  emptyContainer: {
+    paddingVertical: 60,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#999",
+    marginTop: 16,
+  },
+});
+
+export default styles;
+

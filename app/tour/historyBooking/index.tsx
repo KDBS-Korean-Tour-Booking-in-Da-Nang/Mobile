@@ -57,9 +57,18 @@ export default function HistoryBooking() {
       if (!normalized) {
         return t("common.na");
       }
-      const key = `tour.booking.status.${normalized}`;
+      // Replace underscores with dots for i18n key
+      const keyWithoutUnderscores = normalized.replace(/_/g, ".");
+      const key = `tour.booking.status.${keyWithoutUnderscores}`;
       const translated = t(key);
-      return translated === key ? normalized : translated;
+      // If translation not found, format the status text nicely (remove underscores and add spaces)
+      if (translated === key) {
+        return normalized.replace(/_/g, " ").toLowerCase()
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
+      }
+      return translated;
     },
     [t]
   );

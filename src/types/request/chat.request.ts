@@ -1,6 +1,5 @@
-export interface ChatMessage {
-  from: string;
-  to: string;
+export interface ChatMessageRequest {
+  senderId: number;
+  receiverId: number;
   content: string;
-  timestamp?: string;
 }
