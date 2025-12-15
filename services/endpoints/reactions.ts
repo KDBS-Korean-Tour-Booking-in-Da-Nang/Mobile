@@ -15,11 +15,14 @@ export async function addReaction(
 export async function clearReaction(
   userEmail: string,
   targetType: "POST" | "COMMENT",
-  targetId: number
+  targetId: number,
+  reactionType: "LIKE" | "DISLIKE" = "LIKE"
 ): Promise<void> {
-  await api.post(`/api/reactions/${targetType}/${targetId}`, null, {
-    headers: { "User-Email": userEmail },
-  });
+  await api.post(
+    "/api/reactions/delete",
+    { targetId, targetType, reactionType, userEmail },
+    { headers: { "User-Email": userEmail } }
+  );
 }
 
 export async function getReactionSummary(
