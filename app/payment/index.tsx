@@ -62,10 +62,9 @@ export default function TossPaymentScreen() {
       setLoading(true);
       setError(null);
 
-      // Determine if this is a deposit payment based on booking status
-      // PENDING_DEPOSIT_PAYMENT = deposit payment (isDeposit = true)
-      // PENDING_BALANCE_PAYMENT = balance payment (isDeposit = false)
-      // PENDING_PAYMENT = full payment (isDeposit = true or false, doesn't matter)
+
+
+
       const normalizedStatus = String(bookingStatus || "").toUpperCase();
       const isDeposit =
         normalizedStatus === "PENDING_DEPOSIT_PAYMENT" ||
@@ -101,7 +100,7 @@ export default function TossPaymentScreen() {
         let savedAmount: number | null = null;
         
         if (data.amount != null) {
-          // Ưu tiên: dùng số tiền từ backend (đã được tính đúng)
+
           const backendAmount = typeof data.amount === "number" 
             ? data.amount 
             : Number(data.amount);
@@ -253,7 +252,6 @@ export default function TossPaymentScreen() {
   const handleWebViewRequest = (request: any): boolean => {
     const url = request.url;
 
-    // Success callback
     if (url.includes("transaction-result")) {
       try {
         const urlObj = new URL(url);
@@ -290,7 +288,6 @@ export default function TossPaymentScreen() {
       }
     }
 
-    // Fail / access-denied callbacks (e.g., change-status failUrl)
     if (
       url.includes("transactions/change-status") ||
       url.includes("status=FAILED") ||
@@ -305,7 +302,7 @@ export default function TossPaymentScreen() {
         currentOrderId,
         actualPaymentAmountFromBackend: actualPaymentAmountRef.current,
       });
-      // Luôn dùng số tiền từ backend response (đã được tính đúng với voucher và deposit)
+
       const finalAmount = actualPaymentAmountRef.current !== null && actualPaymentAmountRef.current > 0
         ? String(Math.round(actualPaymentAmountRef.current))
         : (amount && String(amount).trim().length > 0 && !isNaN(Number(amount)) && Number(amount) > 0)
@@ -341,7 +338,6 @@ export default function TossPaymentScreen() {
             const parsedBookingId = parseInt(bookingId) || 0;
             const currentOrderId = orderIdRef.current;
 
-            // Cố gắng update transaction status, nhưng không bắt buộc
             if (currentOrderId) {
               try {
                 await transactionEndpoints.changeTransactionStatus(
@@ -349,12 +345,11 @@ export default function TossPaymentScreen() {
                   "FAILED"
                 );
               } catch (error: any) {
-                // Bỏ qua lỗi interceptor hoặc API, không hiển thị lỗi cho user
+
                 console.log("[PAYMENT] Could not update transaction status (user cancelled):", error?.message);
               }
             }
 
-            // Cố gắng update booking status, nhưng không bắt buộc
             if (parsedBookingId) {
               try {
                 await tourEndpoints.changeBookingStatus(parsedBookingId, {
@@ -362,13 +357,12 @@ export default function TossPaymentScreen() {
                   message: "User cancelled payment",
                 });
               } catch (error: any) {
-                // Bỏ qua lỗi, không hiển thị lỗi cho user
+
                 console.log("[PAYMENT] Could not update booking status (user cancelled):", error?.message);
               }
             }
 
-            // Navigate về transactionResult với status CANCELLED thay vì FAILED
-            // để phân biệt user tự cancel vs thanh toán thất bại
+
             router.replace({
               pathname: "/transactionResult" as any,
               params: {
@@ -382,7 +376,7 @@ export default function TossPaymentScreen() {
               },
             });
           } catch (error: any) {
-            // Nếu có lỗi, chỉ navigate back, không hiển thị lỗi
+
             console.log("[PAYMENT] Error handling back button:", error?.message);
             router.back();
           }

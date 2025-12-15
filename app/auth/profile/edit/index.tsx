@@ -30,7 +30,6 @@ export default function EditProfile() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
-  // Helper functions to get initial values from user
   const getUserInitialGender = React.useCallback(() => {
     const userGender = (user as any)?.gender || "";
     if (userGender === "M" || userGender === "MALE") return "male";
@@ -55,7 +54,6 @@ export default function EditProfile() {
   const [birthDate, setBirthDate] = useState<string>(getUserDob());
   const [address, setAddress] = useState<string>((user as any)?.address || "");
 
-  // Store initial values for change detection
   const initialValuesRef = useRef({
     fullName: user?.username || "",
     phone: (user as any)?.phone || "",
@@ -64,7 +62,6 @@ export default function EditProfile() {
     address: (user as any)?.address || "",
   });
 
-  // Update initial values when user data changes
   useEffect(() => {
     if (user) {
       const dob = getUserDob();
@@ -84,7 +81,6 @@ export default function EditProfile() {
     }
   }, [user, getUserDob, getUserInitialGender]);
 
-  // Final sanitizer used before save (not used in onChange anymore)
   const sanitizeName = React.useCallback((text: string) => {
     const s = (text || "").trim();
     if (!s) return "";
@@ -133,7 +129,6 @@ export default function EditProfile() {
   const [phoneError, setPhoneError] = useState("");
   const [avatarError, setAvatarError] = useState("");
 
-  // Improved name validation - must start with letter, allow Unicode
   const isNameValid = React.useCallback((name: string) => {
     const trimmed = (name || "").trim();
     if (!trimmed || trimmed.length === 0) return false;
@@ -148,13 +143,12 @@ export default function EditProfile() {
     return digits;
   }, []);
 
-  // Improved phone validation - more flexible like Frontend
   const isPhoneValid = React.useCallback((text: string) => {
     if (!text || !text.trim()) return true; // Phone is optional
     const cleanPhone = (text || "").replace(/\s/g, "");
     if (cleanPhone.length === 0) return true; // Empty phone is allowed
     if (cleanPhone.length > 20) return false;
-    // Allow Vietnamese format or international format
+
     const vietnameseRegex = /^(\+84|0)[0-9]{9,10}$/;
     const internationalRegex = /^\+[1-9]\d{1,14}$/; // E.164 format
     if (
@@ -163,16 +157,15 @@ export default function EditProfile() {
     ) {
       return true;
     }
-    // Only show error if clearly invalid (too short or has invalid chars)
+
     if (cleanPhone.length < 7 || !/^[\d+]+$/.test(cleanPhone)) {
       return false;
     }
     return true; // Allow it (might be valid format we didn't anticipate)
   }, []);
 
-  // Improved DOB validation with age check (>= 13 years old)
   const isBirthDateValid = React.useCallback((s: string) => {
-    // DOB is optional - allow empty
+
     if (!s || !s.trim()) return true;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
     const [y, m, d] = s.split("-").map((x) => Number(x));
@@ -184,23 +177,22 @@ export default function EditProfile() {
     ) {
       return false;
     }
-    // Check age - must be at least 13 years old
+
     const today = new Date();
     let age = today.getFullYear() - dt.getFullYear();
     const monthDiff = today.getMonth() - dt.getMonth();
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dt.getDate())) {
       age--;
     }
-    // Must be in the past
+
     if (dt.getTime() >= today.getTime()) return false;
-    // Must be at least 13 years old
+
     if (age < 13) return false;
-    // Reasonable upper limit
+
     if (age > 150) return false;
     return true;
   }, []);
 
-  // Check if form has any changes
   const hasProfileChanges = React.useCallback(() => {
     const initial = initialValuesRef.current;
     const finalName = sanitizeName(fullName);
@@ -223,7 +215,6 @@ export default function EditProfile() {
     sanitizePhone,
   ]);
 
-  // Validate avatar file
   const validateAvatarFile = async (file: {
     uri: string;
     name?: string;
@@ -240,7 +231,6 @@ export default function EditProfile() {
       "image/webp",
     ];
 
-    // Check file size
     if (file.size !== undefined && file.size > maxSize) {
       setAvatarError(
         t("profile.errors.avatarSize") || "Image size must not exceed 5MB"
@@ -248,10 +238,8 @@ export default function EditProfile() {
       return false;
     }
 
-    // Note: If size is not available from ImagePicker, we'll let the backend validate
-    // This is acceptable as backend will reject files that are too large
 
-    // Check file type
+
     if (file.type && !allowedTypes.includes(file.type)) {
       setAvatarError(
         t("profile.errors.avatarFormat") || "Image format not supported"
@@ -263,7 +251,7 @@ export default function EditProfile() {
   };
 
   const handleSave = async () => {
-    // Clear previous errors
+
     setNameError("");
     setDobError("");
     setPhoneError("");
@@ -271,7 +259,6 @@ export default function EditProfile() {
 
     const finalName = sanitizeName(fullName);
 
-    // Validate name (required)
     if (!finalName.trim() || !isNameValid(finalName)) {
       const errorMsg =
         t("profile.errors.invalidName") || "Full name is invalid";
@@ -280,7 +267,6 @@ export default function EditProfile() {
       return;
     }
 
-    // Validate phone (optional but if provided, should be valid)
     if (phone && phone.trim() && !isPhoneValid(phone)) {
       const errorMsg =
         t("profile.errors.invalidPhone") || "Phone number is invalid";
@@ -289,7 +275,6 @@ export default function EditProfile() {
       return;
     }
 
-    // Validate DOB (optional but if provided, should be valid)
     if (birthDate && birthDate.trim() && !isBirthDateValid(birthDate)) {
       let errorMsg =
         t("booking.errors.dobInvalidFormat") || "Birth date is invalid";
@@ -315,7 +300,6 @@ export default function EditProfile() {
       return;
     }
 
-    // Validate avatar (if selected)
     if (avatarFile && !(await validateAvatarFile(avatarFile))) {
       Alert.alert(
         t("common.error") || "Error",
@@ -346,7 +330,6 @@ export default function EditProfile() {
         ...(avatarFile ? { avatarImg: avatarFile } : {}),
       } as any);
 
-      // Refresh user data after successful update
       try {
         await checkAuthStatus();
       } catch (refreshError) {
@@ -374,7 +357,7 @@ export default function EditProfile() {
       if (e?.response?.data?.message) {
         msg = e.response.data.message;
       } else if (e?.message) {
-        // Check for network errors
+
         if (
           e.message.includes("Network Error") ||
           e.message.includes("network")
@@ -480,7 +463,6 @@ export default function EditProfile() {
                         size: asset.fileSize,
                       };
 
-                      // Validate file
                       const isValid = await validateAvatarFile(fileData);
                       if (!isValid) {
                         return; // Error already set by validateAvatarFile

@@ -449,7 +449,7 @@ export default function Forum() {
       const isValidToken = (s: string) => {
         if (!s) return false;
         const trimmed = s.trim();
-        // hide metadata/urls/long junk
+
         if (trimmed.length > 40) return false;
         if (/\{|\}|\[|\]|"|':/.test(trimmed)) return false;
         if (/^\[\[meta/i.test(trimmed)) return false;

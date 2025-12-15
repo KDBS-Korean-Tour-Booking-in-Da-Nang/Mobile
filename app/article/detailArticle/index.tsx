@@ -27,7 +27,6 @@ import { getTourThumbnailUrl } from "../../../src/utils/media";
 import styles, { contentHtmlCss } from "./style";
 import { WebView } from "react-native-webview";
 
-// Helper function to get article fields based on current language
 const getArticleFields = (article: Article, lang: string) => {
   const currentLang = lang as "vi" | "en" | "ko";
 
@@ -44,7 +43,7 @@ const getArticleFields = (article: Article, lang: string) => {
       content: article.articleContentKR || article.articleContent,
     };
   } else {
-    // Vietnamese (default)
+
     return {
       title: article.articleTitle,
       description: article.articleDescription,
@@ -70,7 +69,6 @@ export default function ArticleDetail() {
   const [loadingSuggestTours, setLoadingSuggestTours] = useState(false);
   const { user } = useAuthContext();
 
-  // Load comments from API (only comments, no replies)
   const loadComments = useCallback(async () => {
     if (!id || isNaN(Number(id))) {
       return;
@@ -81,7 +79,7 @@ export default function ArticleDetail() {
       const response = await articleCommentEndpoints.getCommentsByArticleId(
         Number(id)
       );
-      // Filter to only show comments (no replies - parentCommentId is null)
+
       const commentsOnly = (response.data || []).filter(
         (comment) => !comment.parentCommentId
       );
@@ -143,25 +141,22 @@ export default function ArticleDetail() {
     try {
       setLoadingSuggestTours(true);
       const userId = (user as any)?.userId || (user as any)?.id;
-      // If no userId, don't pass it (backend accepts optional userId)
+
       const response = await tourEndpoints.suggestByArticle(userId);
       const tours = Array.isArray(response.data) ? response.data : [];
-      // Map tourId to id since backend returns Tour entity (with tourId) instead of TourResponse (with id)
+
       const mappedTours = tours.map((tour: any) => ({
         ...tour,
         id: tour.id || tour.tourId, // Use tourId if id is not present
       }));
-      // Log tours to debug
-      console.log("[Article Detail] Loaded suggest tours:", mappedTours.map(t => ({ id: t?.id, tourId: t?.tourId, name: t?.tourName })));
       setSuggestTours(mappedTours);
     } catch (error: any) {
-      // Silently handle errors - don't show error to user
-      // Timeout, network errors, or empty results are expected
+
+
       const isTimeout = error?.code === "ECONNABORTED" || error?.message?.includes("timeout");
       const isNetworkError = error?.code === "ERR_NETWORK" || !error?.response;
       const isServerError = error?.response?.status >= 500;
-      
-      // Only log unexpected errors (not timeout, network, or server errors)
+
       if (!isTimeout && !isNetworkError && !isServerError && error?.response?.status !== 404) {
         console.error("Error loading suggest tours:", error);
       }
@@ -184,7 +179,6 @@ export default function ArticleDetail() {
     }
   }, [id, article, loadSuggestTours]);
 
-  // Track language changes
   useEffect(() => {
     const handleLanguageChange = (lng: string) => {
       setCurrentLang(lng);
@@ -197,7 +191,7 @@ export default function ArticleDetail() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    // Map language to locale
+
     const localeMap: Record<string, string> = {
       vi: "vi-VN",
       en: "en-US",
@@ -220,11 +214,11 @@ export default function ArticleDetail() {
     }
 
     try {
-      // Handle LocalDateTime format from backend (e.g., "2025-12-06T16:52:20")
-      // If no timezone is specified, parse as local time
+
+
       let date: Date;
       if (dateString.includes("T") && !dateString.includes("Z") && !dateString.includes("+") && !dateString.match(/[+-]\d{2}:\d{2}$/)) {
-        // Parse LocalDateTime as local time
+
         const parts = dateString.split("T");
         if (parts.length === 2) {
           const [year, month, day] = parts[0].split("-").map(Number);
@@ -238,7 +232,6 @@ export default function ArticleDetail() {
         date = new Date(dateString);
       }
 
-      // Check if date is valid
       if (isNaN(date.getTime())) {
         return t("article.comment.justNow") || "Vừa xong";
       }
@@ -290,7 +283,7 @@ export default function ArticleDetail() {
       });
 
       setCommentText("");
-      // Reload comments after successful submit
+
       await loadComments();
     } catch (error: any) {
       Alert.alert(
@@ -393,7 +386,6 @@ export default function ArticleDetail() {
               </View>
             </View>
 
-            {/* Comments Section */}
             <View style={styles.commentsSection}>
               <View style={styles.commentsHeader}>
                 <Text style={styles.commentsTitle}>
@@ -401,7 +393,6 @@ export default function ArticleDetail() {
                 </Text>
               </View>
 
-              {/* Comment Input */}
               <View style={styles.commentInputContainer}>
                 <View style={styles.commentInputWrapper}>
                   <TextInput
@@ -439,7 +430,6 @@ export default function ArticleDetail() {
                 </TouchableOpacity>
               </View>
 
-              {/* Comments List */}
               {loadingComments ? (
                 <View style={styles.commentsLoadingContainer}>
                   <ActivityIndicator size="small" color="#007AFF" />
@@ -498,7 +488,6 @@ export default function ArticleDetail() {
               )}
             </View>
 
-            {/* Suggest Tours Section */}
             <View style={styles.suggestToursSection}>
               <View style={styles.suggestToursHeader}>
                 <Text style={styles.suggestToursTitle}>

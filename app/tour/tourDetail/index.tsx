@@ -191,7 +191,7 @@ export default function TourDetail() {
       setVoucherLoading(true);
       setVoucherError(null);
       try {
-        // Lấy danh sách voucher áp dụng theo tourId
+
         const response = await voucherEndpoints.getByTourId(tour.id);
         const data = Array.isArray(response.data) ? response.data : [];
         const normalized = data
@@ -291,7 +291,7 @@ export default function TourDetail() {
 
         setHasBookedTour(hasSuccessfulBooking);
       } catch {
-        // Silently handle errors
+
         setHasBookedTour(false);
       } finally {
         setCheckingBooking(false);
@@ -301,7 +301,6 @@ export default function TourDetail() {
     checkUserBooking();
   }, [user?.email, tour?.id]);
 
-  // Hero carousel: ONLY use main cover image (thumbnails), not content images
   const imageList = useMemo(() => {
     const cover = getTourThumbnailUrl(tour?.tourImgPath);
     return cover ? [cover] : [DEFAULT_TOUR_IMAGE];
@@ -476,7 +475,7 @@ export default function TourDetail() {
                 </View>
               </View>
               <View style={styles.metaDivider} />
-              {/* Type (center to balance with other columns) */}
+              {}
               <View style={[styles.metaCol, styles.metaColNarrow]}>
                 <Text
                   style={[
@@ -502,7 +501,7 @@ export default function TourDetail() {
                 </Text>
               </View>
               <View style={styles.metaDivider} />
-              {/* Estimate */}
+              {}
               <View style={styles.metaCol}>
                 <Text
                   style={[
@@ -528,7 +527,7 @@ export default function TourDetail() {
                 </Text>
               </View>
               <View style={styles.metaDivider} />
-              {/* Vehicle */}
+              {}
               <View style={styles.metaCol}>
                 <Text
                   style={[
@@ -729,7 +728,7 @@ export default function TourDetail() {
                   if (!html || typeof html !== "string") return null;
 
                   try {
-                    // Tách danh sách ảnh từ toàn bộ HTML
+
                     const imgRegex = /<img[^>]*src=["']([^"']+)["'][^>]*>/gi;
                     const images: string[] = [];
                     let workingHtml = html;
@@ -741,20 +740,17 @@ export default function TourDetail() {
                       if (resolved) images.push(resolved);
                     }
 
-                    // Loại bỏ thẻ <img> khỏi phần text
                     workingHtml = workingHtml.replace(
                       /<img[^>]*src=["'][^"']+["'][^>]*>/gi,
                       ""
                     );
 
-                    // Giữ xuống dòng từ các block tag
                     workingHtml = workingHtml
                       .replace(/<\/p>/gi, "\n\n")
                       .replace(/<br\s*\/?>/gi, "\n")
                       .replace(/<\/li>/gi, "\n")
                       .replace(/<\/div>/gi, "\n");
 
-                    // Chia nhỏ text theo thẻ <strong> để biết đoạn nào in đậm
                     type Seg = { text: string; bold: boolean };
                     const segments: Seg[] = [];
                     const strongRegex = /<strong[^>]*>([\s\S]*?)<\/strong>/gi;
@@ -865,7 +861,7 @@ export default function TourDetail() {
         </View>
       </ScrollView>
 
-      {/* Voucher Modal */}
+      {}
       <Modal
         visible={showVoucherModal}
         animationType="slide"

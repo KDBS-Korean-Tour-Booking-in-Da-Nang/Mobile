@@ -132,7 +132,6 @@ export default function TicketModal({ visible, onClose }: TicketModalProps) {
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          {/* Header */}
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
               {t("ticket.title") || "Gửi Ticket"}
@@ -146,13 +145,11 @@ export default function TicketModal({ visible, onClose }: TicketModalProps) {
             </TouchableOpacity>
           </View>
 
-          {/* Content */}
           <ScrollView
             style={styles.modalScrollView}
             showsVerticalScrollIndicator={true}
           >
             <View style={styles.form}>
-              {/* Reasons Selection (Multi-select) */}
               <View style={styles.field}>
                 <Text style={styles.label}>
                   {t("ticket.reason.label") || "Lý do"} *{" "}
@@ -203,7 +200,6 @@ export default function TicketModal({ visible, onClose }: TicketModalProps) {
                 </View>
               </View>
 
-              {/* Message */}
               <View style={styles.field}>
                 <Text style={styles.label}>
                   {t("ticket.messageLabel") || "Nội dung"} *
@@ -229,7 +225,6 @@ export default function TicketModal({ visible, onClose }: TicketModalProps) {
             </View>
           </ScrollView>
 
-          {/* Footer */}
           <View style={styles.modalFooter}>
             <TouchableOpacity
               style={styles.cancelButton}

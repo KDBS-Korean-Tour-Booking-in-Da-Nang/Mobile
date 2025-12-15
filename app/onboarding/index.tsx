@@ -28,7 +28,6 @@ export default function Onboarding() {
   const [index, setIndex] = useState(0);
   const listRef = useRef<FlatList<Slide>>(null as any);
 
-  // Replace these with your actual assets under assets/images
   const slides: Slide[] = useMemo(
     () => [
       {

@@ -73,29 +73,26 @@ export default function BookingDetail() {
         const tour: TourResponse = (
           await tourEndpoints.getById(data?.tourId || 0)
         ).data;
-        
-        // Tính original total (chưa có voucher)
+
         const originalTotal =
           (tour.adultPrice || 0) * (data.adultsCount || 0) +
           (tour.childrenPrice || 0) * (data.childrenCount || 0) +
           (tour.babyPrice || 0) * (data.babiesCount || 0);
-        
-        // Ưu tiên dùng totalDiscountAmount từ booking response (đã có voucher discount)
-        // Nếu không có, dùng originalTotal
+
+
         const finalTotal = data?.totalDiscountAmount !== undefined && data.totalDiscountAmount > 0
           ? Number(data.totalDiscountAmount)
           : originalTotal;
         
         setTotalAmount(finalTotal);
-        
-        // Ưu tiên dùng depositDiscountAmount từ booking response (đã có voucher discount và deposit split)
+
         if (data?.depositDiscountAmount !== undefined && data.depositDiscountAmount > 0) {
           const depositValue = Number(data.depositDiscountAmount);
           setDepositAmount(depositValue);
-          // Tính remaining amount từ finalTotal và depositValue
+
           setRemainingAmount(Math.max(finalTotal - depositValue, 0));
         } else {
-          // Fallback: tính từ depositPercentage nếu không có depositDiscountAmount
+
         const dp = Number(tour.depositPercentage ?? 0);
         if (!Number.isNaN(dp)) {
           const depositValue =
@@ -157,7 +154,6 @@ export default function BookingDetail() {
     ? String(booking.bookingStatus).toUpperCase()
     : "";
 
-  // Payment statuses
   const isPendingPayment =
     bookingStatus === BookingStatus.PENDING_PAYMENT ||
     bookingStatus === "PENDING_PAYMENT";
@@ -170,7 +166,6 @@ export default function BookingDetail() {
     bookingStatus === BookingStatus.PENDING_BALANCE_PAYMENT ||
     bookingStatus === "PENDING_BALANCE_PAYMENT";
 
-  // Update and processing statuses
   const isWaitingForUpdate =
     bookingStatus === BookingStatus.WAITING_FOR_UPDATE ||
     bookingStatus === "WAITING_FOR_UPDATE";
@@ -179,7 +174,6 @@ export default function BookingDetail() {
     bookingStatus === BookingStatus.WAITING_FOR_APPROVED ||
     bookingStatus === "WAITING_FOR_APPROVED";
 
-  // Success statuses
   const isAwaitingCompletion =
     bookingStatus === BookingStatus.BOOKING_SUCCESS_WAIT_FOR_CONFIRMED ||
     bookingStatus === "BOOKING_SUCCESS_WAIT_FOR_CONFIRMED";
@@ -196,7 +190,6 @@ export default function BookingDetail() {
     bookingStatus === BookingStatus.BOOKING_SUCCESS ||
     bookingStatus === "BOOKING_SUCCESS";
 
-  // Complaint and cancellation
   const isUnderComplaint =
     bookingStatus === BookingStatus.BOOKING_UNDER_COMPLAINT ||
     bookingStatus === "BOOKING_UNDER_COMPLAINT";
@@ -299,7 +292,7 @@ export default function BookingDetail() {
     try {
       setConfirmingCancel(true);
       const res = await tourEndpoints.cancelBooking(booking.bookingId);
-      // Cập nhật dữ liệu hoàn tiền sau hủy và hiển thị modal thành công
+
       setShowCancelPreview(false);
       setCancelSuccessData(res.data || null);
       setShowCancelSuccessModal(true);
@@ -321,11 +314,11 @@ export default function BookingDetail() {
     if (!normalized) {
       return t("common.na");
     }
-    // Replace underscores with dots for i18n key
+
     const keyWithoutUnderscores = normalized.replace(/_/g, ".");
     const key = `tour.booking.status.${keyWithoutUnderscores}`;
     const translated = t(key);
-    // If translation not found, format the status text nicely (remove underscores and add spaces)
+
     if (translated === key) {
       return normalized.replace(/_/g, " ").toLowerCase()
         .split(" ")
@@ -379,21 +372,19 @@ export default function BookingDetail() {
     }
 
     const normalizedStatus = String(booking.bookingStatus || "").toUpperCase();
-    
-    // Ưu tiên dùng depositDiscountAmount và totalDiscountAmount từ booking response
-    // (đã được tính đúng với voucher discount từ backend)
+
+
     let amountToPay = 0;
     if (normalizedStatus === "PENDING_BALANCE_PAYMENT") {
-      // Tính remaining amount từ totalDiscountAmount và depositDiscountAmount
+
       const totalAfterDiscount = booking?.totalDiscountAmount ?? booking?.totalAmount ?? 0;
       const depositAfterDiscount = booking?.depositDiscountAmount ?? 0;
       amountToPay = Math.max(totalAfterDiscount - depositAfterDiscount, 0);
     } else {
-      // Dùng depositDiscountAmount (đã có voucher discount)
+
       amountToPay = Number(booking?.depositDiscountAmount ?? booking?.depositAmount ?? booking?.totalAmount ?? 0);
     }
-    
-    // Lấy voucherCode từ booking response
+
     const voucherCode = booking?.voucherCode || "";
 
     if (isPendingBalancePayment) {
@@ -815,7 +806,7 @@ export default function BookingDetail() {
         </View>
       </ScrollView>
 
-      {/* Update Info Modal */}
+      {}
       <Modal
         visible={showUpdateModal}
         animationType="slide"
@@ -839,7 +830,7 @@ export default function BookingDetail() {
             <ScrollView style={styles.modalScrollView}>
               {updateData && (
                 <>
-                  {/* Contact Info */}
+                  {}
                   <View style={styles.modalSection}>
                     <Text style={styles.modalSectionTitle}>
                       {t("tour.confirm.contactInfo")}
@@ -938,7 +929,7 @@ export default function BookingDetail() {
                     </View>
                   </View>
 
-                  {/* Guests Info */}
+                  {}
                   {updateData.adultInfo && updateData.adultInfo.length > 0 && (
                     <View style={styles.modalSection}>
                       <Text style={styles.modalSectionTitle}>
@@ -1118,7 +1109,7 @@ export default function BookingDetail() {
         </View>
       </Modal>
 
-      {/* Confirm Update Modal */}
+      {}
       <Modal
         visible={showConfirmModal}
         animationType="fade"
@@ -1158,7 +1149,7 @@ export default function BookingDetail() {
         </View>
       </Modal>
 
-      {/* Complaint Modal */}
+      {}
       <Modal
         visible={showComplaintModal}
         animationType="fade"
@@ -1219,7 +1210,7 @@ export default function BookingDetail() {
         </View>
       </Modal>
 
-      {/* Cancel Preview Modal */}
+      {}
       <Modal
         visible={showCancelPreview}
         animationType="fade"
@@ -1322,7 +1313,7 @@ export default function BookingDetail() {
         </View>
       </Modal>
 
-      {/* Cancel Success Modal */}
+      {}
       <Modal
         visible={showCancelSuccessModal}
         animationType="fade"
@@ -1388,7 +1379,7 @@ export default function BookingDetail() {
         </View>
       </Modal>
 
-      {/* Complaint Confirm Modal */}
+      {}
       <Modal
         visible={showComplaintConfirmModal}
         animationType="fade"

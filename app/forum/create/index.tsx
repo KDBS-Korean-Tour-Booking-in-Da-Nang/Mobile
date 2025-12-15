@@ -188,7 +188,7 @@ export default function CreatePost() {
           multiline
         />
 
-        {/* Hashtags */}
+        {}
         <View style={styles.hashtagContainer}>
           <View style={styles.hashtagInputContainer}>
             <TextInput

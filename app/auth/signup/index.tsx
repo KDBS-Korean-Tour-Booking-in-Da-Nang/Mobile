@@ -22,7 +22,6 @@ export default function SignUp() {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Force English on this screen and restore previous language on leave
   useEffect(() => {
     previousLangRef.current = i18n.language;
     if (i18n.language !== "en") {
@@ -71,7 +70,7 @@ export default function SignUp() {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
-      {/* Top Illustration */}
+      {}
       <View style={styles.illustrationContainer}>
         <Image
           source={require("../../../assets/images/signup.png")}
@@ -80,12 +79,12 @@ export default function SignUp() {
         />
       </View>
 
-      {/* Form Card overlapping -140 */}
+      {}
       <View style={styles.formCard}>
         <Text style={styles.formTitle}>Sign Up</Text>
         <Text style={styles.formSubtitle}>Create a new account</Text>
 
-        {/* Username */}
+        {}
         <View style={styles.inputContainer}>
           <Text style={styles.inputLabel}>Full name</Text>
           <TextInput
@@ -96,7 +95,7 @@ export default function SignUp() {
           />
         </View>
 
-        {/* Email */}
+        {}
         <View style={styles.inputContainer}>
           <Text style={styles.inputLabel}>Email</Text>
           <TextInput
@@ -109,7 +108,7 @@ export default function SignUp() {
           />
         </View>
 
-        {/* Password */}
+        {}
         <View style={styles.inputContainer}>
           <Text style={styles.inputLabel}>Password</Text>
           <TextInput
@@ -122,7 +121,7 @@ export default function SignUp() {
           />
         </View>
 
-        {/* Confirm Password */}
+        {}
         <View style={styles.inputContainer}>
           <Text style={styles.inputLabel}>Confirm Password</Text>
           <TextInput
@@ -135,7 +134,7 @@ export default function SignUp() {
           />
         </View>
 
-        {/* Sign Up Button */}
+        {}
         <TouchableOpacity
           style={styles.signUpButton}
           onPress={handleSignUp}
@@ -144,14 +143,14 @@ export default function SignUp() {
           <Text style={styles.signUpButtonText}>Sign Up</Text>
         </TouchableOpacity>
 
-        {/* Divider */}
+        {}
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
           <Text style={styles.dividerText}>OR</Text>
           <View style={styles.dividerLine} />
         </View>
 
-        {/* Social */}
+        {}
         <View style={styles.socialButtonsContainer}>
           <TouchableOpacity style={styles.socialButton}>
             <Image
@@ -167,7 +166,7 @@ export default function SignUp() {
           </TouchableOpacity>
         </View>
 
-        {/* Footer */}
+        {}
         <View style={styles.footerRow}>
           <Text style={styles.footerText}>Already have an account?</Text>
           <TouchableOpacity onPress={() => navigate("/auth/login/userLogin")}>

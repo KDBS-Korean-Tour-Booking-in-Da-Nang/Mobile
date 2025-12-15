@@ -37,7 +37,7 @@ export default function ConversationDetail() {
   const { user: currentUser } = useAuthContext();
   const router = useRouter();
   const params = useLocalSearchParams();
-  // Support both dynamic route [userId] and query param userId
+
   const otherUserId = params.userId ? Number(params.userId) : null;
   const currentUserId = (currentUser as any)?.userId || (currentUser as any)?.id || 0;
   const insets = useSafeAreaInsets();
@@ -50,10 +50,8 @@ export default function ConversationDetail() {
   const [sending, setSending] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
-  // WebSocket hook
   const { connected, sendMessage: sendWebSocketMessage, subscribeToConversation } = useChatWebSocket(currentUserId);
 
-  // Load conversation and user info
   useEffect(() => {
     if (!otherUserId || !currentUserId) {
       if (!otherUserId) router.back();
@@ -63,8 +61,7 @@ export default function ConversationDetail() {
     const loadConversation = async () => {
       try {
         setLoading(true);
-        
-        // Load user info
+
         try {
           const usersResponse = await usersEndpoints.getAll();
           
@@ -72,15 +69,14 @@ export default function ConversationDetail() {
           if (Array.isArray(usersResponse.data)) {
             allUsers = usersResponse.data;
           } else if (usersResponse.data && Array.isArray(usersResponse.data.result)) {
-            // Response structure: {code: 0, result: [...]}
+
             allUsers = usersResponse.data.result;
           } else if (usersResponse.data && Array.isArray(usersResponse.data.content)) {
             allUsers = usersResponse.data.content;
           } else if (usersResponse.data && Array.isArray(usersResponse.data.data)) {
             allUsers = usersResponse.data.data;
           }
-          
-          // Find user - prioritize userId field (API returns userId, not id)
+
           const foundUser = allUsers.find((u: any) => u.userId === otherUserId || u.id === otherUserId);
           
           if (foundUser) {
@@ -92,7 +88,7 @@ export default function ConversationDetail() {
               username: foundUser.username,
             });
           } else {
-            // Fallback if user not found
+
             setUser({
               id: otherUserId,
               name: `User ${otherUserId}`,
@@ -108,10 +104,8 @@ export default function ConversationDetail() {
           });
         }
 
-        // Load conversation
         const conversationResponse = await getConversation(currentUserId, otherUserId);
-        
-        // Handle different response structures
+
         let conversationData: ChatMessageResponse[] = [];
         if (Array.isArray(conversationResponse.data)) {
           conversationData = conversationResponse.data;
@@ -134,22 +128,20 @@ export default function ConversationDetail() {
     loadConversation();
   }, [otherUserId, currentUserId, router]);
 
-  // Clear input when conversation changes
   useEffect(() => {
     setMessageText("");
   }, [otherUserId]);
 
-  // Subscribe to WebSocket messages for this conversation
   useEffect(() => {
     if (!otherUserId) return;
 
     const unsubscribe = subscribeToConversation(otherUserId, (message: ChatMessageResponse) => {
       setMessages((prev) => {
-        // Avoid duplicates - check by messageId, or by content + timestamp if messageId is temporary
+
         const exists = prev.some((m) => {
-          // Check by messageId first
+
           if (m.messageId === message.messageId) return true;
-          // Also check by content + sender + timestamp to avoid duplicate optimistic messages
+
           if (m.content === message.content && 
               m.senderId === message.senderId && 
               m.receiverId === message.receiverId &&
@@ -167,7 +159,7 @@ export default function ConversationDetail() {
   }, [otherUserId, subscribeToConversation]);
 
   useEffect(() => {
-    // Scroll to bottom when messages change
+
     if (messages.length > 0 && flatListRef.current) {
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
@@ -179,7 +171,7 @@ export default function ConversationDetail() {
     if (!messageText.trim() || !otherUserId || !currentUserId || sending) return;
 
     const content = messageText.trim();
-    // Clear input immediately before sending
+
     setMessageText("");
     setInputKey(prev => prev + 1); // Force TextInput to reset
     setSending(true);
@@ -201,7 +193,7 @@ export default function ConversationDetail() {
           setMessages(response.data);
         }
       }
-      // Double-check: ensure input is cleared after successful send
+
       setMessageText("");
       setInputKey(prev => prev + 1); // Force TextInput to reset
 
@@ -210,7 +202,7 @@ export default function ConversationDetail() {
       }, 100);
     } catch (error) {
       console.error("Error sending message:", error);
-      // Only restore message text on error
+
       setMessageText(content);
     } finally {
       setSending(false);
@@ -331,7 +323,7 @@ export default function ConversationDetail() {
   return (
     <MainLayout isNavVisible={true}>
       <View style={styles.container}>
-        {/* Header */}
+        {}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backIconButton} onPress={goBack}>
             <Ionicons name="chevron-back" size={24} color="#000" />
@@ -349,7 +341,7 @@ export default function ConversationDetail() {
           <View style={styles.headerSpacer} />
         </View>
 
-        {/* Messages List */}
+        {}
         {messages.length === 0 ? (
           <View style={styles.emptyMessagesContainer}>
             <Ionicons name="chatbubbles-outline" size={64} color="#ccc" />
@@ -372,7 +364,7 @@ export default function ConversationDetail() {
           />
         )}
 
-        {/* Input Area - Always visible at bottom */}
+        {}
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}

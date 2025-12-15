@@ -39,7 +39,7 @@ const getArticleFields = (article: Article, lang: string) => {
       content: article.articleContentKR || article.articleContent,
     };
   } else {
-    // Vietnamese (default)
+
     return {
       title: article.articleTitle,
       description: article.articleDescription,
@@ -65,12 +65,12 @@ export default function ArticleList() {
       const response = await articleCommentEndpoints.getCommentsByArticleId(
         articleId
       );
-      // Filter to only show comments (no replies - parentCommentId is null)
+
       const commentsOnly = (response.data || []).filter(
         (comment) => !comment.parentCommentId
       );
       setArticleComments((prev) => {
-        // Only update if not already set
+
         if (prev[articleId]) {
           return prev;
         }
@@ -115,17 +115,15 @@ export default function ArticleList() {
     loadArticles();
   }, [loadArticles]);
 
-  // Load comments for all articles after articles are loaded
   useEffect(() => {
     if (articles.length > 0) {
       articles.forEach((article) => {
         loadCommentsForArticle(article.articleId);
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [articles]);
 
-  // Track language changes
   useEffect(() => {
     const handleLanguageChange = (lng: string) => {
       setCurrentLang(lng);
@@ -159,7 +157,6 @@ export default function ArticleList() {
     return match && match[1] ? match[1] : null;
   };
 
-  // Filter articles based on search query (local search)
   const filteredArticles = useMemo(() => {
     if (!searchQuery.trim()) {
       return articles;
@@ -182,7 +179,7 @@ export default function ArticleList() {
 
     try {
       let date: Date;
-      // Handle LocalDateTime format from backend
+
       if (
         dateString.includes("T") &&
         !dateString.includes("Z") &&
@@ -265,7 +262,7 @@ export default function ArticleList() {
           }
           showsVerticalScrollIndicator={false}
         >
-          {/* Search Bar */}
+          {}
           <View style={styles.searchContainer}>
             <View style={styles.searchInputContainer}>
               <Ionicons
@@ -376,7 +373,7 @@ export default function ArticleList() {
                       </View>
                     </TouchableOpacity>
 
-                    {/* Top 3 Comments Preview */}
+                    {}
                     {topComments.length > 0 && (
                       <View style={styles.articleCommentsPreview}>
                         {topComments.map((comment) => (

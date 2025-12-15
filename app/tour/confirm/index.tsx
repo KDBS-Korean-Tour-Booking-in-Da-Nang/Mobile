@@ -98,7 +98,6 @@ export default function ConfirmTour() {
 
   React.useEffect(() => {
     try {
-      // Component mounted
     } catch {}
   }, []);
 
@@ -169,7 +168,6 @@ export default function ConfirmTour() {
   }, [voucherPreview, computedDiscount, originalTotal]);
 
   const finalTotal = React.useMemo(() => {
-    // Ưu tiên totalDiscountAmount từ booking response (khi vào từ history booking)
     if (bookingResponse?.totalDiscountAmount !== undefined && bookingResponse.totalDiscountAmount > 0) {
       return Math.max(Number(bookingResponse.totalDiscountAmount), 0);
     }
@@ -187,7 +185,6 @@ export default function ConfirmTour() {
   );
 
   const depositPercentage = React.useMemo(() => {
-    // Ưu tiên depositPercentage từ voucherPreview nếu có
     if (voucherPreview?.depositPercentage !== undefined) {
       const raw = Number(voucherPreview.depositPercentage) * 100;
       if (!Number.isNaN(raw)) {
@@ -200,12 +197,9 @@ export default function ConfirmTour() {
   }, [tour?.depositPercentage, voucherPreview?.depositPercentage]);
 
   const amountDueNow = React.useMemo(() => {
-    // Ưu tiên depositDiscountAmount từ booking response (khi vào từ history booking)
-    // Đây là giá trị chính xác nhất vì đã được tính từ backend với voucher discount
     if (bookingResponse?.depositDiscountAmount !== undefined && bookingResponse.depositDiscountAmount > 0) {
       return Math.max(Math.round(Number(bookingResponse.depositDiscountAmount)), 0);
     }
-    // Ưu tiên finalDepositAmount từ voucherPreview (đã được tính đúng với voucher)
     if (voucherPreview?.finalDepositAmount !== undefined) {
       return Math.max(Number(voucherPreview.finalDepositAmount || 0), 0);
     }
@@ -227,8 +221,6 @@ export default function ConfirmTour() {
     const loadVoucherPreview = async () => {
       if (!currentBookingId) return;
       try {
-        // Try to get voucher preview from booking
-        // If booking has voucherCode (đã được apply khi tạo booking), it will return preview với đầy đủ thông tin
         try {
         const res = await voucherEndpoints.previewApply(currentBookingId);
           if (res.data) {
@@ -236,8 +228,6 @@ export default function ConfirmTour() {
             return;
           }
         } catch {
-          // Booking chưa có voucherCode, không cần làm gì
-          // Voucher đã được apply khi tạo booking nên sẽ có trong response
           setVoucherPreview(null);
         }
       } catch {
@@ -255,7 +245,6 @@ export default function ConfirmTour() {
           .data;
         if (!response) return;
 
-        // Lưu booking response để dùng depositDiscountAmount và totalDiscountAmount
         setBookingResponse(response);
 
         if (response.tourId && response.tourId !== currentTourId) {
@@ -293,7 +282,6 @@ export default function ConfirmTour() {
 
         setBookingData(normalized);
 
-        // Store booking status to determine payment type
         if (response.bookingStatus) {
           setBookingStatus(String(response.bookingStatus));
         }
@@ -306,10 +294,8 @@ export default function ConfirmTour() {
             JSON.stringify({ bookingId: response.bookingId, ts: Date.now() })
           );
         } catch {
-          // Unable to cache booking
         }
       } catch {
-        // Load booking failed
       }
     };
 
@@ -420,7 +406,6 @@ export default function ConfirmTour() {
               }
             }
           } catch {
-            // Silently handle errors
           }
         } catch {}
       }
@@ -506,7 +491,6 @@ export default function ConfirmTour() {
           ? "PENDING_DEPOSIT_PAYMENT"
           : bookingStatus || "PENDING_PAYMENT";
 
-      // Đảm bảo số tiền được tính đúng với voucher đã apply
       const paymentAmount = amountDueNow;
       
       console.log("[CONFIRM] Payment amount calculated:", {
@@ -588,14 +572,13 @@ export default function ConfirmTour() {
               <Ionicons name="chevron-back" size={18} color="#000" />
             </View>
           </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {t("tour.confirm.tourInfo")}
+          </Text>
         </View>
 
         <View style={styles.content}>
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              {t("tour.confirm.tourInfo")}
-            </Text>
-
             <View style={styles.infoCard}>
               <View style={styles.tourHeader}>
                 <Text style={styles.tourName}>{tour.tourName}</Text>
@@ -956,7 +939,6 @@ export default function ConfirmTour() {
             style={[
               styles.confirmButton,
               (confirming || !currentBookingId) && styles.confirmButtonDisabled,
-              { marginBottom: 40 },
             ]}
             onPress={handleConfirmBooking}
             disabled={confirming || !currentBookingId}

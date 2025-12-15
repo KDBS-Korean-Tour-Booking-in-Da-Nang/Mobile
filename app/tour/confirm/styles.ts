@@ -7,17 +7,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF9F5",
   },
 
-  // Header Styles
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
+    paddingHorizontal: 20,
+    paddingTop: 30,
+    paddingBottom: 20,
     backgroundColor: "#FFFFFF",
+    gap: 12,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2C3E50",
+    flex: 1,
+    letterSpacing: 0.2,
   },
 
-  // Header Image Styles
   imageWrapper: {
     position: "relative",
     margin: 12,
@@ -31,15 +37,13 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   backBtn: {
-    position: "absolute",
-    top: 12,
-    left: 12,
+    padding: 0,
   },
   backCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F8F9FA",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FFF9F5",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -65,13 +69,11 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
 
-  // Content Styles
   content: {
     paddingHorizontal: 16,
     paddingBottom: 24,
   },
 
-  // Guest Details Styles
   guestSection: {
     marginBottom: 20,
   },
@@ -132,7 +134,6 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
 
-  // Section Styles
   section: {
     marginBottom: 24,
   },
@@ -144,7 +145,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
 
-  // Info Card Styles
   infoCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 28,
@@ -184,7 +184,6 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
 
-  // Price Card Styles
   priceCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 28,
@@ -276,16 +275,16 @@ const styles = StyleSheet.create({
     color: "#5A6C7D",
   },
 
-  // Confirm Button Styles
   confirmButton: {
-    backgroundColor: "#B8D4E3",
+    backgroundColor: "#B5EAD7",
     borderRadius: 28,
     paddingVertical: 16,
     paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
-    marginBottom: 24,
+    marginBottom: 40,
+    marginHorizontal: 16,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -296,7 +295,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   confirmButtonDisabled: {
-    backgroundColor: "#D5E3ED",
+    backgroundColor: "#D4E8E0",
     opacity: 0.6,
   },
   confirmButtonText: {
@@ -306,7 +305,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
 
-  // Loading and Error Styles
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -347,7 +345,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // New Tour Information Styles
   tourHeader: {
     marginBottom: 16,
   },
@@ -399,7 +396,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
 
-  // Contact Information Styles
   contactHeader: {
     flexDirection: "row",
     alignItems: "center",

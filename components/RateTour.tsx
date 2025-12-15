@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { colors } from "../constants/theme";
 import { tourEndpoints } from "../services/endpoints/tour";
 import { useAuthContext } from "../src/contexts/authContext";
 
@@ -239,8 +238,8 @@ const RateTour: React.FC<RateTourProps> = ({
             >
               <Ionicons
                 name={index < stars ? "star" : "star-outline"}
-                size={32}
-                color={index < stars ? "#FFD700" : "#E0E0E0"}
+                size={28}
+                color={index < stars ? "#FFD89A" : "#E0E0E0"}
               />
             </Animated.View>
           </TouchableOpacity>
@@ -263,8 +262,8 @@ const RateTour: React.FC<RateTourProps> = ({
                 <Ionicons
                   key={index}
                   name={index < rate.star ? "star" : "star-outline"}
-                  size={16}
-                  color={index < rate.star ? "#FFD700" : "#E0E0E0"}
+                  size={14}
+                  color={index < rate.star ? "#FFD89A" : "#E0E0E0"}
                 />
               ))}
             </View>
@@ -382,123 +381,142 @@ const RateTour: React.FC<RateTourProps> = ({
 const styles = StyleSheet.create({
   container: {
     marginTop: 20,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
   },
   formContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    padding: 24,
     marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.text.primary,
-    marginBottom: 16,
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#2D2D2D",
+    marginBottom: 20,
+    letterSpacing: -0.3,
   },
   inputContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
-    color: colors.text.secondary,
-    marginBottom: 8,
+    color: "#2D2D2D",
+    marginBottom: 12,
+    letterSpacing: -0.3,
   },
   input: {
-    borderWidth: 1,
-    borderColor: colors.border.medium,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderWidth: 0,
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     fontSize: 16,
-    color: colors.text.primary,
-    backgroundColor: colors.background.secondary,
+    color: "#2D2D2D",
+    backgroundColor: "#FFF9F5",
+    letterSpacing: -0.3,
   },
   textArea: {
-    height: 100,
+    height: 120,
     textAlignVertical: "top",
   },
   starsContainer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 12,
+    gap: 8,
   },
   starWrapper: {
-    padding: 4,
+    padding: 6,
   },
   star: {
     alignItems: "center",
     justifyContent: "center",
   },
   submitButton: {
-    backgroundColor: colors.primary.main,
-    paddingVertical: 12,
+    backgroundColor: "#B5EAD7",
+    paddingVertical: 16,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 28,
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   submitButtonDisabled: {
-    backgroundColor: colors.border.light,
+    backgroundColor: "#F5F5F5",
+    opacity: 0.6,
   },
   submitButtonText: {
-    color: colors.primary.contrast,
+    color: "#2C3E50",
     fontSize: 16,
     fontWeight: "600",
+    letterSpacing: -0.3,
   },
   ratesContainer: {
-    marginTop: 16,
+    marginTop: 20,
   },
   ratesTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
-    color: colors.text.primary,
-    marginBottom: 12,
+    color: "#2D2D2D",
+    marginBottom: 16,
+    letterSpacing: -0.3,
   },
   rateItem: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: colors.border.light,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    padding: 20,
+    marginBottom: 12,
+    borderWidth: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   rateHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 12,
   },
   rateUsername: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
-    color: colors.text.primary,
+    color: "#2D2D2D",
+    letterSpacing: -0.3,
   },
   rateStars: {
     flexDirection: "row",
+    gap: 4,
   },
   rateContent: {
-    fontSize: 14,
-    color: colors.text.primary,
-    lineHeight: 20,
-    marginBottom: 8,
+    fontSize: 15,
+    color: "#2D2D2D",
+    lineHeight: 22,
+    marginBottom: 12,
+    letterSpacing: -0.3,
   },
   rateDate: {
-    fontSize: 12,
-    color: colors.text.secondary,
+    fontSize: 13,
+    color: "#B8B8B8",
+    letterSpacing: -0.2,
   },
   formHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 20,
   },
   rateActions: {
     flexDirection: "row",
@@ -507,30 +525,33 @@ const styles = StyleSheet.create({
   },
   emptyRatesText: {
     textAlign: "center",
-    color: colors.text.secondary,
+    color: "#B8B8B8",
     fontStyle: "italic",
-    marginTop: 16,
+    marginTop: 20,
+    fontSize: 15,
+    letterSpacing: -0.3,
   },
   alreadyRatedContainer: {
-    backgroundColor: "#f0f8ff",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: "#E8F5E9",
+    borderRadius: 28,
+    padding: 20,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#007AFF",
+    borderWidth: 0,
   },
   alreadyRatedText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#007AFF",
+    color: "#81C784",
     textAlign: "center",
+    letterSpacing: -0.3,
   },
   bookingRequiredText: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    marginTop: 8,
+    fontSize: 15,
+    color: "#B8B8B8",
+    marginTop: 12,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 22,
+    letterSpacing: -0.3,
   },
 });
 

@@ -194,7 +194,7 @@ export default function TourList() {
         tourDescription: shareTour.tourDescription,
       } as any;
       const marker = `[[META:${JSON.stringify(meta)}]]`;
-      // Add tour link in both web and mobile format for compatibility
+
       const tourLink = `http://localhost:3000/tour/detail?id=${shareTour.id}`;
       const contentToSend = `${shareContent.trim()}\n\n${tourLink}\n\n${marker}`;
 
@@ -255,7 +255,7 @@ export default function TourList() {
 
 
   const resolveTourCardImage = (t: any): string => {
-    // Card cover: chỉ dùng tour_img_path (thumbnails)
+
     const cover = getTourThumbnailUrl(t?.tourImgPath);
     return (
       cover ||
@@ -287,7 +287,7 @@ export default function TourList() {
 
   return (
     <MainLayout isNavVisible={isNavVisible}>
-      {/* Gift Modal */}
+      {}
       {showGiftModal && (
         <View style={styles.giftModalContainer}>
           <TouchableOpacity
@@ -357,7 +357,7 @@ export default function TourList() {
           ) : null}
         </View>
 
-        {/* Voucher highlights removed per request. Vouchers are shown only in /tour/voucherList */}
+        {}
 
         <View style={styles.toursGrid}>
           {filteredTours.length > 0 ? (
@@ -458,7 +458,7 @@ export default function TourList() {
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
-      {/* Share Tour Modal */}
+      {}
       <Modal
         visible={shareOpen}
         transparent={true}
@@ -618,7 +618,7 @@ export default function TourList() {
         </View>
       </Modal>
 
-      {/* Close Confirmation Modal */}
+      {}
       <Modal
         visible={showCloseModal}
         transparent={true}

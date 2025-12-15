@@ -197,7 +197,6 @@ export default function BuyingTour() {
     Record<number, string | null>
   >({});
 
-  // Voucher state (visible on buying screen)
   const [voucher, setVoucher] = React.useState<VoucherResponse | null>(null);
   const [selectedVoucherPreview, setSelectedVoucherPreview] = React.useState<ApplyVoucherResponse | null>(null);
   const [showVoucherModal, setShowVoucherModal] = React.useState(false);
@@ -269,7 +268,6 @@ export default function BuyingTour() {
 
   const originalTotal = calculateTotal();
 
-  // Sử dụng data từ preview response nếu có voucher được chọn, nếu không thì tính toán thủ công
   const computedDiscount = React.useMemo(() => {
     if (selectedVoucherPreview?.discountAmount !== undefined) {
       return Number(selectedVoucherPreview.discountAmount) || 0;
@@ -608,7 +606,6 @@ export default function BuyingTour() {
     try {
       setLoadingContinue(true);
 
-      // Gọi preview-all để lấy danh sách voucher có thể apply và tính toán discount
       try {
         const previewResponse = await voucherEndpoints.previewAllAvailable({
           tourId: tour.id,
@@ -617,13 +614,11 @@ export default function BuyingTour() {
           babiesCount: babyCount,
         });
 
-        // Lưu danh sách preview voucher responses
         const previewData = Array.isArray(previewResponse.data) 
           ? previewResponse.data 
           : [];
         setPreviewVoucherResponses(previewData);
 
-        // Hiển thị phần Voucher và Price Summary ở dưới để user có thể chọn voucher hoặc không
         setShowVoucherAndPrice(true);
       } catch (previewError: any) {
         const previewErrorMessage =
@@ -631,7 +626,6 @@ export default function BuyingTour() {
           previewError?.response?.data?.error ||
           previewError?.message;
 
-        // Vẫn hiển thị phần Voucher và Price Summary để user có thể tiếp tục
         setPreviewVoucherResponses([]);
         setShowVoucherAndPrice(true);
         Alert.alert(
@@ -652,7 +646,6 @@ export default function BuyingTour() {
     }
   };
 
-  // Tạo booking với voucherCode đã chọn
   const createBookingWithVoucher = async (selectedVoucherCode?: string) => {
     if (!tour || !user?.email) {
       Alert.alert(t("common.error"), t("tour.booking.errors.loginRequired"));
@@ -796,11 +789,10 @@ export default function BuyingTour() {
       childrenCount,
       babiesCount: babyCount,
       bookingGuestRequests: guestPayload,
-        // Gửi voucherCode nếu đã chọn voucher
+
         voucherCode: selectedVoucherCode ? selectedVoucherCode.trim() : undefined,
     };
 
-      // Tạo booking với voucherCode
       const response = (await tourEndpoints.createBooking(bookingRequest)).data;
       if (!response?.bookingId) {
         throw new Error("Missing bookingId from response");
@@ -841,7 +833,7 @@ export default function BuyingTour() {
   };
 
   const handleBooking = async () => {
-    // Tạo booking với voucherCode đã chọn (nếu có)
+
     await createBookingWithVoucher(voucher?.code);
   };
 
@@ -854,7 +846,7 @@ export default function BuyingTour() {
       try {
         setLoadingVouchers(true);
         setVoucherError(null);
-        // Lấy voucher theo tourId (giống trang tourDetail)
+
         const response = await voucherEndpoints.getByTourId(tour.id);
         const data = Array.isArray(response.data) ? response.data : [];
         const normalized = data
@@ -913,7 +905,6 @@ export default function BuyingTour() {
     loadVouchers();
   }, [t, tour?.id]);
 
-  // Hero carousel: chỉ dùng ảnh bìa (thumbnails)
   const imageList = React.useMemo(() => {
     const cover = getTourThumbnailUrl(tour?.tourImgPath);
     return cover
@@ -1280,32 +1271,8 @@ export default function BuyingTour() {
             <Text style={styles.formTitle}>
               {t("tour.booking.bookingInfo")}
             </Text>
-            {/* <Text style={styles.sectionSubLabel}>
-              {t("tour.booking.departureDate")}
-            </Text> */}
-            {/* <View style={styles.dateRow}>
-              <View style={styles.dateCol}>
-                <View style={styles.datePill}>
-                  <View style={[styles.caretCircle, styles.caretCircleRight]}>
-                    <Text style={styles.caretInner}>v</Text>
-                  </View>
-                </View>
-              </View>
-              <View style={styles.dateCol}>
-                <View style={styles.datePill}>
-                  <View style={[styles.caretCircle, styles.caretCircleRight]}>
-                    <Text style={styles.caretInner}>v</Text>
-                  </View>
-                </View>
-              </View>
-              <View style={styles.dateCol}>
-                <View style={styles.datePill}>
-                  <View style={[styles.caretCircle, styles.caretCircleRight]}>
-                    <Text style={styles.caretInner}>v</Text>
-                  </View>
-                </View>
-              </View>
-            </View> */}
+            {}
+            {}
 
             <Text style={[styles.sectionSubLabel, { marginTop: 10 }]}>
               {t("tour.booking.totalGuests")}
@@ -1393,7 +1360,7 @@ export default function BuyingTour() {
                   <View key={`adult-${idx}`} style={styles.guestForm}>
                     <Text style={styles.guestIndex}>{idx + 1}</Text>
 
-                    {/* Full Name & Date of Birth Row */}
+                    {}
                     <View style={styles.rowContainer}>
                       <View style={styles.fullNameFieldGroup}>
                         <Text style={styles.guestLabel}>
@@ -1804,7 +1771,7 @@ export default function BuyingTour() {
                       </View>
                     </View>
 
-                    {/* ID Number */}
+                    {}
                     <View style={styles.guestFieldGroup}>
                       <Text style={styles.guestLabel}>
                         {t("tour.booking.idNumber")}
@@ -1835,7 +1802,7 @@ export default function BuyingTour() {
                   <View key={`baby-${idx}`} style={styles.guestForm}>
                     <Text style={styles.guestIndex}>{idx + 1}</Text>
 
-                    {/* Full Name & Date of Birth Row */}
+                    {}
                     <View style={styles.rowContainer}>
                       <View style={styles.fullNameFieldGroup}>
                         <Text style={styles.guestLabel}>
@@ -1899,7 +1866,7 @@ export default function BuyingTour() {
                       </View>
                     </View>
 
-                    {/* Gender & Nationality Row */}
+                    {}
                     <View style={styles.rowContainer}>
                       <View style={styles.halfFieldGroup}>
                         <Text style={styles.guestLabel}>
@@ -2046,7 +2013,7 @@ export default function BuyingTour() {
               </View>
             )}
 
-            {/* Continue Button - Show before voucher selection */}
+            {}
             {!showVoucherAndPrice && (
               <View style={{ marginTop: 24, marginBottom: 24 }}>
                 <TouchableOpacity
@@ -2085,7 +2052,7 @@ export default function BuyingTour() {
               </View>
             )}
 
-            {/* Voucher Selection - Show after Continue */}
+            {}
             {showVoucherAndPrice && (
               <>
                 <View style={styles.section}>
@@ -2142,7 +2109,7 @@ export default function BuyingTour() {
               )}
             </View>
 
-            {/* Price Summary Section */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>
                 {t("tour.confirm.priceSummary")}
@@ -2219,7 +2186,7 @@ export default function BuyingTour() {
                   </>
                 )}
 
-                {/* Total Amount (after voucher) */}
+                {}
                 <View style={styles.totalSection}>
                   <Text style={styles.totalLabel}>
                     {t("tour.confirm.total")}
@@ -2229,7 +2196,7 @@ export default function BuyingTour() {
                   </Text>
                 </View>
 
-                {/* Deposit Info - Show if tour has deposit percentage */}
+                {}
                 {(() => {
                   const depositPercent = selectedVoucherPreview?.depositPercentage 
                     ? Number(selectedVoucherPreview.depositPercentage) * 100 
@@ -2268,7 +2235,7 @@ export default function BuyingTour() {
               </View>
             </View>
 
-            {/* Book Now Button - Only show after Continue */}
+            {}
             <BookingButton onPress={handleBooking} disabled={creatingBooking || !showVoucherAndPrice} />
               </>
             )}
@@ -2310,7 +2277,7 @@ export default function BuyingTour() {
                 </View>
               ) : previewVoucherResponses.length > 0 ? (
                 previewVoucherResponses.map((pv) => {
-                  // Tìm voucher tương ứng từ availableVouchers để lấy thông tin đầy đủ
+
                   const v = availableVouchers.find(
                     (av) => av.code === pv.voucherCode || av.voucherId === pv.voucherId
                   ) || {
@@ -2446,26 +2413,24 @@ export default function BuyingTour() {
                     );
                     if (selectedVoucher) {
                       setVoucher(selectedVoucher);
-                      
-                      // Tìm preview response tương ứng với voucher được chọn
+
                       const previewResponse = previewVoucherResponses.find(
                         (pv) => pv.voucherCode === selectedVoucher.code || pv.voucherId === selectedVoucher.voucherId
                       );
                       if (previewResponse) {
                         setSelectedVoucherPreview(previewResponse);
                       } else {
-                        // Nếu không tìm thấy preview response, reset về null
+
                         setSelectedVoucherPreview(null);
                       }
                       
                       setShowVoucherModal(false);
                       setSelectedVoucherId(null);
-                      
-                      // Chỉ lưu voucher vào state, không tạo booking ngay
-                      // Booking sẽ được tạo khi user nhấn "Book Now"
+
+
                     }
                   } else {
-                    // Nếu không chọn voucher, chỉ đóng modal
+
                     setShowVoucherModal(false);
                     setSelectedVoucherId(null);
                   }

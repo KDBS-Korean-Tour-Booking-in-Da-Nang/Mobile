@@ -33,7 +33,6 @@ export default function TransactionResult() {
     null
   );
 
-  // Parse amount từ params (có thể là string, number, hoặc array)
   const amountParam = params.amount
     ? Array.isArray(params.amount)
       ? params.amount[0]
@@ -68,8 +67,7 @@ export default function TransactionResult() {
         return;
       }
 
-      // Số tiền đã được gửi từ payment page (từ backend response)
-      // Payment page đã lưu số tiền thực tế từ backend (actualPaymentAmountRef) và gửi sang đây
+
       if (amount && String(amount).trim().length > 0) {
         const parsedAmount = Number(amount);
         if (!isNaN(parsedAmount) && parsedAmount > 0) {
@@ -101,7 +99,7 @@ export default function TransactionResult() {
       }
     } catch (err: any) {
       setError(err.response?.data?.message || t("payment.result.fetchError"));
-      // Fallback: dùng amount từ params nếu có
+
       if (amount && String(amount).trim().length > 0) {
         const parsedAmount = Number(amount);
         if (!isNaN(parsedAmount) && parsedAmount > 0) {

@@ -46,7 +46,7 @@ export default function HistoryBooking() {
 
   const resolveTourCardImage = (t?: TourResponse): string => {
     if (!t) return "";
-    // Card cover lịch sử: chỉ dùng tour_img_path (thumbnails)
+
     const cover = getTourThumbnailUrl(t?.tourImgPath);
     return cover || "";
   };
@@ -57,11 +57,9 @@ export default function HistoryBooking() {
       if (!normalized) {
         return t("common.na");
       }
-      // Replace underscores with dots for i18n key
       const keyWithoutUnderscores = normalized.replace(/_/g, ".");
       const key = `tour.booking.status.${keyWithoutUnderscores}`;
       const translated = t(key);
-      // If translation not found, format the status text nicely (remove underscores and add spaces)
       if (translated === key) {
         return normalized.replace(/_/g, " ").toLowerCase()
           .split(" ")
@@ -76,35 +74,29 @@ export default function HistoryBooking() {
   const getStatusBadgeColor = useCallback((status?: string) => {
     const normalized = String(status || "").toUpperCase();
     switch (normalized) {
-      // Success statuses - Green
       case BookingStatus.BOOKING_SUCCESS:
       case BookingStatus.BOOKING_BALANCE_SUCCESS:
       case "SUCCESS":
         return "#34C759";
 
-      // Payment pending statuses - Orange
       case BookingStatus.PENDING_PAYMENT:
       case BookingStatus.PENDING_DEPOSIT_PAYMENT:
       case BookingStatus.PENDING_BALANCE_PAYMENT:
         return "#FF9500";
 
-      // Waiting/Processing statuses - Orange
       case BookingStatus.WAITING_FOR_UPDATE:
       case BookingStatus.WAITING_FOR_APPROVED:
       case BookingStatus.BOOKING_SUCCESS_PENDING:
       case BookingStatus.BOOKING_SUCCESS_WAIT_FOR_CONFIRMED:
         return "#FF9500";
 
-      // Rejected/Failed statuses - Red
       case BookingStatus.BOOKING_REJECTED:
       case BookingStatus.BOOKING_FAILED:
         return "#FF3B30";
 
-      // Complaint status - Purple
       case BookingStatus.BOOKING_UNDER_COMPLAINT:
         return "#5856D6";
 
-      // Cancelled status - Gray
       case BookingStatus.BOOKING_CANCELLED:
         return "#8E8E93";
 
@@ -139,7 +131,6 @@ export default function HistoryBooking() {
           ? bookingsResponse.data
           : [];
       } catch {
-        // Silently handle errors
         bookings = [];
       }
 
@@ -483,7 +474,7 @@ export default function HistoryBooking() {
                       >
                         {isProcessing ? (
                           <>
-                            <ActivityIndicator size="small" color="#fff" />
+                            <ActivityIndicator size="small" color="#81C784" />
                             <Text style={styles.cardConfirmButtonText}>
                               {t("tour.booking.confirmCompletionProcessing") ||
                                 "Đang xác nhận..."}
@@ -493,8 +484,8 @@ export default function HistoryBooking() {
                           <>
                             <Ionicons
                               name="checkmark-done"
-                              size={16}
-                              color="#fff"
+                              size={18}
+                              color="#81C784"
                             />
                             <Text style={styles.cardConfirmButtonText}>
                               {t("tour.booking.confirmCompletion") ||
@@ -515,8 +506,8 @@ export default function HistoryBooking() {
                       >
                         <Ionicons
                           name="alert-circle-outline"
-                          size={16}
-                          color="#fff"
+                          size={18}
+                          color="#FF8A65"
                         />
                         <Text style={styles.cardComplaintButtonText}>
                           {t("tour.booking.complaint") || "Khiếu nại"}
@@ -531,7 +522,6 @@ export default function HistoryBooking() {
         </View>
       </ScrollView>
 
-      {/* Complaint Modal */}
       <Modal
         visible={showComplaintModal}
         animationType="slide"
@@ -592,7 +582,6 @@ export default function HistoryBooking() {
         </View>
       </Modal>
 
-      {/* Complaint Confirm Modal */}
       <Modal
         visible={showComplaintConfirmModal}
         animationType="fade"

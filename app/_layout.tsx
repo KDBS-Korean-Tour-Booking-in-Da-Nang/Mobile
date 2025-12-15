@@ -1,6 +1,6 @@
 import { Stack, useRouter } from "expo-router";
 import "../localization/i18n";
-import { View } from "react-native";
+import { View, LogBox } from "react-native";
 import { useEffect, useRef } from "react";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
@@ -8,6 +8,37 @@ import { NavigationProvider } from "../navigation/navigation";
 import { AuthProvider, useAuthContext } from "../src/contexts/authContext";
 import { NotificationProvider } from "../src/contexts/notificationContext";
 import NotificationToastManager from "../components/NotificationToastManager";
+
+LogBox.ignoreLogs([
+  'No route named "payment" exists in nested children',
+  'No route named "transactionResult" exists in nested children',
+  'No route named "google" exists in nested children',
+  'No route named "detailArticle" exists in nested children',
+  'No route named "notifications" exists in nested children',
+  'No route named "onboarding" exists in nested children',
+  'Layout children',
+  'No route named "payment"',
+  'No route named "transactionResult"',
+  'No route named "google"',
+  'No route named "onboarding"',
+  'No route named ',
+  '[Layout children]',
+  "SafeAreaView has been deprecated and will be removed in a future release.",
+]);
+const originalWarn = console.warn;
+console.warn = (...args) => {
+  const msg = args?.[0];
+  if (
+    typeof msg === "string" &&
+    (msg.includes("No route named") ||
+      msg.includes("[Layout children]") ||
+      msg.includes("SafeAreaView has been deprecated"))
+  ) {
+    return;
+  }
+  originalWarn?.(...args);
+};
+LogBox.ignoreAllLogs(true);
 
 SplashScreen.preventAutoHideAsync();
 
