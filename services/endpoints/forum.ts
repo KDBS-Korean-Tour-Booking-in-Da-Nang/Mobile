@@ -70,11 +70,21 @@ export const forumEndpoints = {
   removeReaction: (
     targetId: number,
     targetType: "POST" | "COMMENT",
-    userEmail?: string
+    userEmail?: string,
+    reactionType: "LIKE" | "DISLIKE" = "LIKE"
   ) =>
-    api.post(`/api/reactions/${targetType}/${targetId}`, null, {
-      params: userEmail ? { userEmail } : undefined,
-    }),
+    api.post(
+      "/api/reactions/delete",
+      {
+        targetId,
+        targetType,
+        reactionType,
+        userEmail,
+      },
+      {
+        params: userEmail ? { userEmail } : undefined,
+      }
+    ),
 
   getReactionSummary: (
     targetId: number,
