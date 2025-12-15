@@ -1,23 +1,29 @@
 import { StyleSheet } from "react-native";
-import { typography } from "../../../src/constants/theme";
+import { typography } from "../../../constants/theme";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#FFF9F5",
   },
 
-  // Header Styles
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
-    backgroundColor: "#fff",
+    paddingHorizontal: 20,
+    paddingTop: 30,
+    paddingBottom: 20,
+    backgroundColor: "#FFFFFF",
+    gap: 12,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2C3E50",
+    flex: 1,
+    letterSpacing: 0.2,
   },
 
-  // Header Image Styles
   imageWrapper: {
     position: "relative",
     margin: 12,
@@ -31,15 +37,13 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   backBtn: {
-    position: "absolute",
-    top: 12,
-    left: 12,
+    padding: 0,
   },
   backCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#fff",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FFF9F5",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -65,35 +69,36 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
 
-  // Content Styles
   content: {
     paddingHorizontal: 16,
     paddingBottom: 24,
   },
 
-  // Guest Details Styles
   guestSection: {
     marginBottom: 20,
   },
   guestSectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
-    color: "#333",
+    color: "#2C3E50",
     marginBottom: 12,
+    letterSpacing: 0.2,
   },
   guestCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    padding: 20,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#E8EDF2",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   guestHeader: {
     flexDirection: "row",
@@ -103,8 +108,9 @@ const styles = StyleSheet.create({
   guestName: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333",
+    color: "#2C3E50",
     marginLeft: 8,
+    letterSpacing: 0.2,
   },
   guestDetails: {
     gap: 8,
@@ -116,35 +122,43 @@ const styles = StyleSheet.create({
   },
   guestDetailLabel: {
     fontSize: 14,
-    color: "#666",
+    color: "#7A8A99",
     flex: 1,
+    fontWeight: "500",
   },
   guestDetailValue: {
     fontSize: 14,
-    color: "#333",
-    fontWeight: "500",
+    color: "#2C3E50",
+    fontWeight: "600",
     flex: 1,
     textAlign: "right",
   },
 
-  // Section Styles
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
+    fontWeight: "600",
+    color: "#2C3E50",
     marginBottom: 12,
+    letterSpacing: 0.2,
   },
 
-  // Info Card Styles
   infoCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    padding: 20,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#E8EDF2",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   infoRow: {
     flexDirection: "row",
@@ -170,13 +184,20 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
 
-  // Price Card Styles
   priceCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    padding: 20,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#E8EDF2",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   priceRow: {
     flexDirection: "row",
@@ -198,88 +219,142 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: "#F0F4F8",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  subtotalLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#2C3E50",
+  },
+  subtotalValue: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#2C3E50",
+  },
+  depositLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2C3E50",
+  },
+  depositValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#5A6C7D",
+  },
+  discountLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#F5B8C4",
+  },
+  discountValue: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#F5B8C4",
   },
   totalLabel: {
     fontSize: 16,
-    color: "#111",
-    fontWeight: "700",
+    color: "#2C3E50",
+    fontWeight: "600",
   },
   totalValue: {
     fontSize: 18,
-    color: "#2F9E44",
-    fontWeight: "800",
+    color: "#2C3E50",
+    fontWeight: "700",
+  },
+  remainingLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2C3E50",
+  },
+  remainingValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#5A6C7D",
   },
 
-  // Confirm Button Styles
   confirmButton: {
-    backgroundColor: "#2F9E44",
-    borderRadius: 12,
+    backgroundColor: "#B5EAD7",
+    borderRadius: 28,
     paddingVertical: 16,
     paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
-    marginBottom: 24,
+    marginBottom: 40,
+    marginHorizontal: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
   },
   confirmButtonDisabled: {
-    backgroundColor: "#9ca3af",
+    backgroundColor: "#D4E8E0",
+    opacity: 0.6,
   },
   confirmButtonText: {
-    color: "#fff",
+    color: "#2C3E50",
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "600",
+    letterSpacing: 0.2,
   },
 
-  // Loading and Error Styles
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#FFF9F5",
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: "#666",
+    color: "#7A8A99",
+    fontWeight: "500",
   },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#FFF9F5",
     padding: 20,
   },
   errorTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#333",
+    color: "#2C3E50",
     marginTop: 16,
     textAlign: "center",
+    letterSpacing: 0.2,
   },
   retryButton: {
     marginTop: 20,
-    backgroundColor: "#007AFF",
+    backgroundColor: "#B8D4E3",
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 24,
   },
   retryButtonText: {
-    color: "#fff",
+    color: "#2C3E50",
     fontSize: 16,
     fontWeight: "600",
   },
 
-  // New Tour Information Styles
   tourHeader: {
     marginBottom: 16,
   },
   tourName: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "#1a1a1a",
+    fontWeight: "600",
+    color: "#2C3E50",
     marginBottom: 12,
     lineHeight: 26,
+    letterSpacing: 0.2,
   },
   tourMeta: {
     flexDirection: "row",
@@ -292,7 +367,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 14,
-    color: "#666",
+    color: "#7A8A99",
     fontWeight: "500",
   },
   tourDetails: {
@@ -305,7 +380,7 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 12,
-    color: "#999",
+    color: "#7A8A99",
     fontWeight: "500",
     marginBottom: 4,
     textTransform: "uppercase",
@@ -315,13 +390,12 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontSize: 16,
-    color: "#333",
+    color: "#2C3E50",
     fontWeight: "600",
     flexShrink: 1,
     flexWrap: "wrap",
   },
 
-  // Contact Information Styles
   contactHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -341,13 +415,14 @@ const styles = StyleSheet.create({
   },
   contactName: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#1a1a1a",
+    fontWeight: "600",
+    color: "#2C3E50",
     marginBottom: 4,
+    letterSpacing: 0.2,
   },
   contactPhone: {
     fontSize: 14,
-    color: "#007AFF",
+    color: "#5A6C7D",
     fontWeight: "600",
   },
   contactDetails: {
@@ -360,7 +435,7 @@ const styles = StyleSheet.create({
   },
   contactText: {
     fontSize: 14,
-    color: "#666",
+    color: "#7A8A99",
     flex: 1,
   },
 
@@ -416,29 +491,359 @@ const styles = StyleSheet.create({
   priceItemLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1a1a1a",
+    color: "#2C3E50",
     marginBottom: 4,
+    letterSpacing: 0.2,
   },
   priceItemUnit: {
     fontSize: 12,
-    color: "#666",
+    color: "#7A8A99",
     fontWeight: "500",
   },
   priceItemValue: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#1a1a1a",
+    color: "#2C3E50",
     textAlign: "right",
   },
   priceDivider: {
     height: 1,
-    backgroundColor: "#e5e7eb",
+    backgroundColor: "#F0F4F8",
     marginVertical: 16,
   },
   totalSection: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  depositNote: {
+    marginTop: 6,
+    fontSize: 12,
+    color: "#7A8A99",
+  },
+
+  // Voucher Styles
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  selectVoucherButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#F0F8FF",
+  },
+  selectVoucherButtonDisabled: {
+    backgroundColor: "#F5F5F5",
+    opacity: 0.6,
+  },
+  selectVoucherButtonText: {
+    fontSize: 14,
+    color: "#007AFF",
+    fontWeight: "600",
+  },
+  selectVoucherButtonTextDisabled: {
+    color: "#999",
+  },
+  voucherCard: {
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: "#E0F2E1",
+    borderLeftWidth: 3,
+    borderLeftColor: "#34C759",
+  },
+  voucherHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 0,
+    gap: 8,
+  },
+  voucherIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#F0F9F0",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  voucherInfo: {
+    flex: 1,
+  },
+  voucherCodeRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 2,
+  },
+  voucherCode: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#34C759",
+    letterSpacing: 0.5,
+    flex: 1,
+    marginRight: 8,
+  },
+  voucherName: {
+    fontSize: 10,
+    color: "#666",
+    fontWeight: "500",
+    marginTop: 4,
+    paddingLeft: 36,
+  },
+  removeVoucherButton: {
+    padding: 2,
+    marginLeft: "auto",
+  },
+  voucherDetails: {
+    marginTop: 4,
+  },
+  voucherDetailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  voucherDetailLabel: {
+    fontSize: 12,
+    color: "#666",
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+  voucherDetailValue: {
+    fontSize: 16,
+    color: "#34C759",
+    fontWeight: "700",
+    marginRight: 8,
+  },
+  noVoucherCard: {
+    backgroundColor: "#f8f9fa",
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  noVoucherText: {
+    fontSize: 14,
+    color: "#999",
+    fontStyle: "italic",
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 28,
+    maxHeight: "80%",
+    paddingBottom: 0,
+    width: "92%",
+    alignSelf: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 24,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F5F5F5",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#333",
+    letterSpacing: -0.3,
+  },
+  modalCloseButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: "#F8F8F8",
+  },
+  modalScrollView: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  voucherOptionCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderLeftWidth: 3,
+    borderLeftColor: "#e5e7eb",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  voucherOptionCardSelected: {
+    borderColor: "#E0F2E1",
+    borderLeftColor: "#34C759",
+  },
+  voucherOptionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  voucherOptionContent: {
+    marginBottom: 12,
+  },
+  voucherOptionLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  radioButtonContainer: {
+    marginRight: 0,
+  },
+  radioButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#999",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  radioButtonSelected: {
+    borderColor: "#34C759",
+  },
+  radioButtonInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#34C759",
+  },
+  voucherOptionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#F0F9F0",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  voucherOptionInfo: {
+    flex: 1,
+  },
+  voucherOptionCode: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#34C759",
+    letterSpacing: 0.5,
+    flex: 1,
+    marginRight: 8,
+  },
+  voucherOptionName: {
+    fontSize: 11,
+    color: "#666",
+    fontWeight: "500",
+    marginTop: 4,
+    paddingLeft: 64,
+  },
+  voucherOptionDetails: {
+    gap: 6,
+    paddingLeft: 36,
+  },
+  voucherOptionDetailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  voucherOptionDetailLabel: {
+    fontSize: 13,
+    color: "#666",
+    fontWeight: "500",
+  },
+  voucherOptionDetailValue: {
+    fontSize: 16,
+    color: "#34C759",
+    fontWeight: "700",
+    marginRight: 0,
+  },
+  voucherLoadingContainer: {
+    paddingVertical: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  voucherLoadingText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  voucherEmptyContainer: {
+    paddingVertical: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  voucherEmptyText: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
+    paddingHorizontal: 16,
+  },
+  modalFooter: {
+    flexDirection: "row",
+    padding: 24,
+    paddingTop: 20,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#F5F5F5",
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 24,
+    backgroundColor: "#FAFAFA",
+    borderWidth: 1.5,
+    borderColor: "#E8E8E8",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalCancelButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#666",
+  },
+  modalConfirmButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 24,
+    backgroundColor: "#5BA3FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalConfirmButtonDisabled: {
+    backgroundColor: "#B8D9FF",
+  },
+  modalConfirmButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#fff",
   },
 });
 

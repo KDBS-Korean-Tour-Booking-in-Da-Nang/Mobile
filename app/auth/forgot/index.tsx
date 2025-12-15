@@ -10,9 +10,8 @@ import {
   Platform,
   Image,
 } from "react-native";
-import { useNavigation } from "../../../src/navigation";
-import { useForgotPassword } from "../../../src/hooks/useAuth";
-// Hardcode English strings for auth flows (no i18n)
+import { useNavigation } from "../../../navigation/navigation";
+import { useForgotPassword } from "../../../hooks/useAuth";
 import styles from "./styles";
 
 export default function ForgotPassword() {
@@ -63,7 +62,7 @@ export default function ForgotPassword() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Top Illustration */}
+        {}
         <View style={styles.illustrationContainer}>
           <Image
             source={require("../../../assets/images/forgotpassword.png")}
@@ -72,7 +71,7 @@ export default function ForgotPassword() {
           />
         </View>
 
-        {/* Form Card overlapping */}
+        {}
         <View style={styles.formCard}>
           <Text style={styles.formTitle}>Forgot Password</Text>
           <Text style={styles.formSubtitle}>Enter your email to continue</Text>

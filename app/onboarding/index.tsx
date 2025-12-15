@@ -9,8 +9,8 @@ import {
   TouchableOpacity,
   Platform,
 } from "react-native";
-import { useNavigation } from "../../src/navigation";
-import { spacing } from "../../src/constants/theme";
+import { useNavigation } from "../../navigation/navigation";
+import { spacing } from "../../constants/theme";
 import { markOnboardingCompleted } from "../../src/utils/onboardingUtils";
 
 type Slide = {
@@ -28,7 +28,6 @@ export default function Onboarding() {
   const [index, setIndex] = useState(0);
   const listRef = useRef<FlatList<Slide>>(null as any);
 
-  // Replace these with your actual assets under assets/images
   const slides: Slide[] = useMemo(
     () => [
       {

@@ -12,10 +12,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import * as ImagePicker from "expo-image-picker";
-import { useNavigation } from "../../../src/navigation";
+import { useNavigation } from "../../../navigation/navigation";
 import { useAuthContext } from "../../../src/contexts/authContext";
-import { createPost } from "../../../src/endpoints/forum";
-import { colors, spacing } from "../../../src/constants/theme";
+import forumEndpoints from "../../../services/endpoints/forum";
+import { colors, spacing } from "../../../constants/theme";
 import styles from "./styles";
 
 export default function CreatePost() {
@@ -30,6 +30,43 @@ export default function CreatePost() {
   const [loading, setLoading] = useState(false);
   const MAX_TITLE = 120;
   const MAX_CONTENT = 5000;
+
+  const createPostFormData = (data: {
+    title: string;
+    content: string;
+    userEmail?: string;
+    hashtags?: string[];
+    images?: any[];
+  }): FormData => {
+    const formData = new FormData();
+    formData.append("title", data.title);
+    formData.append("content", data.content);
+    if (data.userEmail) {
+      formData.append("userEmail", data.userEmail);
+    }
+    if (data.hashtags && data.hashtags.length > 0) {
+      data.hashtags.forEach((hashtag) => {
+        formData.append("hashtags", hashtag);
+      });
+    }
+    if (data.images) {
+      data.images.forEach((image: any, idx: number) => {
+        const uri: string = image?.uri || image?.path || "";
+        const clean = uri.split("?")[0];
+        const ext = (
+          clean.match(/\.([a-zA-Z0-9]+)$/)?.[1] || "jpg"
+        ).toLowerCase();
+        const mime =
+          image?.type ||
+          (ext === "jpg" || ext === "jpeg" ? "image/jpeg" : `image/${ext}`);
+        const name = image?.name || `photo_${Date.now()}_${idx}.${ext}`;
+        if (uri) {
+          formData.append("images", { uri, name, type: mime } as any);
+        }
+      });
+    }
+    return formData;
+  };
 
   const handleAddHashtag = () => {
     const raw = currentHashtag.trim();
@@ -94,13 +131,14 @@ export default function CreatePost() {
 
     setLoading(true);
     try {
-      await createPost({
+      const formData = createPostFormData({
         userEmail: user.email,
         title: trimmedTitle,
         content: trimmedContent,
         hashtags,
         images,
       });
+      await forumEndpoints.createPost(formData);
 
       Alert.alert(t("createPost.success"), t("createPost.success"), [
         { text: "OK", onPress: () => goBack() },
@@ -150,7 +188,7 @@ export default function CreatePost() {
           multiline
         />
 
-        {/* Hashtags */}
+        {}
         <View style={styles.hashtagContainer}>
           <View style={styles.hashtagInputContainer}>
             <TextInput
@@ -183,13 +221,11 @@ export default function CreatePost() {
           </View>
         </View>
 
-        {/* Image Picker */}
         <TouchableOpacity style={styles.imagePicker} onPress={handlePickImage}>
           <Ionicons name="camera" size={24} color={colors.text.secondary} />
           <Text style={styles.imagePickerText}>{t("createPost.addImage")}</Text>
         </TouchableOpacity>
 
-        {/* Selected Images Preview */}
         <View style={styles.imagePreviewContainer}>
           {images.map((image, index) => (
             <Image

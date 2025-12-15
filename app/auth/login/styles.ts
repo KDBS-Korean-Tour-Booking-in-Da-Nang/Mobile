@@ -1,5 +1,5 @@
-import { StyleSheet, Dimensions } from "react-native";
-import { spacing } from "../../../src/constants/theme";
+import { StyleSheet, Dimensions, Platform, StatusBar } from "react-native";
+import { spacing } from "../../../constants/theme";
 
 const { width } = Dimensions.get("window");
 
@@ -7,41 +7,44 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#1A8EEA",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight || 0 : 0,
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 80,
   },
   illustrationContainer: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: 50,
+    paddingTop: 20,
+    paddingBottom: 5,
+    height: width * 0.4,
   },
   illustration: {
-    width: width * 0.8,
-    height: width * 0.8,
+    width: width * 0.55,
+    height: width * 0.55,
   },
   formCard: {
-    flex: 1,
     backgroundColor: "#fff",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
-    paddingBottom: spacing.xl,
-    marginTop: -150,
+    paddingBottom: 100,
+    marginTop: 0,
+    flex: 1,
   },
   formTitle: {
-    fontSize: 30,
+    fontSize: 29,
     fontWeight: "800",
     color: "#000",
     marginBottom: spacing.sm,
     textAlign: "left",
   },
   formSubtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: "#000",
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
     textAlign: "left",
   },
   inputContainer: {
@@ -96,9 +99,9 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     paddingVertical: spacing.md,
     alignItems: "center",
-    marginTop: spacing.xl,
+    marginTop: spacing.lg,
     marginBottom: spacing.sm,
-    height: 56,
+    height: 54,
     justifyContent: "center",
   },
   signInButtonDisabled: {
@@ -136,7 +139,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   socialButton: {
     width: 56,
@@ -150,6 +153,9 @@ const styles = StyleSheet.create({
     height: 44,
     marginHorizontal: spacing.md,
   },
+  socialButtonDisabled: {
+    opacity: 0.5,
+  },
   socialIcon: {
     width: 24,
     height: 24,
@@ -158,6 +164,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
   },
   signupText: {
     fontSize: 16,

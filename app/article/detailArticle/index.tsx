@@ -5,16 +5,52 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  TextInput,
+  Alert,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
-import { useNavigation } from "../../../src/navigation";
+import { useNavigation } from "../../../navigation/navigation";
 import { useTranslation } from "react-i18next";
-import ScrollableLayout from "../../../src/components/ScrollableLayout";
-import { getArticleById, Article } from "../../../src/endpoints/articles";
+import i18n from "../../../localization/i18n";
+import ScrollableLayout from "../../../components/ScrollableLayout";
+import { getArticleById, Article } from "../../../services/endpoints/articles";
+import { articleCommentEndpoints } from "../../../services/endpoints/articleComments";
+import { ArticleCommentResponse } from "../../../src/types/response/articleComment.response";
+import { useAuthContext } from "../../../src/contexts/authContext";
+import { tourEndpoints } from "../../../services/endpoints/tour";
+import { TourResponse } from "../../../src/types/response/tour.response";
+import { formatPriceKRW } from "../../../src/utils/currency";
+import { getTourThumbnailUrl } from "../../../src/utils/media";
 import styles, { contentHtmlCss } from "./style";
 import { WebView } from "react-native-webview";
+
+const getArticleFields = (article: Article, lang: string) => {
+  const currentLang = lang as "vi" | "en" | "ko";
+
+  if (currentLang === "en") {
+    return {
+      title: article.articleTitleEN || article.articleTitle,
+      description: article.articleDescriptionEN || article.articleDescription,
+      content: article.articleContentEN || article.articleContent,
+    };
+  } else if (currentLang === "ko") {
+    return {
+      title: article.articleTitleKR || article.articleTitle,
+      description: article.articleDescriptionKR || article.articleDescription,
+      content: article.articleContentKR || article.articleContent,
+    };
+  } else {
+
+    return {
+      title: article.articleTitle,
+      description: article.articleDescription,
+      content: article.articleContent,
+    };
+  }
+};
 
 export default function ArticleDetail() {
   const { navigate } = useNavigation();
@@ -24,6 +60,37 @@ export default function ArticleDetail() {
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [contentHeight, setContentHeight] = useState(0);
+  const [currentLang, setCurrentLang] = useState(i18n.language);
+  const [comments, setComments] = useState<ArticleCommentResponse[]>([]);
+  const [commentText, setCommentText] = useState("");
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [suggestTours, setSuggestTours] = useState<TourResponse[]>([]);
+  const [loadingSuggestTours, setLoadingSuggestTours] = useState(false);
+  const { user } = useAuthContext();
+
+  const loadComments = useCallback(async () => {
+    if (!id || isNaN(Number(id))) {
+      return;
+    }
+
+    setLoadingComments(true);
+    try {
+      const response = await articleCommentEndpoints.getCommentsByArticleId(
+        Number(id)
+      );
+
+      const commentsOnly = (response.data || []).filter(
+        (comment) => !comment.parentCommentId
+      );
+      setComments(commentsOnly);
+    } catch (error) {
+      console.error("Error loading comments:", error);
+      setComments([]);
+    } finally {
+      setLoadingComments(false);
+    }
+  }, [id]);
 
   useEffect(() => {
     setArticle(null);
@@ -70,15 +137,69 @@ export default function ArticleDetail() {
     }
   }, [id]);
 
+  const loadSuggestTours = useCallback(async () => {
+    try {
+      setLoadingSuggestTours(true);
+      const userId = (user as any)?.userId || (user as any)?.id;
+
+      const response = await tourEndpoints.suggestByArticle(userId);
+      const tours = Array.isArray(response.data) ? response.data : [];
+
+      const mappedTours = tours.map((tour: any) => ({
+        ...tour,
+        id: tour.id || tour.tourId, // Use tourId if id is not present
+      }));
+      setSuggestTours(mappedTours);
+    } catch (error: any) {
+
+
+      const isTimeout = error?.code === "ECONNABORTED" || error?.message?.includes("timeout");
+      const isNetworkError = error?.code === "ERR_NETWORK" || !error?.response;
+      const isServerError = error?.response?.status >= 500;
+
+      if (!isTimeout && !isNetworkError && !isServerError && error?.response?.status !== 404) {
+        console.error("Error loading suggest tours:", error);
+      }
+      setSuggestTours([]);
+    } finally {
+      setLoadingSuggestTours(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (id) {
       loadArticle();
+      loadComments();
     }
-  }, [id, loadArticle]);
+  }, [id, loadArticle, loadComments]);
+
+  useEffect(() => {
+    if (id && article) {
+      loadSuggestTours();
+    }
+  }, [id, article, loadSuggestTours]);
+
+  useEffect(() => {
+    const handleLanguageChange = (lng: string) => {
+      setCurrentLang(lng);
+    };
+    i18n.on("languageChanged", handleLanguageChange);
+    return () => {
+      i18n.off("languageChanged", handleLanguageChange);
+    };
+  }, []);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("vi-VN", {
+
+    const localeMap: Record<string, string> = {
+      vi: "vi-VN",
+      en: "en-US",
+      ko: "ko-KR",
+    };
+    const locale = localeMap[currentLang] || "vi-VN";
+
+    return date.toLocaleDateString(locale, {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -87,7 +208,93 @@ export default function ArticleDetail() {
     });
   };
 
-  // Source link button removed in current layout
+  const formatCommentDate = (dateString: string) => {
+    if (!dateString) {
+      return t("article.comment.justNow") || "Vừa xong";
+    }
+
+    try {
+
+
+      let date: Date;
+      if (dateString.includes("T") && !dateString.includes("Z") && !dateString.includes("+") && !dateString.match(/[+-]\d{2}:\d{2}$/)) {
+
+        const parts = dateString.split("T");
+        if (parts.length === 2) {
+          const [year, month, day] = parts[0].split("-").map(Number);
+          const timePart = parts[1].split(".")[0]; // Remove milliseconds if present
+          const [hour, minute, second] = timePart.split(":").map(Number);
+          date = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0);
+        } else {
+          date = new Date(dateString);
+        }
+      } else {
+        date = new Date(dateString);
+      }
+
+      if (isNaN(date.getTime())) {
+        return t("article.comment.justNow") || "Vừa xong";
+      }
+
+      const now = new Date();
+      const diffInMs = now.getTime() - date.getTime();
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+
+      if (diffInMinutes < 1) {
+        return t("article.comment.justNow") || "Vừa xong";
+      } else if (diffInHours < 1) {
+        return `${diffInMinutes} phút trước`;
+      } else if (diffInHours < 24) {
+        return t("article.comment.hoursAgo", { hours: diffInHours }) || `${diffInHours} giờ trước`;
+      } else {
+        const diffInDays = Math.floor(diffInHours / 24);
+        return t("article.comment.daysAgo", { days: diffInDays }) || `${diffInDays} ngày trước`;
+      }
+    } catch (error) {
+      console.error("Error formatting comment date:", error);
+      return t("article.comment.justNow") || "Vừa xong";
+    }
+  };
+
+  const handleSubmitComment = async () => {
+    if (!commentText.trim()) {
+      return;
+    }
+
+    if (!user?.email) {
+      Alert.alert(
+        t("common.error") || "Lỗi",
+        "Vui lòng đăng nhập để bình luận"
+      );
+      return;
+    }
+
+    if (!article) {
+      return;
+    }
+
+    setSubmittingComment(true);
+    try {
+      await articleCommentEndpoints.createComment({
+        userEmail: user.email,
+        articleId: article.articleId,
+        content: commentText.trim(),
+      });
+
+      setCommentText("");
+
+      await loadComments();
+    } catch (error: any) {
+      Alert.alert(
+        t("common.error") || "Lỗi",
+        error?.response?.data?.message ||
+          "Không thể gửi bình luận. Vui lòng thử lại."
+      );
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -127,6 +334,7 @@ export default function ArticleDetail() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <ScrollView
           style={styles.scrollView}
+          contentContainerStyle={styles.scrollViewContent}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.articleContainer}>
@@ -137,13 +345,13 @@ export default function ArticleDetail() {
                   onPress={() => navigate("/article")}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="arrow-back" size={22} color="#212529" />
+                  <Ionicons name="arrow-back-outline" size={20} color="#999" />
                 </TouchableOpacity>
                 <Text
                   style={[styles.articleTitle, { flex: 1 }]}
                   numberOfLines={2}
                 >
-                  {article.articleTitle}
+                  {getArticleFields(article, currentLang).title}
                 </Text>
               </View>
 
@@ -156,7 +364,11 @@ export default function ArticleDetail() {
               <View style={styles.articleBody}>
                 <WebView
                   originWhitelist={["*"]}
-                  source={{ html: buildHtmlContent(article.articleContent) }}
+                  source={{
+                    html: buildHtmlContent(
+                      getArticleFields(article, currentLang).content
+                    ),
+                  }}
                   onMessage={(e) => {
                     const nextHeight = Number(e.nativeEvent.data) || 0;
                     if (!Number.isNaN(nextHeight)) {
@@ -172,6 +384,181 @@ export default function ArticleDetail() {
                   scrollEnabled={false}
                 />
               </View>
+            </View>
+
+            <View style={styles.commentsSection}>
+              <View style={styles.commentsHeader}>
+                <Text style={styles.commentsTitle}>
+                  {t("article.comment.title") || "Bình luận"} ({comments.length})
+                </Text>
+              </View>
+
+              <View style={styles.commentInputContainer}>
+                <View style={styles.commentInputWrapper}>
+                  <TextInput
+                    style={styles.commentInput}
+                    placeholder={t("article.comment.placeholder") || "Viết bình luận..."}
+                    value={commentText}
+                    onChangeText={setCommentText}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.commentSubmitButton,
+                    (!commentText.trim() || submittingComment) &&
+                      styles.commentSubmitButtonDisabled,
+                  ]}
+                  onPress={handleSubmitComment}
+                  disabled={!commentText.trim() || submittingComment}
+                >
+                  {submittingComment ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text
+                      style={[
+                        styles.commentSubmitButtonText,
+                        !commentText.trim() &&
+                          styles.commentSubmitButtonTextDisabled,
+                      ]}
+                    >
+                      {t("article.comment.submit") || "Gửi"}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              {loadingComments ? (
+                <View style={styles.commentsLoadingContainer}>
+                  <ActivityIndicator size="small" color="#007AFF" />
+                </View>
+              ) : comments.length === 0 ? (
+                <View style={styles.noCommentsContainer}>
+                  <Ionicons
+                    name="chatbubble-outline"
+                    size={40}
+                    color="#D0D0D0"
+                  />
+                  <Text style={styles.noCommentsText}>
+                    {t("article.comment.noComments") ||
+                      "Chưa có bình luận nào. Hãy là người đầu tiên bình luận!"}
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.commentsList}>
+                  {comments.map((comment) => (
+                    <View
+                      key={comment.articleCommentId}
+                      style={styles.commentItem}
+                    >
+                      <View style={styles.commentAvatarContainer}>
+                        {comment.userAvatar ? (
+                          <Image
+                            source={{ uri: comment.userAvatar }}
+                            style={styles.commentAvatar}
+                          />
+                        ) : (
+                          <View style={styles.commentAvatarPlaceholder}>
+                            <Ionicons
+                              name="person-outline"
+                              size={18}
+                              color="#999"
+                            />
+                          </View>
+                        )}
+                      </View>
+                      <View style={styles.commentContent}>
+                        <View style={styles.commentHeader}>
+                          <Text style={styles.commentUserName}>
+                            {comment.username || "Người dùng"}
+                          </Text>
+                          <Text style={styles.commentDate}>
+                            {formatCommentDate(comment.createdAt)}
+                          </Text>
+                        </View>
+                        <Text style={styles.commentText}>
+                          {comment.content}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            <View style={styles.suggestToursSection}>
+              <View style={styles.suggestToursHeader}>
+                <Text style={styles.suggestToursTitle}>
+                  {t("article.suggestTours.title")}
+                </Text>
+              </View>
+              {loadingSuggestTours ? (
+                <View style={styles.suggestToursLoading}>
+                  <ActivityIndicator size="small" color="#007AFF" />
+                </View>
+              ) : suggestTours.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.suggestToursList}
+                >
+                  {suggestTours
+                    .filter((tour) => {
+                      if (!tour?.id) return false;
+                      const tourId = typeof tour.id === "number" ? tour.id : Number(tour.id);
+                      return !isNaN(tourId) && tourId > 0;
+                    })
+                    .map((tour, index) => {
+                      const tourId = typeof tour.id === "number" ? tour.id : Number(tour.id);
+                      return (
+                        <TouchableOpacity
+                          key={tourId || `tour-${index}`}
+                          style={styles.suggestTourCard}
+                          onPress={() => {
+                            if (tourId && !isNaN(tourId) && tourId > 0) {
+                              console.log("[Article Detail] Navigating to tour detail:", tourId);
+                              navigate(`/tour/tourDetail?id=${tourId}` as any);
+                            } else {
+                              console.error("[Article Detail] Invalid tour ID:", {
+                                originalId: tour.id,
+                                parsedId: tourId,
+                                tour: tour
+                              });
+                            }
+                          }}
+                        >
+                          <Image
+                            source={{
+                              uri: getTourThumbnailUrl(tour?.tourImgPath) || "",
+                            }}
+                            style={styles.suggestTourImage}
+                            contentFit="cover"
+                            transition={0}
+                            cachePolicy="disk"
+                          />
+                          <View style={styles.suggestTourContent}>
+                            <Text style={styles.suggestTourName} numberOfLines={2}>
+                              {tour.tourName}
+                            </Text>
+                            <Text style={styles.suggestTourPrice}>
+                              {tour.adultPrice
+                                ? formatPriceKRW(tour.adultPrice)
+                                : "N/A"}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                </ScrollView>
+              ) : (
+                <View style={styles.suggestToursEmpty}>
+                  <Text style={styles.suggestToursEmptyText}>
+                    {t("article.suggestTours.noTours")}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         </ScrollView>

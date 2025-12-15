@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,17 +9,25 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  ActivityIndicator,
+  StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "../../../src/navigation";
+import { useNavigation } from "../../../navigation/navigation";
 import { useAuthContext } from "../../../src/contexts/authContext";
 import { useTranslation } from "react-i18next";
+import { useGoogleAuth } from "../../../hooks/useGoogleAuth";
 import styles from "./styles";
 
 export default function UserLogin() {
   const { navigate, replace } = useNavigation();
   const { login, checkAuthStatus } = useAuthContext();
   const { t } = useTranslation();
+  const {
+    loginWithGoogle,
+    loading: googleLoading,
+    error: googleError,
+  } = useGoogleAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,7 +35,7 @@ export default function UserLogin() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert(t("auth.login.error"), t("auth.login.error"));
+      Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
@@ -38,21 +46,41 @@ export default function UserLogin() {
       replace("/home");
     } catch (error: any) {
       Alert.alert(
-        t("auth.login.error"),
-        error.message || t("auth.login.error")
+        "Error",
+        error.message ||
+          "Login failed. Please check your credentials and try again."
       );
     } finally {
       setLoading(false);
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      await loginWithGoogle();
+      await checkAuthStatus();
+    } catch {
+
+    }
+  };
+
+  useEffect(() => {
+    if (googleError) {
+      Alert.alert("Error", googleError);
+    }
+  }, [googleError]);
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Background Illustration */}
+    <View style={styles.container}>
+      {Platform.OS === "android" && (
+        <StatusBar backgroundColor="#000000" barStyle="light-content" />
+      )}
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+        {}
         <View style={styles.illustrationContainer}>
           <Image
             source={require("../../../assets/images/signin.png")}
@@ -61,12 +89,10 @@ export default function UserLogin() {
           />
         </View>
 
-        {/* Sign In Form Card */}
         <View style={styles.formCard}>
           <Text style={styles.formTitle}>Sign In</Text>
           <Text style={styles.formSubtitle}>Please enter a valid account</Text>
 
-          {/* Email Input */}
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Email</Text>
             <TextInput
@@ -80,7 +106,6 @@ export default function UserLogin() {
             />
           </View>
 
-          {/* Password Input */}
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Password</Text>
             <View style={styles.passwordInputWrapper}>
@@ -105,7 +130,6 @@ export default function UserLogin() {
             </View>
           </View>
 
-          {/* Forgot Password Link */}
           <TouchableOpacity
             style={styles.forgotPasswordContainer}
             onPress={() => navigate("/auth/forgot")}
@@ -113,7 +137,6 @@ export default function UserLogin() {
             <Text style={styles.forgotPasswordText}>Forgot Password</Text>
           </TouchableOpacity>
 
-          {/* Sign In Button */}
           <TouchableOpacity
             style={[
               styles.signInButton,
@@ -137,21 +160,30 @@ export default function UserLogin() {
             )}
           </TouchableOpacity>
 
-          {/* OR Divider */}
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>OR</Text>
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Social Login Buttons */}
           <View style={styles.socialButtonsContainer}>
-            <TouchableOpacity style={styles.socialButton}>
-              <Image
-                source={require("../../../assets/images/google.png")}
-                style={styles.socialIcon}
-                resizeMode="contain"
-              />
+            <TouchableOpacity
+              style={[
+                styles.socialButton,
+                (googleLoading || loading) && styles.socialButtonDisabled,
+              ]}
+              onPress={handleGoogleLogin}
+              disabled={googleLoading || loading}
+            >
+              {googleLoading ? (
+                <ActivityIndicator size="small" color="#000" />
+              ) : (
+                <Image
+                  source={require("../../../assets/images/google.png")}
+                  style={styles.socialIcon}
+                  resizeMode="contain"
+                />
+              )}
             </TouchableOpacity>
             <TouchableOpacity style={styles.socialButton}>
               <Image
@@ -162,7 +194,6 @@ export default function UserLogin() {
             </TouchableOpacity>
           </View>
 
-          {/* Sign Up Link */}
           <View style={styles.signupContainer}>
             <Text style={styles.signupText}>Don&apos;t have account? </Text>
             <TouchableOpacity onPress={() => navigate("/auth/signup")}>
@@ -172,7 +203,6 @@ export default function UserLogin() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    </View>
   );
 }
-
-// styles moved to styles.ts

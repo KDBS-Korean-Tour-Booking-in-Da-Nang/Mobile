@@ -6,7 +6,7 @@ import React, {
   useReducer,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import api from "../services/api";
+import api from "../../services/api";
 
 type User = {
   userId: number;
@@ -19,7 +19,6 @@ type User = {
   birthdate?: string;
   gender?: string;
   phone?: string;
-  isPremium?: boolean;
   dob?: string;
   cccd?: string;
   balance?: number;
@@ -113,20 +112,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       const token = await AsyncStorage.getItem("authToken");
       const userDataRaw = await AsyncStorage.getItem("userData");
       let userData: User | null = userDataRaw ? JSON.parse(userDataRaw) : null;
-      if (userData && !userData.email) {
-        const anyUser: any = userData as any;
-        const fallbackEmail =
-          anyUser.userEmail || anyUser.emailAddress || anyUser.mail;
-        if (fallbackEmail && typeof fallbackEmail === "string") {
-          userData = { ...(userData as any), email: fallbackEmail } as User;
-          await AsyncStorage.setItem("userData", JSON.stringify(userData));
+
+      if (userData && userData.userId) {
+        const userId =
+          typeof userData.userId === "number"
+            ? userData.userId
+            : parseInt(String(userData.userId), 10);
+
+        if (isNaN(userId) || userId <= 0) {
+          console.error("[AuthContext] Invalid userId in stored userData:", {
+            userId: userData.userId,
+            parsed: userId,
+            userData,
+          });
+
+          await AsyncStorage.removeItem("userData");
+          userData = null;
+        } else {
+
+          userData.userId = userId;
         }
       }
+
       dispatch({
         type: "SET_AUTH",
         payload: { isAuthenticated: !!token, user: userData },
       });
     } catch (error) {
+      console.error("[AuthContext] Error checking auth status:", error);
       dispatch({
         type: "SET_AUTH",
         payload: { isAuthenticated: false, user: null },
@@ -145,13 +158,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         user?: User;
       };
       const token = payload?.token as string;
-      let user = payload?.user as any;
-      if (user && !user.email) {
-        const fallbackEmail = user.userEmail || user.emailAddress || user.mail;
-        if (fallbackEmail && typeof fallbackEmail === "string") {
-          user = { ...user, email: fallbackEmail };
-        }
-      }
+      const user = payload?.user as any;
       await AsyncStorage.setItem("authToken", token);
       await AsyncStorage.setItem("userData", JSON.stringify(user));
       dispatch({ type: "LOGIN_SUCCESS", payload: { token, user } });
@@ -165,7 +172,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   const logout = async () => {
     try {
-      await api.post("/api/auth/logout");
+      const token = await AsyncStorage.getItem("authToken");
+      if (token) {
+        await api.post("/api/auth/logout", { token });
+      }
     } catch (e) {
     } finally {
       await AsyncStorage.removeItem("authToken");

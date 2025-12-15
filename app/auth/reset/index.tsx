@@ -8,43 +8,36 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
-import { useNavigation } from "../../../src/navigation";
+import { useNavigation } from "../../../navigation/navigation";
 import { useLocalSearchParams } from "expo-router";
-import api from "../../../src/services/api";
-import { colors } from "../../../src/constants/theme";
-import { Ionicons } from "@expo/vector-icons";
-import styles from "./styles";
-// Hardcode English for auth flows
+import api from "../../../services/api";
+import styles from "../verify/styles";
 
-export default function ResetPassword() {
+export default function SetNewPassword() {
   const { navigate } = useNavigation();
   const params = useLocalSearchParams();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const email = params.email as string;
+  const email = (params.email as string) || "";
   const otp = (params.otpCode as string) || "";
 
-  const handleResetPassword = async () => {
+  const handleSetPassword = async () => {
     if (!newPassword.trim() || !confirmPassword.trim()) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
-
-    if (newPassword.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters");
-      return;
-    }
-
     if (newPassword !== confirmPassword) {
       Alert.alert("Error", "Passwords do not match");
       return;
     }
-
+    if (newPassword.length < 8) {
+      Alert.alert("Error", "Password must be at least 8 characters");
+      return;
+    }
     setLoading(true);
     try {
       const resp = await api.post("/api/auth/forgot-password/reset", {
@@ -75,133 +68,56 @@ export default function ResetPassword() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header removed */}
-
-        <View style={styles.content}>
-          <View style={styles.formContainer}>
-            <View style={styles.iconContainer}>
-              <View style={styles.iconWrapper}>
-                <Ionicons
-                  name="lock-open"
-                  size={48}
-                  color={colors.primary.main}
-                />
-              </View>
-            </View>
-
-            <Text style={styles.formTitle}>Create new password</Text>
-            <Text style={styles.formSubtitle}>
-              Please enter a new password for your account
-            </Text>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>New password</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={20}
-                  color={colors.text.secondary}
-                />
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Enter new password"
-                  value={newPassword}
-                  onChangeText={setNewPassword}
-                  secureTextEntry={!showNewPassword}
-                  autoCapitalize="none"
-                />
-                <TouchableOpacity
-                  onPress={() => setShowNewPassword(!showNewPassword)}
-                  style={styles.eyeButton}
-                >
-                  <Ionicons
-                    name={showNewPassword ? "eye-off-outline" : "eye-outline"}
-                    size={20}
-                    color={colors.text.secondary}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Confirm new password</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={20}
-                  color={colors.text.secondary}
-                />
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Re-enter new password"
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry={!showConfirmPassword}
-                  autoCapitalize="none"
-                />
-                <TouchableOpacity
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                  style={styles.eyeButton}
-                >
-                  <Ionicons
-                    name={
-                      showConfirmPassword ? "eye-off-outline" : "eye-outline"
-                    }
-                    size={20}
-                    color={colors.text.secondary}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.passwordRequirements}>
-              <Text style={styles.requirementsTitle}>
-                Password requirements:
-              </Text>
-              <Text style={styles.requirementItem}>
-                • At least 6 characters
-              </Text>
-              <Text style={styles.requirementItem}>
-                • Should include upper and lower case
-              </Text>
-              <Text style={styles.requirementItem}>
-                • Should include numbers and special characters
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={[
-                styles.resetButton,
-                loading && styles.resetButtonDisabled,
-              ]}
-              onPress={handleResetPassword}
-              disabled={loading}
-            >
-              {loading ? (
-                <View style={styles.loadingContainer}>
-                  <Ionicons
-                    name="reload"
-                    size={20}
-                    color="white"
-                    style={styles.spinning}
-                  />
-                  <Text style={styles.resetButtonText}>Resetting...</Text>
-                </View>
-              ) : (
-                <Text style={styles.resetButtonText}>Reset password</Text>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>Remember your password? </Text>
-              <TouchableOpacity
-                onPress={() => navigate("/auth/login/userLogin")}
-              >
-                <Text style={styles.loginLink}>Login</Text>
-              </TouchableOpacity>
-            </View>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.illustrationContainer}>
+          <Image
+            source={require("../../../assets/images/otp-set.png")}
+            style={styles.illustration}
+            resizeMode="contain"
+          />
+        </View>
+        <View style={styles.formCard}>
+          <Text style={styles.formTitle}>Set New Password</Text>
+          <Text style={styles.formSubtitle}>
+            Please enter a code from email
+          </Text>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>New password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="******"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry
+              autoCapitalize="none"
+            />
           </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Confirm new password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="******"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              autoCapitalize="none"
+            />
+          </View>
+          <TouchableOpacity
+            style={[
+              styles.verifyButton,
+              loading && styles.verifyButtonDisabled,
+            ]}
+            onPress={handleSetPassword}
+            disabled={loading}
+          >
+            <Text style={styles.verifyButtonText}>
+              {loading ? "..." : "Submit"}
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

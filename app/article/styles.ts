@@ -1,37 +1,13 @@
 import { StyleSheet } from "react-native";
-import { colors } from "../../src/constants/theme";
+import { colors } from "../../constants/theme";
 
 export default StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FFF9F5",
   },
   containerIos: {
-    paddingTop: 8,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
-    backgroundColor: "#FFFFFF",
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#212529",
-    flex: 1,
-    textAlign: "center",
-  },
-  headerRight: {
-    width: 40,
+    paddingTop: 40,
   },
   scrollView: {
     flex: 1,
@@ -71,10 +47,13 @@ export default StyleSheet.create({
     padding: 16,
     paddingBottom: 20,
   },
+  articleCardWrapper: {
+    marginBottom: 16,
+  },
   articleCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    marginBottom: 16,
+    marginHorizontal: 0,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -114,7 +93,7 @@ export default StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginTop: 8,
   },
   articleAuthor: {
     flexDirection: "row",
@@ -126,6 +105,15 @@ export default StyleSheet.create({
     marginLeft: 4,
   },
   articleDate: {
+    fontSize: 12,
+    color: colors.text.secondary,
+  },
+  articleMetaRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  articleCommentCount: {
     fontSize: 12,
     color: colors.text.secondary,
   },
@@ -143,5 +131,111 @@ export default StyleSheet.create({
     borderRadius: 12,
     marginRight: 8,
     marginBottom: 4,
+  },
+  searchContainer: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    backgroundColor: "#FFF9F5",
+  },
+  searchInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: "#E8EDF2",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: "#2C3E50",
+    paddingVertical: 0,
+    includeFontPadding: false,
+  },
+  clearSearchButton: {
+    marginLeft: 8,
+    padding: 4,
+  },
+  articleCommentsPreview: {
+    backgroundColor: "#FFFFFF",
+    marginHorizontal: 0,
+    marginTop: 8,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#F0F0F0",
+  },
+  commentPreviewItem: {
+    flexDirection: "row",
+    marginBottom: 12,
+  },
+  commentPreviewAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#E5E5E5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+    marginTop: 2,
+    overflow: "hidden",
+  },
+  commentPreviewAvatarImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  commentPreviewContent: {
+    flex: 1,
+  },
+  commentPreviewUserName: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#212529",
+    marginBottom: 2,
+  },
+  commentPreviewText: {
+    fontSize: 13,
+    color: "#495057",
+    lineHeight: 18,
+    marginBottom: 4,
+  },
+  commentPreviewDate: {
+    fontSize: 11,
+    color: colors.text.secondary,
+  },
+  viewAllCommentsButton: {
+    marginTop: 4,
+    paddingVertical: 8,
+  },
+  viewAllCommentsText: {
+    fontSize: 13,
+    color: "#007AFF",
+    fontWeight: "500",
   },
 });

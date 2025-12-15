@@ -17,19 +17,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useAuthContext } from "../../src/contexts/authContext";
 import { useTranslation } from "react-i18next";
-import {
-  searchPosts,
+import forumEndpoints, {
   PostResponse,
-  deletePost,
-  getMySavedPosts,
   SavedPostResponse,
-  getPostById,
-  getMyPosts,
-} from "../../src/endpoints/forum";
-import PostCard from "../../src/components/PostCard";
-import CreatePostModal from "../../src/components/CreatePostModal";
+} from "../../services/endpoints/forum";
+import { PostRawResponse } from "../../src/types/response/forum.response";
+import api from "../../services/api";
+import PostCard from "../../components/PostCard";
+import CreatePostModal from "../../components/CreatePostModal";
 import styles from "./styles";
-import MainLayout from "../../src/components/MainLayout";
+import MainLayout from "../../components/MainLayout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Forum() {
@@ -51,14 +48,59 @@ export default function Forum() {
   const [viewingSaved, setViewingSaved] = useState(false);
   const [viewingMyPosts, setViewingMyPosts] = useState(false);
 
-  const [isNavVisible, setIsNavVisible] = useState(true);
   const lastScrollY = useRef(0);
-  const scrollThreshold = 50;
+  const scrollThreshold = 50; 
+  const scrollPositionThreshold = 10; 
   const flatListRef = useRef<FlatList>(null);
-  const buttonAnimation = useRef(new Animated.Value(1)).current;
+  const buttonAnimation = useRef(new Animated.Value(0)).current;
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hideButtonTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
+
+  const transformApiPost = useCallback(
+    (apiPost: PostRawResponse): PostResponse => {
+      const toAbsoluteUrl = (path: string): string => {
+        if (!path) return path;
+        if (/^https?:\/\//i.test(path)) return path;
+        const base = (api.defaults.baseURL || "").replace(/\/$/, "");
+        const origin = base.endsWith("/api") ? base.slice(0, -4) : base;
+        const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+        return `${origin}${normalizedPath}`;
+      };
+
+      let hashtags: string[] = [];
+      if (apiPost.hashtags) {
+        if (Array.isArray(apiPost.hashtags)) {
+          hashtags = apiPost.hashtags.map((h) => {
+            if (typeof h === "string") return h;
+            if (typeof h === "object" && h.content) return h.content;
+            return String(h);
+          });
+        }
+      }
+
+      return {
+        id: apiPost.forumPostId,
+        title: apiPost.title,
+        content: apiPost.content,
+        username: apiPost.username || "Unknown User",
+        userAvatar: apiPost.userAvatar || "",
+        imageUrls: apiPost.images
+          ? apiPost.images.map((i) => toAbsoluteUrl(i.imgPath))
+          : [],
+        hashtags,
+        createdAt: apiPost.createdAt,
+        likeCount: apiPost.reactions?.likeCount || 0,
+        dislikeCount: apiPost.reactions?.dislikeCount || 0,
+        totalReactions: apiPost.reactions?.totalReactions || 0,
+        userReaction: apiPost.reactions?.userReaction || null,
+        commentCount: 0,
+      };
+    },
+    []
+  );
 
   const loadPosts = useCallback(
     async (page: number = 0, keyword: string = "") => {
@@ -69,25 +111,47 @@ export default function Forum() {
           setIsLoadingMore(true);
         }
 
-        const response = await searchPosts({
+        const requestParams: any = {
           keyword: keyword || undefined,
           page,
           size: 10,
           sort: "createdAt,desc",
-        });
+        };
+        if (Array.isArray(requestParams.hashtags)) {
+          requestParams.hashtags = requestParams.hashtags.join(",");
+        }
+        if (requestParams.keyword) {
+          requestParams.searchIn = "title,content";
+          requestParams.fullText = true;
+        }
+
+        const response = await forumEndpoints.searchPosts(requestParams);
+        const raw = Array.isArray(response.data)
+          ? response.data
+          : (response.data as { content: any[] })?.content || [];
+        let posts = raw.map(transformApiPost);
+
+        if (keyword && typeof keyword === "string" && keyword.trim()) {
+          const q = keyword.trim().toLowerCase();
+          posts = posts.filter(
+            (p) =>
+              p.title?.toLowerCase().includes(q) ||
+              p.content?.toLowerCase().includes(q)
+          );
+        }
 
         if (page === 0) {
-          setPosts(response);
+          setPosts(posts);
         } else {
           setPosts((prev) => {
             const existingIds = new Set(prev.map((p) => p.id));
-            const newPosts = response.filter((p) => !existingIds.has(p.id));
+            const newPosts = posts.filter((p) => !existingIds.has(p.id));
             const combined = [...prev, ...newPosts];
             return combined;
           });
         }
 
-        setHasMorePosts(response.length === 10);
+        setHasMorePosts(posts.length === 10);
         setCurrentPage(page);
       } catch {
         Alert.alert(t("forum.errorTitle"), t("forum.cannotLoadPosts"));
@@ -101,7 +165,6 @@ export default function Forum() {
 
   useFocusEffect(
     useCallback(() => {
-      // Fetch data when the screen is focused
       if (!authLoading && user) {
         loadPosts();
       } else if (!authLoading && !user) {
@@ -142,10 +205,11 @@ export default function Forum() {
     setRefreshing(true);
     setCurrentPage(0);
     if (viewingSaved) {
-      const data = await getMySavedPosts();
+      const response = await forumEndpoints.getMySavedPosts();
+      const data = response.data?.result || response.data || [];
       setSavedPosts(data);
       const mapped = (data || [])
-        .map((s) => {
+        .map((s: any) => {
           if (!s) return null;
           return {
             id: Number(s.postId),
@@ -163,11 +227,13 @@ export default function Forum() {
             commentCount: 0,
           } as PostResponse;
         })
-        .filter((p): p is PostResponse => !!p);
+        .filter((p: any): p is PostResponse => !!p);
       setPosts(mapped);
     } else if (viewingMyPosts) {
-      const data = await getMyPosts(0, 50);
-      setPosts(data);
+      const response = await forumEndpoints.getMyPosts(0, 50);
+      const apiPosts = (response.data as { content: any[] })?.content || [];
+      const posts = apiPosts.map(transformApiPost);
+      setPosts(posts);
     } else {
       await loadPosts(0, searchQuery);
     }
@@ -200,25 +266,23 @@ export default function Forum() {
     [loadPosts]
   );
 
-  const handlePostCreated = useCallback((newPost: PostResponse) => {
-    setPosts((prev) => {
-      const exists = prev.some((p) => p.id === newPost.id);
-      if (exists) return prev;
-      return [newPost, ...prev];
-    });
-    setShowCreateModal(false);
-    setEditingPost(null);
-  }, []);
+  const handlePostCreated = useCallback(
+    async (newPost: PostResponse) => {
+      await loadPosts(0, searchQuery);
+      setShowCreateModal(false);
+      setEditingPost(null);
+    },
+    [loadPosts, searchQuery]
+  );
 
-  const handlePostUpdated = useCallback((updatedPost: PostResponse) => {
-    setPosts((prev) => {
-      const filteredPosts = prev.filter((post) => post.id !== updatedPost.id);
-      const newPosts = [updatedPost, ...filteredPosts];
-      return newPosts;
-    });
-    setEditingPost(null);
-    setShowCreateModal(false);
-  }, []);
+  const handlePostUpdated = useCallback(
+    async (updatedPost: PostResponse) => {
+      await loadPosts(0, searchQuery);
+      setEditingPost(null);
+      setShowCreateModal(false);
+    },
+    [loadPosts, searchQuery]
+  );
 
   const handlePostDeleted = useCallback(
     async (postId: number) => {
@@ -248,11 +312,8 @@ export default function Forum() {
       }
 
       try {
-        await deletePost(postId, user.email);
-        setPosts((prev) => {
-          const filtered = prev.filter((post) => post.id !== postId);
-          return filtered;
-        });
+        await forumEndpoints.deletePost(postId, user.email);
+        await loadPosts(0, searchQuery); // reload list mới
         Alert.alert(t("forum.successTitle"), t("forum.postDeleted"));
       } catch {
         if (false as any) {
@@ -271,7 +332,7 @@ export default function Forum() {
         }
       }
     },
-    [user?.email, t]
+    [user?.email, t, loadPosts, searchQuery]
   );
 
   const handleEditPost = useCallback((post: PostResponse) => {
@@ -294,29 +355,54 @@ export default function Forum() {
       return;
     }
     try {
-      const data = savedPosts.length ? savedPosts : await getMySavedPosts();
-      setSavedPosts(data);
-      const mapped = (data || [])
-        .map((s) => {
-          if (!s) return null;
-          return {
-            id: Number(s.postId),
-            title: s.postTitle,
-            content: s.postContent,
-            username: s.postAuthor,
-            userAvatar: s.postAuthorAvatar || "",
-            imageUrls: [],
-            hashtags: [],
-            createdAt: s.postCreatedAt,
-            likeCount: 0,
-            dislikeCount: 0,
-            totalReactions: 0,
-            userReaction: null,
-            commentCount: 0,
-          } as PostResponse;
-        })
-        .filter((p): p is PostResponse => !!p);
-      setPosts(mapped);
+      if (savedPosts.length) {
+        const mapped = (savedPosts || [])
+          .map((s) => {
+            if (!s) return null;
+            return {
+              id: Number(s.postId),
+              title: s.postTitle,
+              content: s.postContent,
+              username: s.postAuthor,
+              userAvatar: s.postAuthorAvatar || "",
+              imageUrls: [],
+              hashtags: [],
+              createdAt: s.postCreatedAt,
+              likeCount: 0,
+              dislikeCount: 0,
+              totalReactions: 0,
+              userReaction: null,
+              commentCount: 0,
+            } as PostResponse;
+          })
+          .filter((p): p is PostResponse => !!p);
+        setPosts(mapped);
+      } else {
+        const response = await forumEndpoints.getMySavedPosts();
+        const data = response.data?.result || response.data || [];
+        setSavedPosts(data);
+        const mapped = (data || [])
+          .map((s: any) => {
+            if (!s) return null;
+            return {
+              id: Number(s.postId),
+              title: s.postTitle,
+              content: s.postContent,
+              username: s.postAuthor,
+              userAvatar: s.postAuthorAvatar || "",
+              imageUrls: [],
+              hashtags: [],
+              createdAt: s.postCreatedAt,
+              likeCount: 0,
+              dislikeCount: 0,
+              totalReactions: 0,
+              userReaction: null,
+              commentCount: 0,
+            } as PostResponse;
+          })
+          .filter((p: any): p is PostResponse => !!p);
+        setPosts(mapped);
+      }
       setViewingSaved(true);
       setViewingMyPosts(false);
       setHasMorePosts(false);
@@ -331,8 +417,10 @@ export default function Forum() {
       return;
     }
     try {
-      const data = await getMyPosts(0, 50);
-      setPosts(data);
+      const response = await forumEndpoints.getMyPosts(0, 50);
+      const apiPosts = (response.data as { content: any[] })?.content || [];
+      const posts = apiPosts.map(transformApiPost);
+      setPosts(posts);
       setViewingMyPosts(true);
       setViewingSaved(false);
       setHasMorePosts(false);
@@ -358,6 +446,17 @@ export default function Forum() {
       const suggestions: string[] = [];
       const queryLower = query.toLowerCase();
 
+      const isValidToken = (s: string) => {
+        if (!s) return false;
+        const trimmed = s.trim();
+
+        if (trimmed.length > 40) return false;
+        if (/\{|\}|\[|\]|"|':/.test(trimmed)) return false;
+        if (/^\[\[meta/i.test(trimmed)) return false;
+        if (/https?:\/\//i.test(trimmed)) return false;
+        return true;
+      };
+
       const hashtags = new Set<string>();
       posts.forEach((post) => {
         post.hashtags?.forEach((tag) => {
@@ -373,7 +472,11 @@ export default function Forum() {
         const contentWords = post.content?.toLowerCase().split(/\s+/) || [];
 
         [...titleWords, ...contentWords].forEach((word) => {
-          if (word.length > 2 && word.includes(queryLower)) {
+          if (
+            word.length > 2 &&
+            word.includes(queryLower) &&
+            isValidToken(word)
+          ) {
             words.add(word);
           }
         });
@@ -382,47 +485,90 @@ export default function Forum() {
       suggestions.push(...Array.from(hashtags).slice(0, 3));
       suggestions.push(...Array.from(words).slice(0, 5));
 
-      setSearchSuggestions(suggestions.slice(0, 8));
+      const cleaned = suggestions.filter(isValidToken);
+      setSearchSuggestions(cleaned.slice(0, 8));
     },
     [posts]
   );
 
+  const hideButtonAfterDelay = useCallback(() => {
+    if (hideButtonTimeoutRef.current) {
+      clearTimeout(hideButtonTimeoutRef.current);
+    }
+    hideButtonTimeoutRef.current = setTimeout(() => {
+      Animated.timing(buttonAnimation, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }, 5000);
+  }, [buttonAnimation]);
+
   const handleScroll = useCallback(
     (event: any) => {
       const currentScrollY = event.nativeEvent.contentOffset.y;
-      const scrollDifference = Math.abs(currentScrollY - lastScrollY.current);
+      const scrollDifference = currentScrollY - lastScrollY.current;
 
-      if (scrollDifference > scrollThreshold) {
-        if (currentScrollY > lastScrollY.current) {
-          setIsNavVisible(false);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+        scrollTimeoutRef.current = null;
+      }
+
+      if (currentScrollY < scrollPositionThreshold) {
+        if (hideButtonTimeoutRef.current) {
+          clearTimeout(hideButtonTimeoutRef.current);
+          hideButtonTimeoutRef.current = null;
+        }
+        Animated.timing(buttonAnimation, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+        lastScrollY.current = currentScrollY;
+        return;
+      }
+
+      if (currentScrollY >= scrollPositionThreshold) {
+        if (scrollDifference > scrollThreshold) {
+          if (hideButtonTimeoutRef.current) {
+            clearTimeout(hideButtonTimeoutRef.current);
+            hideButtonTimeoutRef.current = null;
+          }
           Animated.timing(buttonAnimation, {
             toValue: 0,
-            duration: 300,
+            duration: 200,
             useNativeDriver: true,
           }).start();
+          scrollTimeoutRef.current = setTimeout(() => {
+            Animated.timing(buttonAnimation, {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            }).start();
+            hideButtonAfterDelay();
+          }, 300);
         } else {
-          setIsNavVisible(true);
           Animated.timing(buttonAnimation, {
             toValue: 1,
             duration: 300,
             useNativeDriver: true,
           }).start();
+          hideButtonAfterDelay();
         }
         lastScrollY.current = currentScrollY;
       }
     },
-    [buttonAnimation]
+    [buttonAnimation, hideButtonAfterDelay]
   );
 
   const loadFullPostDetails = useCallback(async (postId: number) => {
     try {
-      const fullPost = await getPostById(postId);
+      const response = await forumEndpoints.getPostById(postId);
+      const fullPost = transformApiPost(response.data);
       setPosts((prev) => {
         return prev.map((p) => (p.id === postId ? fullPost : p));
       });
-    } catch (error) {
-      
-    }
+    } catch (error) {}
   }, []);
 
   const renderPost = ({ item }: { item: PostResponse }) => {
@@ -481,7 +627,7 @@ export default function Forum() {
   }
 
   return (
-    <MainLayout isNavVisible={isNavVisible}>
+    <MainLayout>
       <TouchableWithoutFeedback onPress={() => setShowSearchDropdown(false)}>
         <View style={styles.container}>
           <View style={styles.header}>
@@ -615,9 +761,7 @@ export default function Forum() {
             contentContainerStyle={styles.feedContainer}
             onScroll={handleScroll}
             scrollEventThrottle={16}
-            onScrollToIndexFailed={(info) => {
-              
-            }}
+            onScrollToIndexFailed={(info) => {}}
           />
 
           <Animated.View
