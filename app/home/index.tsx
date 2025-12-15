@@ -138,7 +138,6 @@ export default function Home() {
   const [suggestToursViaBehavior, setSuggestToursViaBehavior] = useState<TourResponse[]>([]);
   const [loadingSuggestTours, setLoadingSuggestTours] = useState(false);
 
-  // Search UI state (similar to forum)
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
@@ -230,23 +229,22 @@ export default function Home() {
       try {
         setLoadingSuggestTours(true);
         const userId = (user as any)?.userId || (user as any)?.id || 0;
-        // Backend expects int userId (required = false means default 0)
+
         const response = await tourEndpoints.suggestViaBehavior(userId);
         const tours = Array.isArray(response.data) ? response.data : [];
-        // Map tourId to id since backend returns Tour entity (with tourId) instead of TourResponse (with id)
+
         const mappedTours = tours.map((tour: any) => ({
           ...tour,
           id: tour.id || tour.tourId, // Use tourId if id is not present
         }));
         setSuggestToursViaBehavior(mappedTours);
       } catch (error: any) {
-        // Silently handle errors - don't show error to user
-        // Timeout, network errors, or empty results are expected
+
+
         const isTimeout = error?.code === "ECONNABORTED" || error?.message?.includes("timeout");
         const isNetworkError = error?.code === "ERR_NETWORK" || !error?.response;
         const isServerError = error?.response?.status >= 500;
-        
-        // Only log unexpected errors (not timeout, network, or server errors)
+
         if (!isTimeout && !isNetworkError && !isServerError && error?.response?.status !== 404) {
           console.error("Error loading suggest tours via behavior:", error);
         }
@@ -267,7 +265,7 @@ export default function Home() {
     const urls: Record<number, string> = {};
 
     featuredTours.forEach((tour) => {
-      // Card cover: chỉ dùng ảnh bìa (thumbnails)
+
       const cover = getTourThumbnailUrl(tour?.tourImgPath);
       urls[tour.id] = cover || "";
     });
@@ -691,7 +689,7 @@ export default function Home() {
             )}
           </View>
 
-          {/* Suggest Tours Via Behavior Section */}
+          {}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>

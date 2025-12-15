@@ -113,7 +113,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       const userDataRaw = await AsyncStorage.getItem("userData");
       let userData: User | null = userDataRaw ? JSON.parse(userDataRaw) : null;
 
-      // Validate userId is a valid number before using
       if (userData && userData.userId) {
         const userId =
           typeof userData.userId === "number"
@@ -126,11 +125,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
             parsed: userId,
             userData,
           });
-          // Clear invalid userData
+
           await AsyncStorage.removeItem("userData");
           userData = null;
         } else {
-          // Ensure userId is a number
+
           userData.userId = userId;
         }
       }

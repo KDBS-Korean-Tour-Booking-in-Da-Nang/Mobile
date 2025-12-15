@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { searchPosts } from "../services/endpoints/forum";
+import { forumEndpoints } from "../services/endpoints/forum";
 
 interface SearchBarProps {
   onSearch: (keyword: string) => void;
@@ -36,7 +36,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [selectedHashtags, setSelectedHashtags] = useState<string[]>([]);
 
-  // Note: Suggestions are derived live from backend search results
 
   useEffect(() => {
     if (searchText.length > 0) {
@@ -50,36 +49,42 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const generateSuggestions = async (text: string) => {
     setIsLoading(true);
     try {
-      const posts = await searchPosts({
+      const searchRes = await forumEndpoints.searchPosts({
         keyword: text,
         page: 0,
         size: 5,
         sort: "createdAt,desc",
       });
-      const titles = Array.from(
+      const posts: any[] =
+        ((searchRes as any)?.data?.content ??
+          (searchRes as any)?.data ??
+          []) as any[];
+      const titles: string[] = Array.from(
         new Set(
           (posts || [])
-            .map((p) => (p?.title || "").trim())
-            .filter((t) => t.length > 0)
+            .map((p: any) => (p?.title || "").trim())
+            .filter((t: string) => t.length > 0)
         )
       ).slice(0, 5);
 
       const hashtags = Array.from(
         new Set(
           (posts || [])
-            .flatMap((p) => p?.hashtags || [])
-            .map((h) => (h || "").trim())
-            .filter((h) => h.length > 0)
+            .flatMap((p: any) => p?.hashtags || [])
+            .map((h: any) => (h || "").trim())
+            .filter((h: string) => h.length > 0)
         )
       )
         .map((h) => `#${h}`)
         .slice(0, 5);
 
-      const keywordSuggestions: SearchSuggestion[] = titles.map((keyword) => ({
-        id: `kw-${keyword}`,
-        text: keyword,
-        type: "keyword",
-      }));
+      const keywordSuggestions: SearchSuggestion[] = titles.map(
+        (keyword: string) => ({
+          id: `kw-${keyword}`,
+          text: keyword,
+          type: "keyword",
+        })
+      );
       const hashtagSuggestions: SearchSuggestion[] = hashtags.map(
         (hashtag) => ({
           id: `ht-${hashtag}`,
@@ -88,7 +93,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
         })
       );
 
-      // Always include a direct search option at top
       const directOption: SearchSuggestion = {
         id: `direct-${text}`,
         text: text,
@@ -163,7 +167,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Search Input */}
       <View style={styles.searchContainer}>
         <View style={styles.inputContainer}>
           <Ionicons
@@ -199,7 +202,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
         </TouchableOpacity>
       </View>
 
-      {/* Selected Hashtags */}
       {selectedHashtags.length > 0 && (
         <View style={styles.hashtagsContainer}>
           <Text style={styles.hashtagsTitle}>{t("forum.filtersTitle")}</Text>
@@ -218,7 +220,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
         </View>
       )}
 
-      {/* Suggestions Dropdown */}
       {showSuggestions && (
         <View style={styles.suggestionsContainer}>
           {isLoading ? (

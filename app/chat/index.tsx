@@ -80,14 +80,12 @@ export default function ChatList() {
       } else {
         setLoading(true);
       }
-      
-      // Get all messages from current user to find conversation partners
+
       const messagesResponse = await getAllMessagesFromUser(currentUserId);
       const allMessages: ChatMessageResponse[] = Array.isArray(messagesResponse.data) 
         ? messagesResponse.data 
         : [];
 
-      // Create a map of partner IDs to their last messages for quick lookup
       const messagesByPartner = new Map<number, ChatMessageResponse>();
       allMessages.forEach((msg) => {
         let partnerId: number | null = null;
@@ -108,10 +106,9 @@ export default function ChatList() {
       let chatUsers: ChatUser[] = [];
 
       if (isAdmin) {
-        // ADMIN: Load all users to select from
+
         const usersResponse = await usersEndpoints.getAll();
-        
-        // Handle different response structures
+
         let allUsers: any[] = [];
         if (Array.isArray(usersResponse.data)) {
           allUsers = usersResponse.data;
@@ -128,13 +125,11 @@ export default function ChatList() {
           }
         }
 
-        // Filter out current user
         const otherUsers = allUsers.filter((u: any) => {
           const userId = u.userId || u.id;
           return userId && userId !== currentUserId;
         });
 
-        // Build chat users list - include ALL users for admin
         chatUsers = otherUsers.map((userData: any) => {
           const userId = userData.userId || userData.id;
           const lastMessage = messagesByPartner.get(userId);
@@ -154,7 +149,6 @@ export default function ChatList() {
           };
         });
 
-        // Sort: users with conversations first, then alphabetically
         chatUsers.sort((a, b) => {
           if (a.lastMessageTimestamp && b.lastMessageTimestamp) {
             return new Date(b.lastMessageTimestamp).getTime() - new Date(a.lastMessageTimestamp).getTime();
@@ -168,12 +162,12 @@ export default function ChatList() {
           return a.name.localeCompare(b.name);
         });
       } else {
-        // REGULAR USER: Only show conversations that already exist
-        // Get unique partner IDs from messages
+
+
         const partnerIds = Array.from(messagesByPartner.keys());
 
         if (partnerIds.length > 0) {
-          // Fetch user info for conversation partners
+
           const usersResponse = await usersEndpoints.getAll();
           let allUsers: any[] = [];
           if (Array.isArray(usersResponse.data)) {
@@ -186,7 +180,6 @@ export default function ChatList() {
             allUsers = usersResponse.data.data;
           }
 
-          // Build chat users list - only for partners with existing conversations
           chatUsers = partnerIds.map((partnerId) => {
             const userData = allUsers.find((u: any) => (u.userId || u.id) === partnerId);
             const lastMessage = messagesByPartner.get(partnerId);
@@ -206,7 +199,6 @@ export default function ChatList() {
             };
           });
 
-          // Sort by last message time (most recent first)
           chatUsers.sort((a, b) => {
             if (a.lastMessageTimestamp && b.lastMessageTimestamp) {
               return new Date(b.lastMessageTimestamp).getTime() - new Date(a.lastMessageTimestamp).getTime();
@@ -309,7 +301,7 @@ export default function ChatList() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          {/* AI Assistant Chat - Always at top */}
+          {}
           <TouchableOpacity
             style={styles.aiChatItem}
             onPress={handleAIChatPress}
@@ -343,7 +335,7 @@ export default function ChatList() {
             />
           </TouchableOpacity>
 
-          {/* Users List */}
+          {}
           <View style={styles.usersSection}>
             <Text style={styles.sectionTitle}>
               {isAdmin 

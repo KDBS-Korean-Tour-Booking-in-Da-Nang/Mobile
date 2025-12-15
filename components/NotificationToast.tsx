@@ -45,7 +45,7 @@ export default function NotificationToast({
   }, [slideAnim, opacityAnim, onDismiss]);
 
   useEffect(() => {
-    // Slide in animation
+
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: 0,
@@ -59,7 +59,6 @@ export default function NotificationToast({
       }),
     ]).start();
 
-    // Auto dismiss after 5 seconds
     const timer = setTimeout(() => {
       handleDismiss();
     }, 5000);
@@ -142,7 +141,7 @@ export default function NotificationToast({
         activeOpacity={0.9}
       >
         <View style={styles.leftContainer}>
-          {/* Avatar */}
+          {}
           <View style={styles.avatarContainer}>
             {notification.actor?.avatar ? (
               <Image
@@ -156,7 +155,7 @@ export default function NotificationToast({
                 <Ionicons name="person" size={20} color="#8E8E93" />
               </View>
             )}
-            {/* Icon Overlay */}
+            {}
             <View
               style={[
                 styles.iconOverlay,
@@ -175,7 +174,7 @@ export default function NotificationToast({
             </View>
           </View>
 
-          {/* Text Content */}
+          {}
           <View style={styles.textContainer}>
             <Text style={styles.title} numberOfLines={1}>
               {notification.title || "Thông báo mới"}
@@ -186,7 +185,7 @@ export default function NotificationToast({
           </View>
         </View>
 
-        {/* Close Button */}
+        {}
         <TouchableOpacity
           style={styles.closeButton}
           onPress={handleDismiss}

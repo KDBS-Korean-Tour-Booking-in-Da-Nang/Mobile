@@ -84,7 +84,6 @@ const styles = StyleSheet.create({
     ...shadows.small,
   },
 
-  // Variants
   primary: {
     backgroundColor: colors.primary.main,
   },
@@ -100,7 +99,6 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
 
-  // Sizes
   small: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
@@ -117,7 +115,6 @@ const styles = StyleSheet.create({
     minHeight: 56,
   },
 
-  // Text styles
   text: {
     fontSize: 16,
     fontWeight: '600' as const,
@@ -137,7 +134,6 @@ const styles = StyleSheet.create({
     color: colors.primary.main,
   },
 
-  // Size text styles
   smallText: {
     fontSize: 14,
   },
@@ -148,7 +144,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
 
-  // States
   disabled: {
     opacity: 0.5,
   },

@@ -60,7 +60,7 @@ export default function UserLogin() {
       await loginWithGoogle();
       await checkAuthStatus();
     } catch {
-      // Error is handled by useGoogleAuth hook
+
     }
   };
 
@@ -80,7 +80,7 @@ export default function UserLogin() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Background Illustration */}
+        {}
         <View style={styles.illustrationContainer}>
           <Image
             source={require("../../../assets/images/signin.png")}

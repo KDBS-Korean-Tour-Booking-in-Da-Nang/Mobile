@@ -41,7 +41,7 @@ export default function Settings() {
       title: t("settings.options.language"),
       icon: "globe-outline",
       onPress: () => {
-        // TODO: Navigate to language settings
+
       },
     },
     {
@@ -57,7 +57,7 @@ export default function Settings() {
       title: t("settings.options.transactions"),
       icon: "card-outline",
       onPress: () => {
-        // TODO: Navigate to transaction history
+
       },
     },
     {
@@ -73,7 +73,7 @@ export default function Settings() {
   return (
     <MainLayout>
       <View style={styles.container}>
-        {/* Header with Back Button */}
+        {}
         <View style={styles.header}>
           <TouchableOpacity onPress={goBack} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color="#000" />
@@ -82,10 +82,10 @@ export default function Settings() {
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Settings Title */}
+          {}
           <Text style={styles.pageTitle}>{t("settings.title")}</Text>
 
-          {/* Settings Options */}
+          {}
           <View style={styles.optionsContainer}>
             {settingsOptions.map((option) => (
               <TouchableOpacity
@@ -108,11 +108,11 @@ export default function Settings() {
             ))}
           </View>
 
-          {/* Extra spacing at bottom */}
+          {}
           <View style={styles.bottomSpacing} />
         </ScrollView>
 
-        {/* Sign Out Button */}
+        {}
         <View style={styles.signOutContainer}>
           <TouchableOpacity
             style={styles.signOutButton}
@@ -129,7 +129,7 @@ export default function Settings() {
         </View>
       </View>
 
-      {/* Ticket Modal */}
+      {}
       <TicketModal
         visible={showTicketModal}
         onClose={() => setShowTicketModal(false)}

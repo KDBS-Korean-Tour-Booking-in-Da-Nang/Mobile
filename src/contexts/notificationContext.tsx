@@ -50,7 +50,6 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
     Set<(notification: NotificationResponse) => void>
   >(new Set());
 
-  // Function to register/unregister callbacks
   const registerCallback = (
     callback: (notification: NotificationResponse) => void
   ) => {
@@ -60,10 +59,9 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
     };
   };
 
-  // Handle new notification from polling
   const handleNewNotification = useCallback(
     (notification: NotificationResponse) => {
-                  // Add to notifications list
+
                   setNotifications((prev) => {
                     const exists = prev.some(
                       (n) => n.notificationId === notification.notificationId
@@ -73,11 +71,11 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
                     }
                     return [notification, ...prev];
                   });
-                  // Update unread count
+
                   setUnreadCount((prev) => prev + 1);
-                  // Show toast notification
+
                   setCurrentToast(notification);
-                  // Notify all registered callbacks
+
                   callbacksRef.current.forEach((callback) => {
                     callback(notification);
                   });
@@ -85,14 +83,12 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
     []
   );
 
-  // Use polling only for app state changes (when app comes to foreground)
   usePollingNotifications({
     onNewNotification: handleNewNotification,
     enabled: true,
   });
 
-  // Load initial notifications and unread count
-  // Only called manually when user opens notifications page
+
   const refreshNotifications = useCallback(async () => {
     if (!userEmail) {
       setNotifications([]);
@@ -111,8 +107,8 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
       setNotifications(notificationsResponse.notifications.content);
       setUnreadCount(unreadCountResponse);
     } catch {
-      // Silently handle errors (like web frontend)
-      // Set empty state on error
+
+
       setNotifications([]);
       setUnreadCount(0);
     }
@@ -125,7 +121,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
         "../../services/endpoints/notifications"
       );
       await markNotificationAsRead(notificationId, userEmail);
-      // Optimistic update (like web frontend)
+
       setNotifications((prev) =>
         prev.map((n) =>
           n.notificationId === notificationId ? { ...n, isRead: true } : n
@@ -133,7 +129,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch {
-      // Silently handle errors (like web frontend)
+
     }
   }, [userEmail]);
 
@@ -143,7 +139,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
     if (unreadNotifications.length === 0) return;
     
     try {
-      // Mark all notifications as read by updating each one (like web frontend)
+
       const { markNotificationAsRead } = await import(
         "../../services/endpoints/notifications"
       );
@@ -152,11 +148,11 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
           markNotificationAsRead(n.notificationId, userEmail)
         )
       );
-      // Optimistic update
+
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch {
-      // Silently handle errors (like web frontend)
+
     }
   }, [userEmail, notifications]);
 

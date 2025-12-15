@@ -73,7 +73,6 @@ const PostCard: React.FC<PostCardProps> = ({
     }
   }, [post.id, post.imageUrls.length, post.hashtags.length, onLoadFullDetails]);
 
-  // Load userId from username when needed
   useEffect(() => {
     const loadUserId = async () => {
       if (!post.username || postUserId) return;
@@ -107,7 +106,7 @@ const PostCard: React.FC<PostCardProps> = ({
   }, [post.username, showUserDropdown, postUserId]);
 
   const handleUserPress = () => {
-    // Don't show dropdown if it's the current user's own post
+
     if (isOwner) {
       return;
     }
@@ -193,12 +192,12 @@ const PostCard: React.FC<PostCardProps> = ({
     try {
       if (reactionType === "LIKE") {
         if (isLiked) {
-          // Unlike: remove reaction
+
           await forumEndpoints.removeReaction(post.id, "POST", user.email);
           setIsLiked(false);
           setLikeCount((prev) => Math.max(0, prev - 1));
         } else {
-          // Like: add reaction
+
           await forumEndpoints.addReaction(
             {
               targetId: post.id,
@@ -210,13 +209,12 @@ const PostCard: React.FC<PostCardProps> = ({
           setIsLiked(true);
           setLikeCount((prev) => prev + 1);
 
-          // Remove dislike if exists
           if (isDisliked) {
             setIsDisliked(false);
             setDislikeCount((prev) => Math.max(0, prev - 1));
           }
         }
-        // Refresh summary to get accurate counts
+
         try {
           const summaryResponse = await forumEndpoints.getReactionSummary(
             post.id,
@@ -233,12 +231,12 @@ const PostCard: React.FC<PostCardProps> = ({
         } catch {}
       } else {
         if (isDisliked) {
-          // Remove dislike: remove reaction
+
           await forumEndpoints.removeReaction(post.id, "POST", user.email);
           setIsDisliked(false);
           setDislikeCount((prev) => Math.max(0, prev - 1));
         } else {
-          // Dislike: add reaction
+
           await forumEndpoints.addReaction(
             {
               targetId: post.id,
@@ -250,13 +248,12 @@ const PostCard: React.FC<PostCardProps> = ({
           setIsDisliked(true);
           setDislikeCount((prev) => prev + 1);
 
-          // Remove like if exists
           if (isLiked) {
             setIsLiked(false);
             setLikeCount((prev) => Math.max(0, prev - 1));
           }
         }
-        // Refresh summary to get accurate counts
+
         try {
           const summaryResponse = await forumEndpoints.getReactionSummary(
             post.id,
@@ -299,7 +296,7 @@ const PostCard: React.FC<PostCardProps> = ({
     } finally {
       setIsLoading(false);
     }
-    // Re-check saved status after save/unsave
+
     await checkIfSaved();
   };
 
@@ -398,7 +395,7 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const extractTourIdFromContent = (text: string): number | null => {
     if (!text) return null;
-    // Support both web format: /tour/detail?id=2 and mobile format: /tour/tourDetail?id=2
+
     const patterns = [
       /(?:https?:\/\/[^\s]+)?\/?tour\/detail\?id=(\d+)/i,
       /(?:https?:\/\/[^\s]+)?\/?tour\/tourDetail\?id=(\d+)/i,
@@ -419,7 +416,7 @@ const PostCard: React.FC<PostCardProps> = ({
     const withoutMeta = text
       .replace(/<!--META:\{[\s\S]*?\}-->/gi, "")
       .replace(/\[\[META:\{[\s\S]*?\}\]\]/gi, "");
-    // Support both web and mobile tour link formats
+
     const withoutLinks = withoutMeta
       .replace(/(?:https?:\/\/[^\s]+)?\/?tour\/detail\?id=\d+/gi, "")
       .replace(/(?:https?:\/\/[^\s]+)?\/?tour\/tourDetail\?id=\d+/gi, "")
@@ -654,9 +651,9 @@ const PostCard: React.FC<PostCardProps> = ({
             </View>
           </View>
 
-          {/* Menu Button and Translate Button Container */}
+          {}
           <View style={styles.headerRightContainer}>
-            {/* Menu Button */}
+            {}
             <TouchableOpacity
               onPress={() => {
                 setShowMenu(!showMenu);
@@ -667,7 +664,7 @@ const PostCard: React.FC<PostCardProps> = ({
               <Ionicons name="ellipsis-vertical-outline" size={20} color="#7A8A99" />
             </TouchableOpacity>
             
-            {/* Translate Button - Below menu button */}
+            {}
             {post.content && post.content.trim().length > 0 && (
               <TouchableOpacity
                 style={styles.translateChip}
@@ -691,7 +688,7 @@ const PostCard: React.FC<PostCardProps> = ({
           </View>
         </View>
 
-        {/* User Dropdown - Only show if not owner */}
+        {}
         {showUserDropdown && !isOwner && (
           <View style={styles.userDropdown}>
             <TouchableOpacity
@@ -748,7 +745,7 @@ const PostCard: React.FC<PostCardProps> = ({
           {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
             <View style={styles.hashtagsContainer}>
               {post.hashtags.map((hashtag, index) => {
-                // Convert hashtag to valid format (no spaces, no Vietnamese diacritics)
+
                 const validHashtag = hashtag
                   .toLowerCase()
                   .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, "a")

@@ -35,7 +35,7 @@ export default function AIChatScreen() {
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
-    // Load chat history from AsyncStorage
+
     const loadHistory = async () => {
       try {
         const saved = await AsyncStorage.getItem("chat_history");
@@ -45,7 +45,7 @@ export default function AIChatScreen() {
             ? parsed.map((msg: any, index: number) => ({
                 role: msg.role,
                 content: msg.content,
-                // If no timestamp, generate one based on index (older messages first)
+
                 timestamp: msg.timestamp || new Date(Date.now() - (parsed.length - index) * 60000).toISOString(),
               }))
             : [];
@@ -59,7 +59,7 @@ export default function AIChatScreen() {
   }, []);
 
   useEffect(() => {
-    // Scroll to bottom when messages change
+
     if (messages.length > 0 && flatListRef.current) {
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
@@ -76,13 +76,12 @@ export default function AIChatScreen() {
       timestamp: new Date().toISOString(),
     };
 
-    // Add user message immediately for better UX
     setMessages((prev) => [...prev, userMessage]);
     setMessageText("");
     setSending(true);
 
     try {
-      // Call Gemini API - history should be string array (include current messages + new user message)
+
       const history = [...messages, userMessage].map((m) => m.content);
       const response = await geminiEndpoints.chat({
         message: userMessage.content,
@@ -99,10 +98,9 @@ export default function AIChatScreen() {
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      // Save to AsyncStorage
       try {
         const updatedHistory = [...messages, userMessage, assistantMessage];
-        // Save in format compatible with GeminiChatBubble (without timestamp for compatibility)
+
         const historyForStorage = updatedHistory.map((m) => ({
           role: m.role,
           content: m.content,
@@ -190,7 +188,7 @@ export default function AIChatScreen() {
   return (
     <MainLayout isNavVisible={true}>
       <View style={styles.container}>
-        {/* Header */}
+        {}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backIconButton} onPress={goBack}>
             <Ionicons name="chevron-back" size={24} color="#000" />
@@ -206,7 +204,7 @@ export default function AIChatScreen() {
           <View style={styles.headerSpacer} />
         </View>
 
-        {/* Messages List */}
+        {}
         {messages.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Image
@@ -233,7 +231,7 @@ export default function AIChatScreen() {
           />
         )}
 
-        {/* Input Area - Always visible at bottom */}
+        {}
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}

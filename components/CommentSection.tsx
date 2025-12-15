@@ -130,7 +130,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         forumPostId: Number(postId),
         content: newComment.trim(),
         userEmail: chosenEmail,
-        imgPath: "NO_IMAGE", // Backend requires @NotBlank, use "NO_IMAGE" as placeholder if no image
+        imgPath: "NO_IMAGE", 
       });
 
       onCommentAdded(response.data);
@@ -185,7 +185,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
       if (response.data) {
         const updatedComment = response.data;
-        // Update repliesMap if this comment is in replies
         setRepliesMap((prev) => {
           const newMap = { ...prev };
           Object.keys(newMap).forEach((parentId) => {
@@ -199,15 +198,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         setEditingComment(null);
         setEditText("");
       } else {
-        // If response.data is null, reload comments from server
         const commentsResponse = await forumEndpoints.getCommentsByPost(postId);
         const updatedComments = commentsResponse.data || [];
-        // Find and update the comment in the list
         const updatedComment = updatedComments.find(
           (c: ForumCommentResponse) => c.forumCommentId === commentId
         );
         if (updatedComment) {
-          // Update repliesMap
           setRepliesMap((prev) => {
             const newMap = { ...prev };
             Object.keys(newMap).forEach((parentId) => {
@@ -256,17 +252,26 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       return;
     }
 
-    // Check if already reported
     const key = `reported:comment:${commentId}:${user.email}`;
     try {
       const reported = await AsyncStorage.getItem(key);
       if (reported === "1") {
-        Alert.alert("Thông báo", "Bạn đã báo cáo bình luận này trước đó.");
+        Alert.alert(
+          t("forum.notificationTitle"),
+          t("forum.reportDuplicateComment") ||
+            t("forum.reportDuplicate") ||
+            "You have already reported this comment."
+        );
         return;
       }
     } catch {}
 
-    Alert.alert(t("forum.notificationTitle"), t("forum.cannotSendReport"), [
+    Alert.alert(
+      t("forum.notificationTitle"),
+      t("forum.confirmReportComment") ||
+        t("forum.cannotSendReport") ||
+        "Do you want to report this comment?",
+      [
       { text: t("forum.cancel"), style: "cancel" },
       {
         text: t("forum.submitPost"),
@@ -321,7 +326,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   const handleTranslateComment = async (comment: ForumCommentResponse) => {
     const commentId = comment.forumCommentId;
 
-    // If already translated, just toggle visibility
     if (translatedComments[commentId]) {
       setIsShowingTranslatedComments((prev) => ({
         ...prev,
@@ -330,7 +334,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       return;
     }
 
-    // Start translating
     setIsTranslatingComments((prev) => ({
       ...prev,
       [commentId]: true,
@@ -397,7 +400,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
             [commentId]: data,
           }));
         } catch {
-          // Silently fail for individual comments
+
         }
       }
     },
@@ -596,7 +599,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                     const isLiked = !!likedMap[comment.forumCommentId];
                     try {
                       if (isLiked) {
-                        // Unlike: remove reaction
+
                         await forumEndpoints.removeCommentReaction(
                           comment.forumCommentId,
                           user.email
@@ -607,7 +610,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                         }));
                         comment.react = Math.max(0, (comment.react || 0) - 1);
                       } else {
-                        // Like: add reaction
                         await forumEndpoints.addCommentReaction(
                           comment.forumCommentId,
                           "LIKE",
@@ -619,7 +621,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                         }));
                         comment.react = (comment.react || 0) + 1;
                       }
-                      // Refresh summary to get accurate counts
                       const summaryResponse =
                         await forumEndpoints.getCommentReactionSummary(
                           comment.forumCommentId,
@@ -635,7 +636,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                         comment.react = summary.likeCount || 0;
                       }
                     } catch {
-                      // Revert optimistic update on error
                       setLikedMap((prev) => ({
                         ...prev,
                         [comment.forumCommentId]: !isLiked,
@@ -654,7 +654,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                     }
                     size={16}
                     color={
-                      likedMap[comment.forumCommentId] ? "#F5B8C4" : "#7A8A99"
+                      likedMap[comment.forumCommentId] ? "#FF8A9B" : "#7A8A99"
                     }
                   />
                   <Text style={styles.commentActionText}>
@@ -844,7 +844,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                             const isLiked = !!likedMap[reply.forumCommentId];
                             try {
                               if (isLiked) {
-                                // Unlike: remove reaction
+
                                 await forumEndpoints.removeCommentReaction(
                                   reply.forumCommentId,
                                   user.email
@@ -858,7 +858,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                   (reply.react || 0) - 1
                                 );
                               } else {
-                                // Like: add reaction
+
                                 await forumEndpoints.addCommentReaction(
                                   reply.forumCommentId,
                                   "LIKE",
@@ -870,7 +870,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                 }));
                                 reply.react = (reply.react || 0) + 1;
                               }
-                              // Refresh summary to get accurate counts
+
                               const summaryResponse =
                                 await forumEndpoints.getCommentReactionSummary(
                                   reply.forumCommentId,
@@ -886,7 +886,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                 reply.react = summary.likeCount || 0;
                               }
                             } catch {
-                              // Revert optimistic update on error
                               setLikedMap((prev) => ({
                                 ...prev,
                                 [reply.forumCommentId]: !isLiked,
@@ -906,7 +905,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                             size={14}
                             color={
                               likedMap[reply.forumCommentId]
-                                ? "#F5B8C4"
+                                ? "#FF8A9B"
                                 : "#7A8A99"
                             }
                           />
@@ -1165,7 +1164,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                         !!likedMap[nestedReply.forumCommentId];
                                       try {
                                         if (isLiked) {
-                                          // Unlike: remove reaction
+
                                           await forumEndpoints.removeCommentReaction(
                                             nestedReply.forumCommentId,
                                             user.email
@@ -1179,7 +1178,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                             (nestedReply.react || 0) - 1
                                           );
                                         } else {
-                                          // Like: add reaction
+
                                           await forumEndpoints.addCommentReaction(
                                             nestedReply.forumCommentId,
                                             "LIKE",
@@ -1192,7 +1191,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                           nestedReply.react =
                                             (nestedReply.react || 0) + 1;
                                         }
-                                        // Refresh summary to get accurate counts
                                         const summaryResponse =
                                           await forumEndpoints.getCommentReactionSummary(
                                             nestedReply.forumCommentId,
@@ -1209,7 +1207,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                             summary.likeCount || 0;
                                         }
                                       } catch {
-                                        // Revert optimistic update on error
                                         setLikedMap((prev) => ({
                                           ...prev,
                                           [nestedReply.forumCommentId]:
@@ -1233,7 +1230,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                       size={14}
                                       color={
                                         likedMap[nestedReply.forumCommentId]
-                                          ? "#F5B8C4"
+                                          ? "#FF8A9B"
                                           : "#7A8A99"
                                       }
                                     />
@@ -1537,7 +1534,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                 ];
                                               try {
                                                 if (isLiked) {
-                                                  // Unlike: remove reaction
+
                                                   await forumEndpoints.removeCommentReaction(
                                                     deepNestedReply.forumCommentId,
                                                     user.email
@@ -1554,7 +1551,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                         0) - 1
                                                     );
                                                 } else {
-                                                  // Like: add reaction
+
                                                   await forumEndpoints.addCommentReaction(
                                                     deepNestedReply.forumCommentId,
                                                     "LIKE",
@@ -1569,7 +1566,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                     (deepNestedReply.react ||
                                                       0) + 1;
                                                 }
-                                                // Refresh summary to get accurate counts
+
                                                 const summaryResponse =
                                                   await forumEndpoints.getCommentReactionSummary(
                                                     deepNestedReply.forumCommentId,
@@ -1588,7 +1585,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                     summary.likeCount || 0;
                                                 }
                                               } catch {
-                                                // Revert optimistic update on error
                                                 setLikedMap((prev) => ({
                                                   ...prev,
                                                   [deepNestedReply.forumCommentId]:
@@ -1618,7 +1614,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                 likedMap[
                                                   deepNestedReply.forumCommentId
                                                 ]
-                                                  ? "#F5B8C4"
+                                                  ? "#FF8A9B"
                                                   : "#7A8A99"
                                               }
                                             />
@@ -1833,7 +1829,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                       </View>
                                     ))}
 
-                                    {/* Deep nested reply input for nested reply */}
                                     <View
                                       style={
                                         styles.deepNestedReplyInputContainer
@@ -1909,7 +1904,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                   [nestedReply.forumCommentId]:
                                                     "",
                                                 }));
-                                                // Update total comment count
+
                                                 setTotalCommentCounts(
                                                   (prev) => ({
                                                     ...prev,
@@ -1921,16 +1916,15 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                   })
                                                 );
 
-                                                // IMPORTANT: Don't call onCommentAdded for nested replies!
                                               } else {
-                                                // If backend returns nested reply as top-level comment, we need to handle it differently
+
                                                 if (
                                                   newDeepNestedReply.parentCommentId ===
                                                     null ||
                                                   newDeepNestedReply.parentCommentId ===
                                                     undefined
                                                 ) {
-                                                  // Still add to repliesMap even if backend didn't set parentCommentId correctly
+
                                                   setRepliesMap((prev) => ({
                                                     ...prev,
                                                     [nestedReply.forumCommentId]:
@@ -1947,7 +1941,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                                     [nestedReply.forumCommentId]:
                                                       "",
                                                   }));
-                                                  // Update total comment count
                                                   setTotalCommentCounts(
                                                     (prev) => ({
                                                       ...prev,
@@ -1987,7 +1980,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                             )
                           )}
 
-                          {/* Nested reply input */}
                           <View style={styles.nestedReplyInputContainer}>
                             <View style={styles.nestedReplyInputRow}>
                               <TextInput
@@ -2027,9 +2019,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                       });
                                     const newNestedReply = response.data;
 
-                                    // Debug: Check if nested reply has correct parentCommentId
 
-                                    // Only add to repliesMap if it's actually a reply
                                     if (
                                       newNestedReply.parentCommentId ===
                                       reply.forumCommentId
@@ -2046,16 +2036,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                         [reply.forumCommentId]: "",
                                       }));
 
-                                      // IMPORTANT: Don't call onCommentAdded for nested replies!
                                     } else {
-                                      // If backend returns nested reply as top-level comment, we need to handle it differently
                                       if (
                                         newNestedReply.parentCommentId ===
                                           null ||
                                         newNestedReply.parentCommentId ===
                                           undefined
                                       ) {
-                                        // Still add to repliesMap even if backend didn't set parentCommentId correctly
                                         setRepliesMap((prev) => ({
                                           ...prev,
                                           [reply.forumCommentId]: [
@@ -2148,24 +2135,18 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                 ...prev,
                                 [comment.forumCommentId]: "",
                               }));
-                              // Update total comment count
                               setTotalCommentCounts((prev) => ({
                                 ...prev,
                                 [comment.forumCommentId]:
                                   (prev[comment.forumCommentId] || 0) + 1,
                               }));
 
-                              // IMPORTANT: Don't call onCommentAdded for replies!
-                              // This prevents the reply from being added to the main comments array
 
-                              // Double check: Make sure onCommentAdded is NOT called
                             } else {
-                              // If backend returns reply as top-level comment, we need to handle it differently
                               if (
                                 newReply.parentCommentId === null ||
                                 newReply.parentCommentId === undefined
                               ) {
-                                // Still add to repliesMap even if backend didn't set parentCommentId correctly
                                 setRepliesMap((prev) => ({
                                   ...prev,
                                   [comment.forumCommentId]: [
@@ -2177,7 +2158,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                                   ...prev,
                                   [comment.forumCommentId]: "",
                                 }));
-                                // Update total comment count
                                 setTotalCommentCounts((prev) => ({
                                   ...prev,
                                   [comment.forumCommentId]:
@@ -2205,7 +2185,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
           ))}
       </View>
 
-      {/* Add Comment */}
       <View style={styles.addCommentContainer}>
         <TextInput
           style={styles.commentInput}

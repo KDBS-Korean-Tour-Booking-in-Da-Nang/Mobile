@@ -61,19 +61,17 @@ export default function Notifications() {
           setLoadingMore(true);
         }
 
-        // When tab is "all", don't send isRead param to get all notifications (read and unread)
-        // When tab is "unread", send isRead: false to filter only unread
+
         const params: any = {
           page: pageNum,
           size: 20,
           sort: "createdAt,desc",
         };
-        
-        // Only add isRead filter when tab is "unread"
+
         if (activeTab === "unread") {
           params.isRead = false;
         }
-        // When "all", don't include isRead param at all to get everything
+
 
         const userEmail = (user as any)?.email || (user as any)?.userEmail;
         const response = await getNotifications(params, userEmail);
@@ -91,13 +89,10 @@ export default function Notifications() {
         setHasMore(pageNum + 1 < response.notifications.totalPages);
         setPage(pageNum);
       } catch (error: any) {
-        // Silently handle errors (like web frontend)
-        // Only show alert for critical errors
         if (error.response?.status === 401 || error.response?.status === 403) {
-          // Authentication errors - might need to handle separately
+
           console.error("[Notifications] Auth error:", error);
         }
-        // Set empty list on error (like web frontend)
         if (reset || pageNum === 0) {
           setNotifications([]);
           setUnreadCount(0);
@@ -110,12 +105,10 @@ export default function Notifications() {
     [activeTab, user]
   );
 
-  // Refresh context notifications when entering the page
   useEffect(() => {
     refreshContextNotifications();
   }, [refreshContextNotifications]);
 
-  // Handle pull to refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -138,7 +131,6 @@ export default function Notifications() {
       const userEmail = (user as any)?.email || (user as any)?.userEmail;
       try {
         await markNotificationAsRead(notificationId, userEmail);
-        // Optimistic update (like web frontend)
         setNotifications((prev) =>
           prev.map((notif) =>
             notif.notificationId === notificationId
@@ -150,18 +142,15 @@ export default function Notifications() {
         setShowMenuModal(false);
         setSelectedNotificationId(null);
       } catch {
-        // Silently handle errors (like web frontend)
-        // Re-fetch to sync with server
+
         await loadNotifications(page, false);
       }
     },
     [user, loadNotifications, page]
   );
 
-  // Refresh notifications when context updates
   useEffect(() => {
     if (contextNotifications.length > 0) {
-      // Sync with context notifications
       setNotifications((prev) => {
         const merged = [...prev];
         contextNotifications.forEach((contextNotif) => {
@@ -180,15 +169,12 @@ export default function Notifications() {
     setUnreadCount(contextUnreadCount);
   }, [contextNotifications, contextUnreadCount]);
 
-  // Handle navigation when clicking on notification
   const handleNotificationClick = useCallback(
     (notification: NotificationResponse) => {
-      // Mark as read first
       if (!notification.isRead) {
         handleMarkAsRead(notification.notificationId);
       }
 
-      // Navigate based on targetType and targetId
       const { targetType, targetId } = notification;
 
       if (!targetId) return;
@@ -208,7 +194,7 @@ export default function Notifications() {
           navigate(`/tour/tourDetail?tourId=${targetId}`);
           break;
         default:
-          // Handle booking-related notification types
+
           if (
             notification.notificationType === "NEW_BOOKING" ||
             notification.notificationType === "BOOKING_CONFIRMED" ||
@@ -267,7 +253,6 @@ export default function Notifications() {
           onPress: async () => {
             try {
               await deleteNotification(notificationId, userEmail);
-              // Optimistic update (like web frontend - client-side only)
               const wasUnread =
                 notifications.find((n) => n.notificationId === notificationId)
                   ?.isRead === false;
@@ -280,7 +265,6 @@ export default function Notifications() {
               setShowMenuModal(false);
               setSelectedNotificationId(null);
             } catch {
-              // Silently handle errors (like web frontend)
             }
           },
         },
@@ -295,19 +279,15 @@ export default function Notifications() {
     if (unreadNotifications.length === 0) return;
     
     try {
-      // Mark all unread notifications as read (like web frontend)
       await Promise.all(
         unreadNotifications.map((n) => markNotificationAsRead(n.notificationId, userEmail))
       );
-      // Optimistic update
       setNotifications((prev) =>
         prev.map((notif) => ({ ...notif, isRead: true }))
       );
       setUnreadCount(0);
       setShowHeaderMenu(false);
     } catch {
-      // Silently handle errors (like web frontend)
-      // Re-fetch to sync with server
       await loadNotifications(page, false);
     }
   };
@@ -429,7 +409,6 @@ export default function Notifications() {
   return (
     <MainLayout>
       <View style={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <TouchableOpacity onPress={goBack} style={styles.backButton}>
@@ -449,7 +428,6 @@ export default function Notifications() {
             </TouchableOpacity>
           </View>
 
-          {/* Header Menu Modal */}
           <Modal
             visible={showHeaderMenu}
             transparent={true}
@@ -478,7 +456,6 @@ export default function Notifications() {
             </TouchableOpacity>
           </Modal>
 
-          {/* Tabs */}
           <View style={styles.tabsContainer}>
             <TouchableOpacity
               style={[styles.tab, activeTab === "all" && styles.tabActive]}
@@ -514,7 +491,6 @@ export default function Notifications() {
             </TouchableOpacity>
           </View>
 
-          {/* Mark All As Read Button */}
           {unreadCount > 0 && (
             <TouchableOpacity
               style={styles.markAllButton}
@@ -527,7 +503,6 @@ export default function Notifications() {
           )}
         </View>
 
-        {/* Notifications List */}
         {loading && notifications.length === 0 ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#FFB3BA" />
@@ -569,7 +544,6 @@ export default function Notifications() {
                   onPress={() => handleNotificationClick(notification)}
                 >
                   <View style={styles.notificationLeft}>
-                    {/* Avatar */}
                     <View style={styles.avatarContainer}>
                       {notification.actor?.avatar ? (
                         <Image
@@ -583,7 +557,6 @@ export default function Notifications() {
                           <Ionicons name="person" size={22} color="#C8C8C8" />
                         </View>
                       )}
-                      {/* Icon Overlay */}
                       <View
                         style={[
                           styles.iconOverlay,
@@ -606,7 +579,6 @@ export default function Notifications() {
                       </View>
                     </View>
 
-                    {/* Content */}
                     <View style={styles.notificationContent}>
                       <Text style={styles.notificationText}>
                         {String(notification.message || "")}
@@ -617,7 +589,6 @@ export default function Notifications() {
                     </View>
                   </View>
 
-                  {/* Right Side - Status Dot and Menu */}
                   <View style={styles.notificationRight}>
                     {!notification.isRead && <View style={styles.statusDot} />}
                     <TouchableOpacity
@@ -646,7 +617,6 @@ export default function Notifications() {
           </ScrollView>
         )}
 
-        {/* Notification Menu Modal */}
         <Modal
           visible={showMenuModal}
           transparent={true}

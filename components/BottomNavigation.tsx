@@ -27,7 +27,6 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const { navigate } = useNavigation();
   const { t } = useTranslation();
 
-  // Responsive sizing based on screen width
   const isVerySmallScreen = screenWidth < 350; // Very small screens
   const isSmallScreen = screenWidth < 400; // iPhone 11 Pro, iPhone SE, small Android phones
 
@@ -170,7 +169,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
           </View>
         </SafeAreaView>
       </Animated.View>
-      {/* Android Navigation Bar - Outside of navbar container */}
+      {}
       {Platform.OS === "android" && <View style={styles.androidNavBar} />}
     </>
   );

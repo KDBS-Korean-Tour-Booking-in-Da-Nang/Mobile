@@ -62,7 +62,7 @@ export default function ForgotPassword() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Top Illustration */}
+        {}
         <View style={styles.illustrationContainer}>
           <Image
             source={require("../../../assets/images/forgotpassword.png")}
@@ -71,7 +71,7 @@ export default function ForgotPassword() {
           />
         </View>
 
-        {/* Form Card overlapping */}
+        {}
         <View style={styles.formCard}>
           <Text style={styles.formTitle}>Forgot Password</Text>
           <Text style={styles.formSubtitle}>Enter your email to continue</Text>

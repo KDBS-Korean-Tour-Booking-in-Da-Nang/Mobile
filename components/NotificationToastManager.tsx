@@ -15,7 +15,6 @@ export default function NotificationToastManager() {
 
     if (!targetId) return;
 
-    // Handle booking-related notifications
     if (
       notificationType === "NEW_BOOKING" ||
       notificationType === "BOOKING_CONFIRMED" ||
@@ -27,7 +26,6 @@ export default function NotificationToastManager() {
       return;
     }
 
-    // Handle tour-related notifications
     if (
       notificationType === "TOUR_APPROVED" ||
       notificationType === "NEW_RATING"
@@ -36,7 +34,6 @@ export default function NotificationToastManager() {
       return;
     }
 
-    // Handle by targetType
     switch (targetType?.toUpperCase()) {
       case "POST":
       case "FORUM_POST":
@@ -52,7 +49,7 @@ export default function NotificationToastManager() {
         navigate(`/tour/tourDetail?tourId=${targetId}`);
         break;
       default:
-        // Default to forum for forum-related notifications
+
         if (
           notificationType === "LIKE_POST" ||
           notificationType === "LIKE_COMMENT" ||
