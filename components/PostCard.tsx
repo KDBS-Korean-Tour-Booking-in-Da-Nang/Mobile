@@ -106,12 +106,11 @@ const PostCard: React.FC<PostCardProps> = ({
   }, [post.username, showUserDropdown, postUserId]);
 
   const handleUserPress = () => {
-
     if (isOwner) {
       return;
     }
     setShowUserDropdown(!showUserDropdown);
-    setShowMenu(false); // Close post menu if open
+    setShowMenu(false); 
   };
 
   const handleChatPress = () => {
@@ -183,6 +182,7 @@ const PostCard: React.FC<PostCardProps> = ({
   }, [post.id]);
 
   const handleReaction = async (reactionType: "LIKE" | "DISLIKE") => {
+    if (isLoading) return;
     if (!user?.email) {
       Alert.alert(t("forum.errorTitle"), t("forum.loginRequiredAction"));
       return;
@@ -192,12 +192,10 @@ const PostCard: React.FC<PostCardProps> = ({
     try {
       if (reactionType === "LIKE") {
         if (isLiked) {
-
           await forumEndpoints.removeReaction(post.id, "POST", user.email);
           setIsLiked(false);
           setLikeCount((prev) => Math.max(0, prev - 1));
         } else {
-
           await forumEndpoints.addReaction(
             {
               targetId: post.id,
@@ -214,7 +212,6 @@ const PostCard: React.FC<PostCardProps> = ({
             setDislikeCount((prev) => Math.max(0, prev - 1));
           }
         }
-
         try {
           const summaryResponse = await forumEndpoints.getReactionSummary(
             post.id,
@@ -231,12 +228,10 @@ const PostCard: React.FC<PostCardProps> = ({
         } catch {}
       } else {
         if (isDisliked) {
-
           await forumEndpoints.removeReaction(post.id, "POST", user.email);
           setIsDisliked(false);
           setDislikeCount((prev) => Math.max(0, prev - 1));
         } else {
-
           await forumEndpoints.addReaction(
             {
               targetId: post.id,
@@ -253,7 +248,6 @@ const PostCard: React.FC<PostCardProps> = ({
             setLikeCount((prev) => Math.max(0, prev - 1));
           }
         }
-
         try {
           const summaryResponse = await forumEndpoints.getReactionSummary(
             post.id,
@@ -296,7 +290,6 @@ const PostCard: React.FC<PostCardProps> = ({
     } finally {
       setIsLoading(false);
     }
-
     await checkIfSaved();
   };
 
@@ -395,7 +388,6 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const extractTourIdFromContent = (text: string): number | null => {
     if (!text) return null;
-
     const patterns = [
       /(?:https?:\/\/[^\s]+)?\/?tour\/detail\?id=(\d+)/i,
       /(?:https?:\/\/[^\s]+)?\/?tour\/tourDetail\?id=(\d+)/i,
@@ -416,7 +408,6 @@ const PostCard: React.FC<PostCardProps> = ({
     const withoutMeta = text
       .replace(/<!--META:\{[\s\S]*?\}-->/gi, "")
       .replace(/\[\[META:\{[\s\S]*?\}\]\]/gi, "");
-
     const withoutLinks = withoutMeta
       .replace(/(?:https?:\/\/[^\s]+)?\/?tour\/detail\?id=\d+/gi, "")
       .replace(/(?:https?:\/\/[^\s]+)?\/?tour\/tourDetail\?id=\d+/gi, "")
@@ -651,9 +642,7 @@ const PostCard: React.FC<PostCardProps> = ({
             </View>
           </View>
 
-          {}
           <View style={styles.headerRightContainer}>
-            {}
             <TouchableOpacity
               onPress={() => {
                 setShowMenu(!showMenu);
@@ -664,7 +653,6 @@ const PostCard: React.FC<PostCardProps> = ({
               <Ionicons name="ellipsis-vertical-outline" size={20} color="#7A8A99" />
             </TouchableOpacity>
             
-            {}
             {post.content && post.content.trim().length > 0 && (
               <TouchableOpacity
                 style={styles.translateChip}
@@ -688,7 +676,6 @@ const PostCard: React.FC<PostCardProps> = ({
           </View>
         </View>
 
-        {}
         {showUserDropdown && !isOwner && (
           <View style={styles.userDropdown}>
             <TouchableOpacity
@@ -745,7 +732,6 @@ const PostCard: React.FC<PostCardProps> = ({
           {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
             <View style={styles.hashtagsContainer}>
               {post.hashtags.map((hashtag, index) => {
-
                 const validHashtag = hashtag
                   .toLowerCase()
                   .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, "a")
