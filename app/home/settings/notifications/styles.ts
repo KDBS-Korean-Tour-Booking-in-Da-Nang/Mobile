@@ -225,8 +225,7 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   menuItemDelete: {
-    borderTopWidth: 1,
-    borderTopColor: "#FFF9F5",
+    borderTopWidth: 0,
   },
   menuItemText: {
     fontSize: 16,
