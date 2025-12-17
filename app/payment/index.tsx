@@ -296,12 +296,6 @@ export default function TossPaymentScreen() {
       const currentOrderId = orderIdRef.current;
       const urlObj = new URL(url);
       const amountParam = urlObj.searchParams.get("amount");
-      
-      console.log("[PAYMENT] Fail callback - amount from URL:", {
-        amountParam: amountParam || "(empty)",
-        currentOrderId,
-        actualPaymentAmountFromBackend: actualPaymentAmountRef.current,
-      });
 
       const finalAmount = actualPaymentAmountRef.current !== null && actualPaymentAmountRef.current > 0
         ? String(Math.round(actualPaymentAmountRef.current))
@@ -345,8 +339,7 @@ export default function TossPaymentScreen() {
                   "FAILED"
                 );
               } catch (error: any) {
-
-                console.log("[PAYMENT] Could not update transaction status (user cancelled):", error?.message);
+                // Silent fail
               }
             }
 
@@ -357,8 +350,7 @@ export default function TossPaymentScreen() {
                   message: "User cancelled payment",
                 });
               } catch (error: any) {
-
-                console.log("[PAYMENT] Could not update booking status (user cancelled):", error?.message);
+                // Silent fail
               }
             }
 
@@ -376,8 +368,6 @@ export default function TossPaymentScreen() {
               },
             });
           } catch (error: any) {
-
-            console.log("[PAYMENT] Error handling back button:", error?.message);
             router.back();
           }
         },

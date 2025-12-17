@@ -2,23 +2,24 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocalSearchParams } from "expo-router";
 import {
-    ActivityIndicator,
-    Dimensions,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Dimensions,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import ScrollableLayout from "../../components/ScrollableLayout";
 import { colors } from "../../constants/theme";
 import { useNavigation } from "../../navigation/navigation";
 import api from "../../services/api";
 import {
-    Article,
-    getApprovedArticles,
+  Article,
+  getApprovedArticles,
 } from "../../services/endpoints/articles";
 import forumEndpoints, { PostResponse } from "../../services/endpoints/forum";
 import tourEndpoints from "../../services/endpoints/tour";
@@ -29,14 +30,54 @@ import { formatPriceKRW } from "../../src/utils/currency";
 import { getTourThumbnailUrl } from "../../src/utils/media";
 import styles from "./styles";
 
+const getArticleFields = (article: Article, lang: "vi" | "en" | "ko") => {
+  if (!article) {
+    return {
+      title: "",
+      description: "",
+      content: "",
+    };
+  }
+
+  if (lang === "en") {
+    return {
+      title: article.articleTitleEN || article.articleTitle,
+      description: article.articleDescriptionEN || article.articleDescription,
+      content: article.articleContentEN || article.articleContent,
+    };
+  }
+
+  if (lang === "ko") {
+    return {
+      title: article.articleTitleKR || article.articleTitle,
+      description: article.articleDescriptionKR || article.articleDescription,
+      content: article.articleContentKR || article.articleContent,
+    };
+  }
+
+  return {
+    title: article.articleTitle,
+    description: article.articleDescription,
+    content: article.articleContent,
+  };
+};
+
 const LanguageDropdown = ({
   currentLanguage,
   onLanguageSelect,
+  openOnMount = false,
 }: {
   currentLanguage: "en" | "ko" | "vi";
   onLanguageSelect: (lang: "en" | "ko" | "vi") => void;
+  openOnMount?: boolean;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (openOnMount) {
+      setIsOpen(true);
+    }
+  }, [openOnMount]);
 
   const languages = [
     {
@@ -49,11 +90,11 @@ const LanguageDropdown = ({
       name: "한국어",
       flag: require("../../assets/images/krn.webp"),
     },
-    {
-      code: "vi" as const,
-      name: "Việt Nam",
-      flag: require("../../assets/images/vn.jpeg"),
-    },
+    // {
+    //   code: "vi" as const,
+    //   name: "Việt Nam",
+    //   flag: require("../../assets/images/vn.jpeg"),
+    // },
   ];
 
   const currentLang =
@@ -129,13 +170,16 @@ const LanguageDropdown = ({
 export default function Home() {
   const { navigate } = useNavigation();
   const { t, i18n } = useTranslation();
+  const params = useLocalSearchParams();
   const { user } = useAuthContext();
   const [hotPosts, setHotPosts] = useState<PostResponse[]>([]);
   const [featuredTours, setFeaturedTours] = useState<TourResponse[]>([]);
   const [toursLoading, setToursLoading] = useState(true);
   const [articles, setArticles] = useState<Article[]>([]);
   const [articlesLoading, setArticlesLoading] = useState(true);
-  const [suggestToursViaBehavior, setSuggestToursViaBehavior] = useState<TourResponse[]>([]);
+  const [suggestToursViaBehavior, setSuggestToursViaBehavior] = useState<
+    TourResponse[]
+  >([]);
   const [loadingSuggestTours, setLoadingSuggestTours] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -145,6 +189,9 @@ export default function Home() {
   const [currentLanguage, setCurrentLanguage] = useState<"en" | "ko" | "vi">(
     i18n.language as "en" | "ko" | "vi"
   );
+
+  const openLanguageFromParams =
+    params?.openLanguage === "1" || params?.openLanguage === "true";
 
   const handleLanguageSelect = (language: "en" | "ko" | "vi") => {
     setCurrentLanguage(language);
@@ -239,13 +286,18 @@ export default function Home() {
         }));
         setSuggestToursViaBehavior(mappedTours);
       } catch (error: any) {
-
-
-        const isTimeout = error?.code === "ECONNABORTED" || error?.message?.includes("timeout");
-        const isNetworkError = error?.code === "ERR_NETWORK" || !error?.response;
+        const isTimeout =
+          error?.code === "ECONNABORTED" || error?.message?.includes("timeout");
+        const isNetworkError =
+          error?.code === "ERR_NETWORK" || !error?.response;
         const isServerError = error?.response?.status >= 500;
 
-        if (!isTimeout && !isNetworkError && !isServerError && error?.response?.status !== 404) {
+        if (
+          !isTimeout &&
+          !isNetworkError &&
+          !isServerError &&
+          error?.response?.status !== 404
+        ) {
           console.error("Error loading suggest tours via behavior:", error);
         }
         setSuggestToursViaBehavior([]);
@@ -265,7 +317,6 @@ export default function Home() {
     const urls: Record<number, string> = {};
 
     featuredTours.forEach((tour) => {
-
       const cover = getTourThumbnailUrl(tour?.tourImgPath);
       urls[tour.id] = cover || "";
     });
@@ -487,6 +538,7 @@ export default function Home() {
               <LanguageDropdown
                 currentLanguage={currentLanguage}
                 onLanguageSelect={handleLanguageSelect}
+                openOnMount={!!openLanguageFromParams}
               />
               <TouchableOpacity
                 style={styles.settingBtn}
@@ -649,38 +701,41 @@ export default function Home() {
                 showsHorizontalScrollIndicator={false}
                 style={styles.articlesContainer}
               >
-                {articles.map((article) => (
-                  <TouchableOpacity
-                    key={article.articleId}
-                    style={styles.articleCard}
-                    onPress={() => {
-                      navigate(
-                        `/article/detailArticle?id=${article.articleId}`
-                      );
-                    }}
-                  >
-                    <Image
-                      source={{
-                        uri: extractFirstImageSrc(article.articleContent) || "",
+                {articles.map((article) => {
+                  const fields = getArticleFields(article, currentLanguage);
+                  return (
+                    <TouchableOpacity
+                      key={article.articleId}
+                      style={styles.articleCard}
+                      onPress={() => {
+                        navigate(
+                          `/article/detailArticle?id=${article.articleId}`
+                        );
                       }}
-                      style={styles.articleImage}
-                      contentFit="cover"
-                      transition={0}
-                      cachePolicy="disk"
-                    />
-                    <View style={styles.articleContent}>
-                      <Text style={styles.articleTitle} numberOfLines={2}>
-                        {article.articleTitle}
-                      </Text>
-                      <Text style={styles.articleSummary} numberOfLines={2}>
-                        {article.articleDescription}
-                      </Text>
-                      <Text style={styles.articleMeta}>
-                        {formatArticleDate(article.articleCreatedDate)}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
+                    >
+                      <Image
+                        source={{
+                          uri: extractFirstImageSrc(fields.content) || "",
+                        }}
+                        style={styles.articleImage}
+                        contentFit="cover"
+                        transition={0}
+                        cachePolicy="disk"
+                      />
+                      <View style={styles.articleContent}>
+                        <Text style={styles.articleTitle} numberOfLines={2}>
+                          {fields.title}
+                        </Text>
+                        <Text style={styles.articleSummary} numberOfLines={2}>
+                          {fields.description}
+                        </Text>
+                        <Text style={styles.articleMeta}>
+                          {formatArticleDate(article.articleCreatedDate)}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
               </ScrollView>
             ) : (
               <View style={styles.emptyContainer}>
@@ -692,9 +747,9 @@ export default function Home() {
           {}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>
-                  {t("home.suggestTours.title")}
-                </Text>
+              <Text style={styles.sectionTitle}>
+                {t("home.suggestTours.title")}
+              </Text>
               <TouchableOpacity onPress={() => navigate("/tour/list")}>
                 <Text style={styles.seeAllText}>{t("common.seeAll")}</Text>
               </TouchableOpacity>

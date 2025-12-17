@@ -1144,9 +1144,11 @@ export default function BuyingTour() {
                 ]}
                 placeholder=""
                 value={formData.fullName}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, fullName: text }))
-                }
+                onChangeText={(text) => {
+                  // Remove numbers from name input
+                  const filteredText = text.replace(/[0-9]/g, "");
+                  setFormData((prev) => ({ ...prev, fullName: filteredText }));
+                }}
                 editable={!usePersonalInfo || needsUpdate("fullName")}
               />
             </View>
@@ -1370,12 +1372,13 @@ export default function BuyingTour() {
                           style={[styles.input, styles.halfInput]}
                           placeholder={t("tour.booking.fullname")}
                           value={adultInfo[idx]?.fullName || ""}
-                          onChangeText={(text) =>
+                          onChangeText={(text) => {
+                            const filteredText = text.replace(/[0-9]/g, "");
                             setAdultInfo((prev) => ({
                               ...prev,
-                              [idx]: { ...prev[idx], fullName: text },
-                            }))
-                          }
+                              [idx]: { ...prev[idx], fullName: filteredText },
+                            }));
+                          }}
                         />
                       </View>
                       <View style={styles.dobFieldGroup}>
@@ -1589,12 +1592,14 @@ export default function BuyingTour() {
                           style={[styles.input, styles.halfInput]}
                           placeholder={t("tour.booking.fullname")}
                           value={childrenInfo[idx]?.fullName || ""}
-                          onChangeText={(text) =>
+                          onChangeText={(text) => {
+                            // Remove numbers from name input
+                            const filteredText = text.replace(/[0-9]/g, "");
                             setChildrenInfo((prev) => ({
                               ...prev,
-                              [idx]: { ...prev[idx], fullName: text },
-                            }))
-                          }
+                              [idx]: { ...prev[idx], fullName: filteredText },
+                            }));
+                          }}
                         />
                       </View>
                       <View style={styles.dobFieldGroup}>
@@ -1812,12 +1817,14 @@ export default function BuyingTour() {
                           style={[styles.input, styles.halfInput]}
                           placeholder={t("tour.booking.fullname")}
                           value={babyInfo[idx]?.fullName || ""}
-                          onChangeText={(text) =>
+                          onChangeText={(text) => {
+                            // Remove numbers from name input
+                            const filteredText = text.replace(/[0-9]/g, "");
                             setBabyInfo((prev) => ({
                               ...prev,
-                              [idx]: { ...prev[idx], fullName: text },
-                            }))
-                          }
+                              [idx]: { ...prev[idx], fullName: filteredText },
+                            }));
+                          }}
                         />
                       </View>
                       <View style={styles.dobFieldGroup}>

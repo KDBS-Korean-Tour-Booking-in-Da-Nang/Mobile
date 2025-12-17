@@ -4,6 +4,7 @@ import {
   LogoutRequest,
   ForgotPasswordRequestRequest,
   ForgotPasswordResetRequest,
+  ChangePasswordRequest,
 } from "../../src/types/request/auth.request";
 
 export const authEndpoints = {
@@ -19,6 +20,9 @@ export const authEndpoints = {
 
   forgotPasswordReset: (payload: ForgotPasswordResetRequest) =>
     api.post("/api/auth/forgot-password/reset", payload),
+
+  changePassword: (payload: ChangePasswordRequest) =>
+    api.post("/api/auth/change-password", payload),
 };
 
 export default authEndpoints;

@@ -33,7 +33,7 @@ import { getTourThumbnailUrl } from "../../../src/utils/media";
 import { formatPriceKRW } from "../../../src/utils/currency";
 
 export default function TourList() {
-  const { navigate, goBack } = useNavigation();
+  const { navigate } = useNavigation();
   const { t } = useTranslation();
   const { user } = useAuthContext();
 
@@ -41,6 +41,7 @@ export default function TourList() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [keyword, setKeyword] = useState("");
+  const [tourRatings, setTourRatings] = useState<Map<number, number>>(new Map());
 
 
   const [isNavVisible, setIsNavVisible] = useState(true);
@@ -64,7 +65,31 @@ export default function TourList() {
     try {
       setLoading(true);
       const toursData = (await tourEndpoints.getAllPublic()).data;
-      setTours(Array.isArray(toursData) ? toursData : []);
+      const toursList = Array.isArray(toursData) ? toursData : [];
+      setTours(toursList);
+      
+      // Load ratings for all tours
+      const ratingsMap = new Map<number, number>();
+      await Promise.all(
+        toursList.map(async (tour) => {
+          try {
+            const ratingsResponse = await tourEndpoints.getTourRatings(tour.id);
+            const ratings = Array.isArray(ratingsResponse.data) ? ratingsResponse.data : [];
+            
+            if (ratings.length > 0) {
+              const totalStars = ratings.reduce((sum: number, rating: any) => {
+                const star = Number(rating.star) || 0;
+                return sum + star;
+              }, 0);
+              const average = totalStars / ratings.length;
+              ratingsMap.set(tour.id, Math.round(average * 10) / 10);
+            }
+          } catch {
+            // Ignore errors for individual tour ratings
+          }
+        })
+      );
+      setTourRatings(ratingsMap);
     } catch {
       Alert.alert(t("common.error"), t("tour.errors.loadFailed"));
     } finally {
@@ -328,7 +353,9 @@ export default function TourList() {
       >
         <View style={styles.header}>
           <View style={styles.headerLeft} />
-          <Text style={styles.headerTitle}>Tours List</Text>
+          <Text style={styles.headerTitle}>
+            {t("tour.list.title") || "Tours List"}
+          </Text>
           <TouchableOpacity
             style={styles.purchasedButton}
             onPress={() => navigate("/tour/historyBooking")}
@@ -429,7 +456,9 @@ export default function TourList() {
                     <View style={styles.tourFooter}>
                       <View style={styles.ratingContainer}>
                         <Ionicons name="star" size={14} color="#FFD700" />
-                        <Text style={styles.ratingText}>4.5</Text>
+                        <Text style={styles.ratingText}>
+                          {tourRatings.get(tour.id)?.toFixed(1) || "0.0"}
+                        </Text>
                       </View>
                       <View style={styles.priceContainer}>
                         <Text style={styles.priceText}>

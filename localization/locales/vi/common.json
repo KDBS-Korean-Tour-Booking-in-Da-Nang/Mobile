@@ -758,7 +758,7 @@
     "options": {
       "language": "Ngôn ngữ",
       "notifications": "Thông báo",
-      "transactions": "Giao dịch",
+      "changePassword": "Đổi mật khẩu",
       "ticket": "Ticket"
     }
   },
@@ -777,6 +777,33 @@
       "improvement": "Cần cải thiện",
       "feedback": "Góp ý",
       "other": "Khác"
+    }
+  },
+  "changePassword": {
+    "title": "Đổi mật khẩu",
+    "subtitle": "Vui lòng nhập mật khẩu hiện tại và mật khẩu mới của bạn",
+    "oldPassword": "Mật khẩu hiện tại",
+    "oldPasswordPlaceholder": "Nhập mật khẩu hiện tại",
+    "newPassword": "Mật khẩu mới",
+    "newPasswordPlaceholder": "Nhập mật khẩu mới",
+    "confirmPassword": "Xác nhận mật khẩu mới",
+    "confirmPasswordPlaceholder": "Nhập lại mật khẩu mới",
+    "submit": "Cập nhật mật khẩu",
+    "success": {
+      "title": "Thành công",
+      "message": "Đổi mật khẩu thành công!"
+    },
+    "errors": {
+      "title": "Lỗi",
+      "oldPasswordRequired": "Vui lòng nhập mật khẩu hiện tại",
+      "newPasswordRequired": "Vui lòng nhập mật khẩu mới",
+      "passwordTooShort": "Mật khẩu phải có ít nhất 6 ký tự",
+      "confirmPasswordRequired": "Vui lòng xác nhận mật khẩu mới",
+      "passwordsDoNotMatch": "Mật khẩu xác nhận không khớp",
+      "samePassword": "Mật khẩu mới không được trùng với mật khẩu hiện tại",
+      "userNotFound": "Không tìm thấy thông tin người dùng",
+      "generic": "Không thể đổi mật khẩu. Vui lòng thử lại.",
+      "oauthOnly": "Tài khoản này đăng nhập qua Google/Naver và không có mật khẩu. Không thể đổi mật khẩu."
     }
   },
   "notifications": {
@@ -827,6 +854,8 @@
     "aiAssistant": "Trợ lý AI",
     "aiassitant": "Trợ lý AI",
     "startConversation": "Bắt đầu cuộc trò chuyện với AI",
+    "conversations": "Cuộc trò chuyện",
+    "noConversations": "Chưa có cuộc trò chuyện nào",
     "loading": "Đang tải...",
     "userNotFound": "Không tìm thấy người dùng"
   }

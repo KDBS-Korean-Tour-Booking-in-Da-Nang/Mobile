@@ -12,7 +12,8 @@ import {
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import forumEndpoints, {
+import {
+  forumEndpoints,
   PostResponse,
   CreatePostRequest,
 } from "../services/endpoints/forum";
@@ -561,7 +562,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "#E8EDF2",
-    borderBottomWidth: 1,
   },
   selectedHashtags: {
     flexDirection: "row",
@@ -631,7 +631,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "#E8EDF2",
-    borderBottomWidth: 1,
   },
   descriptionSection: {
     marginTop: 16,

@@ -99,7 +99,8 @@ export default function EditProfile() {
     const hasTrailingSpace = /\s$/.test(text || "");
     let s = (text || "")
       .normalize("NFC")
-      .replace(/[^\p{L} ]/gu, " ")
+      // Cho phép cả chữ và số trong tên khi cập nhật profile (chỉ lọc ký tự đặc biệt)
+      .replace(/[^\p{L}\p{N} ]/gu, " ")
       .replace(/\s+/g, " ")
       .replace(/^\s+/, "");
     const trimmedEnd = s.replace(/\s+$/g, "");
@@ -134,6 +135,7 @@ export default function EditProfile() {
     if (!trimmed || trimmed.length === 0) return false;
     if (trimmed.length < 2) return false;
     if (trimmed.length > 30) return false;
+    // Cho phép chữ + số trong tên khi cập nhật profile (booking vẫn không cho số)
     const usernameRegex = /^\p{L}[\p{L}\p{M}\p{N}\s]*$/u;
     return usernameRegex.test(trimmed);
   }, []);
@@ -332,8 +334,7 @@ export default function EditProfile() {
 
       try {
         await checkAuthStatus();
-      } catch (refreshError) {
-        console.error("Error refreshing user data:", refreshError);
+      } catch {
       }
 
       Alert.alert(
@@ -342,14 +343,6 @@ export default function EditProfile() {
       );
       goBack();
     } catch (e: any) {
-      console.error("[EditProfile] Update error:", {
-        message: e?.message,
-        response: e?.response?.data,
-        status: e?.response?.status,
-        code: e?.code,
-        stack: e?.stack,
-      });
-
       let msg =
         t("profile.errors.updateFailed") ||
         "Failed to update profile. Please try again.";
@@ -465,7 +458,7 @@ export default function EditProfile() {
 
                       const isValid = await validateAvatarFile(fileData);
                       if (!isValid) {
-                        return; // Error already set by validateAvatarFile
+                        return; 
                       }
 
                       setAvatarPreviewUri(uri);

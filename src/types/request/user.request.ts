@@ -6,6 +6,7 @@ export interface UpdateUserRequest {
   address?: string;
   gender?: "MALE" | "FEMALE" | "OTHER";
   avatarImg?: { uri: string; name?: string; type?: string } | any;
+  currentAvatarUrl?: string;
 }
 
 export interface RegisterRequest {

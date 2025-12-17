@@ -845,9 +845,11 @@ export default function BookingDetail() {
                           isWaitingForUpdate && styles.modalInputDisabled,
                         ]}
                         value={updateData.contactName}
-                        onChangeText={(text) =>
-                          setUpdateData({ ...updateData, contactName: text })
-                        }
+                        onChangeText={(text) => {
+                          // Remove numbers from name input
+                          const filteredText = text.replace(/[0-9]/g, "");
+                          setUpdateData({ ...updateData, contactName: filteredText });
+                        }}
                         placeholder={t("tour.booking.fullName")}
                         editable={!isWaitingForUpdate}
                       />
@@ -859,9 +861,13 @@ export default function BookingDetail() {
                       <TextInput
                         style={styles.modalInput}
                         value={updateData.contactPhone}
-                        onChangeText={(text) =>
-                          setUpdateData({ ...updateData, contactPhone: text })
-                        }
+                        onChangeText={(text) => {
+                          const digits = (text || "").replace(/\D/g, "");
+                          setUpdateData({
+                            ...updateData,
+                            contactPhone: digits,
+                          });
+                        }}
                         placeholder={t("tour.booking.phoneNumber")}
                         keyboardType="phone-pad"
                       />
@@ -948,8 +954,9 @@ export default function BookingDetail() {
                               style={styles.modalInput}
                               value={guest.fullName}
                               onChangeText={(text) => {
+                                const filteredText = text.replace(/[0-9]/g, "");
                                 const newAdultInfo = [...updateData.adultInfo];
-                                newAdultInfo[idx].fullName = text;
+                                newAdultInfo[idx].fullName = filteredText;
                                 setUpdateData({
                                   ...updateData,
                                   adultInfo: newAdultInfo,

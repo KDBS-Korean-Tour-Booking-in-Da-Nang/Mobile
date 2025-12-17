@@ -22,11 +22,9 @@ function toHttpBase(httpBase?: string): string | undefined {
 }
 
 function getWebSocketUrl(wsBase?: string, apiBase?: string): string | undefined {
-  // If WS_BASE is provided, use it (convert ws:// to http:// for SockJS)
   if (wsBase) {
     try {
       const url = new URL(wsBase);
-      // SockJS needs http/https, not ws/wss
       if (url.protocol === "ws:") {
         url.protocol = "http:";
       } else if (url.protocol === "wss:") {
@@ -34,11 +32,9 @@ function getWebSocketUrl(wsBase?: string, apiBase?: string): string | undefined 
       }
       return url.toString().replace(/\/$/, "");
     } catch {
-      // If URL parsing fails, try to convert ws:// to http:// manually
       return wsBase.replace(/^ws:\/\//, "http://").replace(/^wss:\/\//, "https://").replace(/\/$/, "");
     }
   }
-  // Fallback to deriving from API_BASE
   return apiBase ? toHttpBase(apiBase) : undefined;
 }
 
@@ -57,8 +53,6 @@ export function useStompChat() {
         const user = userData ? JSON.parse(userData) : {};
         const email =
           user?.email || user?.userEmail || user?.emailAddress || user?.mail;
-
-        // no console logs in production
 
         if (!wsUrl) {
           console.log("ERROR: WebSocket URL is undefined!");
