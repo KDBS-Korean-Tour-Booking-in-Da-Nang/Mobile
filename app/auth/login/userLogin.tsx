@@ -113,7 +113,11 @@ export default function UserLogin() {
                 style={styles.textInput}
                 placeholder="********"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  // Remove spaces from password input
+                  const filteredText = text.replace(/\s/g, "");
+                  setPassword(filteredText);
+                }}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
               />

@@ -16,3 +16,9 @@ export interface ForgotPasswordResetRequest {
   otpCode: string;
   newPassword: string;
 }
+
+export interface ChangePasswordRequest {
+  email: string;
+  oldPassword: string;
+  newPassword: string;
+}

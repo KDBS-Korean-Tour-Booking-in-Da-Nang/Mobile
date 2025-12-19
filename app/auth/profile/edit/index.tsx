@@ -99,7 +99,8 @@ export default function EditProfile() {
     const hasTrailingSpace = /\s$/.test(text || "");
     let s = (text || "")
       .normalize("NFC")
-      .replace(/[^\p{L} ]/gu, " ")
+      // Cho phép cả chữ và số trong tên khi cập nhật profile (chỉ lọc ký tự đặc biệt)
+      .replace(/[^\p{L}\p{N} ]/gu, " ")
       .replace(/\s+/g, " ")
       .replace(/^\s+/, "");
     const trimmedEnd = s.replace(/\s+$/g, "");
@@ -134,7 +135,7 @@ export default function EditProfile() {
     if (!trimmed || trimmed.length === 0) return false;
     if (trimmed.length < 2) return false;
     if (trimmed.length > 30) return false;
-    const usernameRegex = /^\p{L}[\p{L}\p{M}\p{N}\s]*$/u;
+    const usernameRegex = /^[\p{L}\p{N}][\p{L}\p{M}\p{N}\s]*$/u;
     return usernameRegex.test(trimmed);
   }, []);
 
@@ -144,13 +145,13 @@ export default function EditProfile() {
   }, []);
 
   const isPhoneValid = React.useCallback((text: string) => {
-    if (!text || !text.trim()) return true; // Phone is optional
+    if (!text || !text.trim()) return true; 
     const cleanPhone = (text || "").replace(/\s/g, "");
-    if (cleanPhone.length === 0) return true; // Empty phone is allowed
+    if (cleanPhone.length === 0) return true; 
     if (cleanPhone.length > 20) return false;
 
     const vietnameseRegex = /^(\+84|0)[0-9]{9,10}$/;
-    const internationalRegex = /^\+[1-9]\d{1,14}$/; // E.164 format
+    const internationalRegex = /^\+[1-9]\d{1,14}$/; 
     if (
       vietnameseRegex.test(cleanPhone) ||
       internationalRegex.test(cleanPhone)
@@ -161,7 +162,7 @@ export default function EditProfile() {
     if (cleanPhone.length < 7 || !/^[\d+]+$/.test(cleanPhone)) {
       return false;
     }
-    return true; // Allow it (might be valid format we didn't anticipate)
+    return true; 
   }, []);
 
   const isBirthDateValid = React.useCallback((s: string) => {
@@ -202,7 +203,7 @@ export default function EditProfile() {
     if ((initial.birthDate || "") !== (birthDate || "")) return true;
     if (initial.gender !== selectedGender) return true;
     if ((initial.address || "") !== (address || "")) return true;
-    if (avatarFile) return true; // Any newly selected avatar file counts as a change
+    if (avatarFile) return true; 
     return false;
   }, [
     fullName,
@@ -222,7 +223,7 @@ export default function EditProfile() {
     size?: number;
   }) => {
     setAvatarError("");
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 5 * 1024 * 1024; 
     const allowedTypes = [
       "image/jpeg",
       "image/jpg",
@@ -332,8 +333,7 @@ export default function EditProfile() {
 
       try {
         await checkAuthStatus();
-      } catch (refreshError) {
-        console.error("Error refreshing user data:", refreshError);
+      } catch {
       }
 
       Alert.alert(
@@ -342,14 +342,6 @@ export default function EditProfile() {
       );
       goBack();
     } catch (e: any) {
-      console.error("[EditProfile] Update error:", {
-        message: e?.message,
-        response: e?.response?.data,
-        status: e?.response?.status,
-        code: e?.code,
-        stack: e?.stack,
-      });
-
       let msg =
         t("profile.errors.updateFailed") ||
         "Failed to update profile. Please try again.";
@@ -465,7 +457,7 @@ export default function EditProfile() {
 
                       const isValid = await validateAvatarFile(fileData);
                       if (!isValid) {
-                        return; // Error already set by validateAvatarFile
+                        return; 
                       }
 
                       setAvatarPreviewUri(uri);

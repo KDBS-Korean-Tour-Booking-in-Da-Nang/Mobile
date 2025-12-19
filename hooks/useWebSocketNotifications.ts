@@ -16,11 +16,9 @@ function toHttpBase(httpBase?: string): string | undefined {
 }
 
 function getWebSocketUrl(wsBase?: string, apiBase?: string): string | undefined {
-  // If WS_BASE is provided, use it (convert ws:// to http:// for SockJS)
   if (wsBase) {
     try {
       const url = new URL(wsBase);
-      // SockJS needs http/https, not ws/wss
       if (url.protocol === "ws:") {
         url.protocol = "http:";
       } else if (url.protocol === "wss:") {
@@ -28,11 +26,9 @@ function getWebSocketUrl(wsBase?: string, apiBase?: string): string | undefined 
       }
       return url.toString().replace(/\/$/, "");
     } catch {
-      // If URL parsing fails, try to convert ws:// to http:// manually
       return wsBase.replace(/^ws:\/\//, "http://").replace(/^wss:\/\//, "https://").replace(/\/$/, "");
     }
   }
-  // Fallback to deriving from API_BASE
   return apiBase ? toHttpBase(apiBase) : undefined;
 }
 
@@ -44,7 +40,6 @@ export function useWebSocketNotifications(
   const callbackRef = useRef(onNewNotification);
   const subscriptionRef = useRef<any>(null);
 
-  // Update callback ref when it changes
   useEffect(() => {
     callbackRef.current = onNewNotification;
   }, [onNewNotification]);
@@ -77,7 +72,6 @@ export function useWebSocketNotifications(
           heartbeatOutgoing: 10000,
           onConnect: () => {
             setConnected(true);
-            // Subscribe to notifications topic
             const subscription = client.subscribe(
               "/user/queue/notifications",
               (msg: IMessage) => {
@@ -89,7 +83,6 @@ export function useWebSocketNotifications(
                     callbackRef.current(notification);
                   }
                 } catch {
-                  // Silently handle parsing errors
                 }
               }
             );
@@ -108,7 +101,6 @@ export function useWebSocketNotifications(
         clientRef.current = client;
         client.activate();
       } catch {
-        // Silently handle setup errors
       }
     };
 

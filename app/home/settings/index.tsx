@@ -27,7 +27,7 @@ export default function Settings() {
           try {
             await logout();
             navigate("/auth/login/userLogin");
-          } catch (error) {
+          } catch {
             navigate("/auth/login/userLogin");
           }
         },
@@ -41,7 +41,7 @@ export default function Settings() {
       title: t("settings.options.language"),
       icon: "globe-outline",
       onPress: () => {
-
+        navigate("/home?openLanguage=1");
       },
     },
     {
@@ -53,11 +53,11 @@ export default function Settings() {
       },
     },
     {
-      id: "transactions",
-      title: t("settings.options.transactions"),
-      icon: "card-outline",
+      id: "changePassword",
+      title: t("settings.options.changePassword"),
+      icon: "lock-closed-outline",
       onPress: () => {
-
+        navigate("/home/settings/changePassword");
       },
     },
     {

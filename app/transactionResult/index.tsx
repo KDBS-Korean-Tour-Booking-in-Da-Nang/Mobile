@@ -73,29 +73,7 @@ export default function TransactionResult() {
         if (!isNaN(parsedAmount) && parsedAmount > 0) {
           const roundedAmount = Math.round(parsedAmount);
           setTransactionAmount(roundedAmount);
-          console.log(
-            "[TRANSACTION RESULT] Amount from params (from payment page):",
-            {
-              amountParam: amount,
-              parsedAmount: parsedAmount,
-              roundedAmount: roundedAmount,
-              amountType: typeof amount,
-            }
-          );
-        } else {
-          console.log("[TRANSACTION RESULT] Invalid amount value:", {
-            amount: amount,
-            parsedAmount: parsedAmount,
-            isNaN: isNaN(parsedAmount),
-            isPositive: parsedAmount > 0,
-          });
         }
-      } else {
-        console.log("[TRANSACTION RESULT] No amount in params:", {
-          amount: amount,
-          amountType: typeof amount,
-          isEmpty: !amount || String(amount).trim().length === 0,
-        });
       }
     } catch (err: any) {
       setError(err.response?.data?.message || t("payment.result.fetchError"));

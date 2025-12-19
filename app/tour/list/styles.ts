@@ -340,14 +340,14 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
   giftModalTextTop: {
-    color: "#8B4A5A",
+    color: "#FFF",
     fontSize: 13,
     fontWeight: "600",
     lineHeight: 16,
     letterSpacing: 0.2,
   },
   giftModalTextBottom: {
-    color: "#8B4A5A",
+    color: "#FFF",
     fontSize: 11,
     fontWeight: "500",
     lineHeight: 14,

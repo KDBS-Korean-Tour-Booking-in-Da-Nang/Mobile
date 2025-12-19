@@ -17,11 +17,9 @@ function toHttpBase(httpBase?: string): string | undefined {
 }
 
 function getWebSocketUrl(wsBase?: string, apiBase?: string): string | undefined {
-  // If WS_BASE is provided, use it (convert ws:// to http:// for SockJS)
   if (wsBase) {
     try {
       const url = new URL(wsBase);
-      // SockJS needs http/https, not ws/wss
       if (url.protocol === "ws:") {
         url.protocol = "http:";
       } else if (url.protocol === "wss:") {
@@ -29,11 +27,9 @@ function getWebSocketUrl(wsBase?: string, apiBase?: string): string | undefined 
       }
       return url.toString().replace(/\/$/, "");
     } catch {
-      // If URL parsing fails, try to convert ws:// to http:// manually
       return wsBase.replace(/^ws:\/\//, "http://").replace(/^wss:\/\//, "https://").replace(/\/$/, "");
     }
   }
-  // Fallback to deriving from API_BASE
   return apiBase ? toHttpBase(apiBase) : undefined;
 }
 
@@ -67,13 +63,11 @@ export function useChatWebSocket(currentUserId: number) {
           heartbeatOutgoing: 10000,
           onConnect: () => {
             setConnected(true);
-            // Subscribe to user's personal queue
             client.subscribe(`/user/${currentUserId}/queue/messages`, (msg: IMessage) => {
               try {
                 const payload: ChatMessageRequest = JSON.parse(msg.body);
-                // Convert to ChatMessageResponse format
                 const messageResponse: ChatMessageResponse = {
-                  messageId: Date.now(), // Temporary ID, backend will provide real ID
+                  messageId: Date.now(),
                   senderId: payload.senderId,
                   receiverId: payload.receiverId,
                   content: payload.content,
@@ -81,7 +75,6 @@ export function useChatWebSocket(currentUserId: number) {
                 };
                 setIncomingMessages((prev) => [...prev, messageResponse]);
                 
-                // Notify handlers for this conversation
                 const conversationKey = payload.senderId === currentUserId 
                   ? payload.receiverId 
                   : payload.senderId;

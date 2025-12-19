@@ -91,7 +91,11 @@ export default function SignUp() {
             style={styles.input}
             placeholder="Enter full name"
             value={fullName}
-            onChangeText={setFullName}
+            onChangeText={(text) => {
+              // Remove numbers from name input
+              const filteredText = text.replace(/[0-9]/g, "");
+              setFullName(filteredText);
+            }}
           />
         </View>
 
@@ -115,7 +119,11 @@ export default function SignUp() {
             style={styles.input}
             placeholder="Enter password"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(text) => {
+              // Remove spaces from password input
+              const filteredText = text.replace(/\s/g, "");
+              setPassword(filteredText);
+            }}
             secureTextEntry
             autoCapitalize="none"
           />
@@ -128,7 +136,11 @@ export default function SignUp() {
             style={styles.input}
             placeholder="Re-enter password"
             value={confirmPassword}
-            onChangeText={setConfirmPassword}
+            onChangeText={(text) => {
+              // Remove spaces from password input
+              const filteredText = text.replace(/\s/g, "");
+              setConfirmPassword(filteredText);
+            }}
             secureTextEntry
             autoCapitalize="none"
           />

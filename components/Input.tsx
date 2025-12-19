@@ -60,6 +60,12 @@ export const Input: React.FC<InputProps> = ({
     setShowPassword(!showPassword);
   };
 
+  const handlePasswordChange = (text: string) => {
+    // Remove spaces from password input
+    const filteredText = text.replace(/\s/g, "");
+    onChangeText(filteredText);
+  };
+
   const inputContainerStyle = [
     styles.inputContainer,
     isFocused && styles.inputContainerFocused,
@@ -90,7 +96,7 @@ export const Input: React.FC<InputProps> = ({
           placeholder={placeholder}
           placeholderTextColor={colors.text.disabled}
           value={value}
-          onChangeText={onChangeText}
+          onChangeText={secureTextEntry ? handlePasswordChange : onChangeText}
           secureTextEntry={secureTextEntry && !showPassword}
           editable={!disabled}
           multiline={multiline}
