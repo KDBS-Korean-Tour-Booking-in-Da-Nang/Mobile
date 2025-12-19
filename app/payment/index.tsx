@@ -296,7 +296,7 @@ export default function TossPaymentScreen() {
       const currentOrderId = orderIdRef.current;
       const urlObj = new URL(url);
       const amountParam = urlObj.searchParams.get("amount");
-
+      
       const finalAmount = actualPaymentAmountRef.current !== null && actualPaymentAmountRef.current > 0
         ? String(Math.round(actualPaymentAmountRef.current))
         : (amount && String(amount).trim().length > 0 && !isNaN(Number(amount)) && Number(amount) > 0)
@@ -339,7 +339,6 @@ export default function TossPaymentScreen() {
                   "FAILED"
                 );
               } catch (error: any) {
-                // Silent fail
               }
             }
 
@@ -350,7 +349,6 @@ export default function TossPaymentScreen() {
                   message: "User cancelled payment",
                 });
               } catch (error: any) {
-                // Silent fail
               }
             }
 
@@ -359,7 +357,7 @@ export default function TossPaymentScreen() {
               pathname: "/transactionResult" as any,
               params: {
                 orderId: currentOrderId || "",
-                status: "CANCELLED", // Dùng CANCELLED thay vì FAILED để phân biệt
+                status: "CANCELLED",
                 paymentMethod: "TOSS",
                 bookingId: bookingId,
                 amount: actualPaymentAmountRef.current !== null
@@ -401,7 +399,7 @@ export default function TossPaymentScreen() {
         </View>
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={64} color="#FF3B30" />
-          <Text style={styles.errorTitle}>Lỗi</Text>
+          <Text style={styles.errorTitle}></Text>
           <Text style={styles.errorMessage}>{error}</Text>
           <TouchableOpacity
             style={styles.retryButton}
@@ -410,7 +408,7 @@ export default function TossPaymentScreen() {
               createPayment();
             }}
           >
-            <Text style={styles.retryButtonText}>Thử lại</Text>
+            <Text style={styles.retryButtonText}></Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -426,7 +424,7 @@ export default function TossPaymentScreen() {
           </TouchableOpacity>
         </View>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorTitle}>Không thể tải trang thanh toán</Text>
+          <Text style={styles.errorTitle}></Text>
         </View>
       </View>
     );
@@ -474,7 +472,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     paddingTop: Platform.OS === "android" 
       ? (StatusBar.currentHeight || 0) + 8 
-      : 50, // iOS safe area top padding
+      : 50, 
     borderBottomWidth: 1,
     borderBottomColor: "#E5E5EA",
   },
@@ -523,7 +521,7 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
-    marginTop: 0, // Không cần margin top vì header đã có padding
+    marginTop: 0, 
   },
   webviewLoading: {
     position: "absolute",

@@ -41,8 +41,9 @@ export default function TourList() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [keyword, setKeyword] = useState("");
-  const [tourRatings, setTourRatings] = useState<Map<number, number>>(new Map());
-
+  const [tourRatings, setTourRatings] = useState<Map<number, number>>(
+    new Map()
+  );
 
   const [isNavVisible, setIsNavVisible] = useState(true);
   const lastScrollY = useRef(0);
@@ -67,15 +68,17 @@ export default function TourList() {
       const toursData = (await tourEndpoints.getAllPublic()).data;
       const toursList = Array.isArray(toursData) ? toursData : [];
       setTours(toursList);
-      
+
       // Load ratings for all tours
       const ratingsMap = new Map<number, number>();
       await Promise.all(
         toursList.map(async (tour) => {
           try {
             const ratingsResponse = await tourEndpoints.getTourRatings(tour.id);
-            const ratings = Array.isArray(ratingsResponse.data) ? ratingsResponse.data : [];
-            
+            const ratings = Array.isArray(ratingsResponse.data)
+              ? ratingsResponse.data
+              : [];
+
             if (ratings.length > 0) {
               const totalStars = ratings.reduce((sum: number, rating: any) => {
                 const star = Number(rating.star) || 0;
@@ -211,17 +214,14 @@ export default function TourList() {
       setShareSubmitting(true);
       const cover = resolveTourCardImage(shareTour);
       const images: any[] = cover ? [{ uri: cover }] : [];
-      const meta = {
-        shareType: "TOUR",
-        tourId: shareTour.id,
-        cover,
-        tourName: shareTour.tourName,
-        tourDescription: shareTour.tourDescription,
-      } as any;
-      const marker = `[[META:${JSON.stringify(meta)}]]`;
 
-      const tourLink = `http://localhost:3000/tour/detail?id=${shareTour.id}`;
-      const contentToSend = `${shareContent.trim()}\n\n${tourLink}\n\n${marker}`;
+      const tourLink = `https://kdbs.online/tour/detail?id=${shareTour.id}`;
+      const contentParts: string[] = [];
+      if (shareContent.trim()) {
+        contentParts.push(shareContent.trim());
+      }
+      contentParts.push(tourLink);
+      const contentToSend = contentParts.join("\n");
 
       const createPostFormData = (data: {
         title: string;
@@ -269,7 +269,10 @@ export default function TourList() {
       });
       await forumEndpoints.createPost(formData);
       setShareOpen(false);
-      Alert.alert(t("forum.successTitle"), t("tour.share.success") || "Tour shared successfully!");
+      Alert.alert(
+        t("forum.successTitle"),
+        t("tour.share.success") || "Tour shared successfully!"
+      );
       navigate("/forum");
     } catch {
       Alert.alert(t("forum.errorTitle"), t("tour.share.errors.shareFailed"));
@@ -278,14 +281,9 @@ export default function TourList() {
     }
   };
 
-
   const resolveTourCardImage = (t: any): string => {
-
     const cover = getTourThumbnailUrl(t?.tourImgPath);
-    return (
-      cover ||
-      "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=250&fit=crop"
-    );
+    return cover;
   };
 
   const filteredTours = useMemo(() => {
@@ -434,9 +432,9 @@ export default function TourList() {
                     <View style={styles.tourMeta}>
                       <View style={styles.locationContainer}>
                         <Ionicons
-                        name="location-outline"
-                        size={14}
-                        color="#7A8A99"
+                          name="location-outline"
+                          size={14}
+                          color="#7A8A99"
                         />
                         <Text style={styles.locationText} numberOfLines={1}>
                           {tour.tourDeparturePoint}
@@ -444,9 +442,9 @@ export default function TourList() {
                       </View>
                       <View style={styles.durationContainer}>
                         <Ionicons
-                        name="time-outline"
-                        size={14}
-                        color="#7A8A99"
+                          name="time-outline"
+                          size={14}
+                          color="#7A8A99"
                         />
                         <Text style={styles.durationText}>
                           {tour.tourDuration || "3N2D"}
@@ -591,7 +589,7 @@ export default function TourList() {
                       style={styles.shareModalTourLink}
                     >
                       <Text style={styles.shareModalTourLinkText}>
-                        {`http://localhost:3000/tour/detail?id=${shareTour.id}`}
+                        {`https://kdbs.online/tour/detail?id=${shareTour.id}`}
                       </Text>
                     </TouchableOpacity>
                   </View>

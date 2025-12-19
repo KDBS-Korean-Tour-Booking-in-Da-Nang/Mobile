@@ -356,7 +356,15 @@
       "destination": "Điểm đến",
       "destinations": "Điểm đến",
       "destinationAndItinerary": "Điểm đến và Hành trình",
-      "bookingNow": "Đặt tour ngay"
+      "bookingNow": "Đặt tour ngay",
+      "applicableVouchers": "Voucher áp dụng",
+      "loadingVouchers": "Đang tải voucher...",
+      "vouchersAvailable": "voucher khả dụng",
+      "viewVouchers": "Xem voucher",
+      "minOrder": "Đơn tối thiểu",
+      "validTo": "Hiệu lực đến",
+      "noVoucherAvailable": "Chưa có voucher phù hợp.",
+      "voucherLoadFailed": "Không thể tải voucher khả dụng."
     },
     "types": {
       "DOMESTIC": "Resort",

@@ -12,14 +12,18 @@ import {
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { forumEndpoints, PostResponse, ForumCommentResponse } from "../services/endpoints/forum";
+import {
+  forumEndpoints,
+  PostResponse,
+  ForumCommentResponse,
+} from "../services/endpoints/forum";
 import ReportModal from "./ReportModal";
 import { useAuthContext } from "../src/contexts/authContext";
 import CommentSection from "./CommentSection";
 import { useTranslation } from "react-i18next";
 import { useNavigation } from "../navigation/navigation";
 import { geminiEndpoints } from "../services/endpoints/gemini";
-import usersEndpoints from "../services/endpoints/users";
+import { usersEndpoints } from "../services/endpoints/users";
 
 interface PostCardProps {
   post: PostResponse;
@@ -81,16 +85,27 @@ const PostCard: React.FC<PostCardProps> = ({
         let allUsers: any[] = [];
         if (Array.isArray(usersResponse.data)) {
           allUsers = usersResponse.data;
-        } else if (usersResponse.data && Array.isArray(usersResponse.data.result)) {
+        } else if (
+          usersResponse.data &&
+          Array.isArray(usersResponse.data.result)
+        ) {
           allUsers = usersResponse.data.result;
-        } else if (usersResponse.data && Array.isArray(usersResponse.data.content)) {
+        } else if (
+          usersResponse.data &&
+          Array.isArray(usersResponse.data.content)
+        ) {
           allUsers = usersResponse.data.content;
-        } else if (usersResponse.data && Array.isArray(usersResponse.data.data)) {
+        } else if (
+          usersResponse.data &&
+          Array.isArray(usersResponse.data.data)
+        ) {
           allUsers = usersResponse.data.data;
         }
-        
-        const foundUser = allUsers.find((u: any) => 
-          (u.username || u.name || "").trim().toLowerCase() === post.username.trim().toLowerCase()
+
+        const foundUser = allUsers.find(
+          (u: any) =>
+            (u.username || u.name || "").trim().toLowerCase() ===
+            post.username.trim().toLowerCase()
         );
         if (foundUser) {
           setPostUserId(foundUser.userId || foundUser.id);
@@ -99,7 +114,7 @@ const PostCard: React.FC<PostCardProps> = ({
         console.error("Error loading userId:", error);
       }
     };
-    
+
     if (showUserDropdown && !postUserId) {
       loadUserId();
     }
@@ -110,7 +125,7 @@ const PostCard: React.FC<PostCardProps> = ({
       return;
     }
     setShowUserDropdown(!showUserDropdown);
-    setShowMenu(false); 
+    setShowMenu(false);
   };
 
   const handleChatPress = () => {
@@ -599,7 +614,7 @@ const PostCard: React.FC<PostCardProps> = ({
   };
 
   return (
-    <TouchableWithoutFeedback 
+    <TouchableWithoutFeedback
       onPress={() => {
         setShowMenu(false);
         setShowUserDropdown(false);
@@ -608,8 +623,8 @@ const PostCard: React.FC<PostCardProps> = ({
       <View style={styles.container}>
         <View style={styles.header}>
           <View style={styles.userInfo}>
-            <TouchableOpacity 
-              onPress={handleUserPress} 
+            <TouchableOpacity
+              onPress={handleUserPress}
               activeOpacity={isOwner ? 1 : 0.7}
               disabled={isOwner}
             >
@@ -625,8 +640,8 @@ const PostCard: React.FC<PostCardProps> = ({
             </TouchableOpacity>
             <View style={styles.userDetails}>
               <View style={styles.usernameRow}>
-                <TouchableOpacity 
-                  onPress={handleUserPress} 
+                <TouchableOpacity
+                  onPress={handleUserPress}
                   activeOpacity={isOwner ? 1 : 0.7}
                   disabled={isOwner}
                 >
@@ -650,20 +665,20 @@ const PostCard: React.FC<PostCardProps> = ({
               }}
               style={styles.menuButton}
             >
-              <Ionicons name="ellipsis-vertical-outline" size={20} color="#7A8A99" />
+              <Ionicons
+                name="ellipsis-vertical-outline"
+                size={20}
+                color="#7A8A99"
+              />
             </TouchableOpacity>
-            
+
             {post.content && post.content.trim().length > 0 && (
               <TouchableOpacity
                 style={styles.translateChip}
                 onPress={toggleShowTranslated}
                 disabled={isTranslating}
               >
-                <Ionicons
-                  name="language-outline"
-                  size={14}
-                  color="#B8D4E3"
-                />
+                <Ionicons name="language-outline" size={14} color="#B8D4E3" />
                 <Text style={styles.translateChipText}>
                   {isTranslating
                     ? t("common.loading")
@@ -687,7 +702,9 @@ const PostCard: React.FC<PostCardProps> = ({
               <Text style={styles.userDropdownText}>
                 {(() => {
                   const translated = t("chat.chat");
-                  return translated && translated !== "chat.chat" ? translated : "Chat";
+                  return translated && translated !== "chat.chat"
+                    ? translated
+                    : "Chat";
                 })()}
               </Text>
             </TouchableOpacity>
@@ -766,8 +783,10 @@ const PostCard: React.FC<PostCardProps> = ({
             if (Array.isArray(post.imageUrls) && post.imageUrls.length > 0) {
               return (
                 <View style={styles.imagesContainer}>
+                  
                   {renderImages(post.imageUrls)}
                 </View>
+                
               );
             }
             return null;

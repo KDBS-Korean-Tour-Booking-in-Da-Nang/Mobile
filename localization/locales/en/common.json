@@ -345,7 +345,15 @@
       "adult": "Adult",
       "children": "Children",
       "baby": "Baby",
-      "destinationAndItinerary": "Destination and Itinerary"
+      "destinationAndItinerary": "Destination and Itinerary",
+      "applicableVouchers": "Applicable vouchers",
+      "loadingVouchers": "Loading vouchers...",
+      "vouchersAvailable": "available vouchers",
+      "viewVouchers": "View vouchers",
+      "minOrder": "Minimum order",
+      "validTo": "Valid to",
+      "noVoucherAvailable": "No suitable vouchers available.",
+      "voucherLoadFailed": "Failed to load applicable vouchers."
     },
     "types": {
       "DOMESTIC": "Domestic",

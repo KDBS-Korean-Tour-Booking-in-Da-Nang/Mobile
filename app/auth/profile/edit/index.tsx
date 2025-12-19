@@ -135,8 +135,7 @@ export default function EditProfile() {
     if (!trimmed || trimmed.length === 0) return false;
     if (trimmed.length < 2) return false;
     if (trimmed.length > 30) return false;
-    // Cho phép chữ + số trong tên khi cập nhật profile (booking vẫn không cho số)
-    const usernameRegex = /^\p{L}[\p{L}\p{M}\p{N}\s]*$/u;
+    const usernameRegex = /^[\p{L}\p{N}][\p{L}\p{M}\p{N}\s]*$/u;
     return usernameRegex.test(trimmed);
   }, []);
 
@@ -146,13 +145,13 @@ export default function EditProfile() {
   }, []);
 
   const isPhoneValid = React.useCallback((text: string) => {
-    if (!text || !text.trim()) return true; // Phone is optional
+    if (!text || !text.trim()) return true; 
     const cleanPhone = (text || "").replace(/\s/g, "");
-    if (cleanPhone.length === 0) return true; // Empty phone is allowed
+    if (cleanPhone.length === 0) return true; 
     if (cleanPhone.length > 20) return false;
 
     const vietnameseRegex = /^(\+84|0)[0-9]{9,10}$/;
-    const internationalRegex = /^\+[1-9]\d{1,14}$/; // E.164 format
+    const internationalRegex = /^\+[1-9]\d{1,14}$/; 
     if (
       vietnameseRegex.test(cleanPhone) ||
       internationalRegex.test(cleanPhone)
@@ -163,7 +162,7 @@ export default function EditProfile() {
     if (cleanPhone.length < 7 || !/^[\d+]+$/.test(cleanPhone)) {
       return false;
     }
-    return true; // Allow it (might be valid format we didn't anticipate)
+    return true; 
   }, []);
 
   const isBirthDateValid = React.useCallback((s: string) => {
@@ -204,7 +203,7 @@ export default function EditProfile() {
     if ((initial.birthDate || "") !== (birthDate || "")) return true;
     if (initial.gender !== selectedGender) return true;
     if ((initial.address || "") !== (address || "")) return true;
-    if (avatarFile) return true; // Any newly selected avatar file counts as a change
+    if (avatarFile) return true; 
     return false;
   }, [
     fullName,
@@ -224,7 +223,7 @@ export default function EditProfile() {
     size?: number;
   }) => {
     setAvatarError("");
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 5 * 1024 * 1024; 
     const allowedTypes = [
       "image/jpeg",
       "image/jpg",

@@ -341,7 +341,15 @@
       "adult": "성인",
       "children": "어린이",
       "baby": "유아",
-      "destinationAndItinerary": "목적지 및 일정"
+      "destinationAndItinerary": "목적지 및 일정",
+      "applicableVouchers": "적용 가능한 바우처",
+      "loadingVouchers": "바우처 로딩 중...",
+      "vouchersAvailable": "개의 사용 가능한 바우처",
+      "viewVouchers": "바우처 보기",
+      "minOrder": "최소 주문",
+      "validTo": "유효 기간",
+      "noVoucherAvailable": "사용 가능한 바우처가 없습니다.",
+      "voucherLoadFailed": "사용 가능한 바우처를 불러오지 못했습니다."
     },
     "meta": {
       "rating": "평점",

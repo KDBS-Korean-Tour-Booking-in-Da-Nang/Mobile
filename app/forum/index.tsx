@@ -111,16 +111,24 @@ export default function Forum() {
           setIsLoadingMore(true);
         }
 
+        const trimmedKeyword =
+          typeof keyword === "string" ? keyword.trim() : "";
+        const isHashtagSearch =
+          !!trimmedKeyword && !trimmedKeyword.includes(" ");
+        const normalizedHashtag = isHashtagSearch
+          ? trimmedKeyword.replace(/^#+/, "").toLowerCase()
+          : null;
+
         const requestParams: any = {
-          keyword: keyword || undefined,
           page,
           size: 10,
           sort: "createdAt,desc",
         };
-        if (Array.isArray(requestParams.hashtags)) {
-          requestParams.hashtags = requestParams.hashtags.join(",");
-        }
-        if (requestParams.keyword) {
+
+        if (isHashtagSearch && normalizedHashtag) {
+          requestParams.hashtags = [normalizedHashtag];
+        } else if (trimmedKeyword) {
+          requestParams.keyword = trimmedKeyword;
           requestParams.searchIn = "title,content";
           requestParams.fullText = true;
         }
@@ -131,13 +139,22 @@ export default function Forum() {
           : (response.data as { content: any[] })?.content || [];
         let posts = raw.map(transformApiPost);
 
-        if (keyword && typeof keyword === "string" && keyword.trim()) {
-          const q = keyword.trim().toLowerCase();
-          posts = posts.filter(
-            (p) =>
-              p.title?.toLowerCase().includes(q) ||
-              p.content?.toLowerCase().includes(q)
+        if (isHashtagSearch && normalizedHashtag) {
+          posts = posts.filter((p) =>
+            (p.hashtags || []).some(
+              (tag) => String(tag).toLowerCase() === normalizedHashtag
+            )
           );
+        } else if (trimmedKeyword) {
+          const q = trimmedKeyword.toLowerCase();
+          posts = posts.filter((p) => {
+            const inTitle = p.title?.toLowerCase().includes(q);
+            const inContent = p.content?.toLowerCase().includes(q);
+            const inHashtag = (p.hashtags || []).some((tag) =>
+              String(tag).toLowerCase().includes(q)
+            );
+            return inTitle || inContent || inHashtag;
+          });
         }
 
         if (page === 0) {
@@ -258,7 +275,7 @@ export default function Forum() {
     (keyword: string) => {
       setSearchQuery(keyword);
       setCurrentPage(0);
-      setPosts([]); // Clear existing posts before search
+      setPosts([]); 
       loadPosts(0, keyword);
       setViewingSaved(false);
       setViewingMyPosts(false);
@@ -313,7 +330,7 @@ export default function Forum() {
 
       try {
         await forumEndpoints.deletePost(postId, user.email);
-        await loadPosts(0, searchQuery); // reload list mới
+        await loadPosts(0, searchQuery); 
         Alert.alert(t("forum.successTitle"), t("forum.postDeleted"));
       } catch {
         if (false as any) {
@@ -564,6 +581,7 @@ export default function Forum() {
   const loadFullPostDetails = useCallback(async (postId: number) => {
     try {
       const response = await forumEndpoints.getPostById(postId);
+      console.log("Full post details loaded:", response.data);
       const fullPost = transformApiPost(response.data);
       setPosts((prev) => {
         return prev.map((p) => (p.id === postId ? fullPost : p));
@@ -668,8 +686,12 @@ export default function Forum() {
                       key={index}
                       style={styles.suggestionItem}
                       onPress={() => {
-                        setSearchQuery(suggestion.replace("#", ""));
-                        handleSearch(suggestion.replace("#", ""));
+                        const raw =
+                          suggestion.startsWith("#")
+                            ? suggestion
+                            : `#${suggestion}`;
+                        setSearchQuery(raw);
+                        handleSearch(raw);
                         setShowSearchDropdown(false);
                       }}
                     >
