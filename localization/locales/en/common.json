@@ -345,7 +345,15 @@
       "adult": "Adult",
       "children": "Children",
       "baby": "Baby",
-      "destinationAndItinerary": "Destination and Itinerary"
+      "destinationAndItinerary": "Destination and Itinerary",
+      "applicableVouchers": "Applicable vouchers",
+      "loadingVouchers": "Loading vouchers...",
+      "vouchersAvailable": "available vouchers",
+      "viewVouchers": "View vouchers",
+      "minOrder": "Minimum order",
+      "validTo": "Valid to",
+      "noVoucherAvailable": "No suitable vouchers available.",
+      "voucherLoadFailed": "Failed to load applicable vouchers."
     },
     "types": {
       "DOMESTIC": "Domestic",
@@ -750,7 +758,7 @@
     "options": {
       "language": "Language",
       "notifications": "Notifications",
-      "transactions": "Transactions",
+      "changePassword": "Change Password",
       "ticket": "Ticket"
     }
   },
@@ -769,6 +777,33 @@
       "improvement": "Need Improvement",
       "feedback": "Feedback",
       "other": "Other"
+    }
+  },
+  "changePassword": {
+    "title": "Change Password",
+    "subtitle": "Please enter your current password and new password",
+    "oldPassword": "Current Password",
+    "oldPasswordPlaceholder": "Enter current password",
+    "newPassword": "New Password",
+    "newPasswordPlaceholder": "Enter new password",
+    "confirmPassword": "Confirm New Password",
+    "confirmPasswordPlaceholder": "Re-enter new password",
+    "submit": "Update Password",
+    "success": {
+      "title": "Success",
+      "message": "Password changed successfully!"
+    },
+    "errors": {
+      "title": "Error",
+      "oldPasswordRequired": "Please enter current password",
+      "newPasswordRequired": "Please enter new password",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "confirmPasswordRequired": "Please confirm new password",
+      "passwordsDoNotMatch": "Passwords do not match",
+      "samePassword": "New password cannot be the same as current password",
+      "userNotFound": "User information not found",
+      "generic": "Unable to change password. Please try again.",
+      "oauthOnly": "This account is logged in via Google/Naver and does not have a password. Cannot change password."
     }
   },
   "notifications": {
@@ -839,6 +874,8 @@
     "aiAssistant": "AI Assistant",
     "aiassitant": "AI Assistant",
     "startConversation": "Start a conversation with AI",
+    "conversations": "Conversations",
+    "noConversations": "No conversations yet",
     "loading": "Loading...",
     "userNotFound": "User not found"
   }

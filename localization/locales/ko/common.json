@@ -341,7 +341,15 @@
       "adult": "성인",
       "children": "어린이",
       "baby": "유아",
-      "destinationAndItinerary": "목적지 및 일정"
+      "destinationAndItinerary": "목적지 및 일정",
+      "applicableVouchers": "적용 가능한 바우처",
+      "loadingVouchers": "바우처 로딩 중...",
+      "vouchersAvailable": "개의 사용 가능한 바우처",
+      "viewVouchers": "바우처 보기",
+      "minOrder": "최소 주문",
+      "validTo": "유효 기간",
+      "noVoucherAvailable": "사용 가능한 바우처가 없습니다.",
+      "voucherLoadFailed": "사용 가능한 바우처를 불러오지 못했습니다."
     },
     "meta": {
       "rating": "평점",
@@ -739,8 +747,8 @@
     "options": {
       "language": "언어",
       "notifications": "알림",
-      "transactions": "거래내역",
-      "ticket": "Ticket"
+      "changePassword": "비밀번호 변경",
+      "ticket": "티켓"
     }
   },
   "ticket": {
@@ -758,6 +766,33 @@
       "improvement": "개선 필요",
       "feedback": "의견",
       "other": "기타"
+    }
+  },
+  "changePassword": {
+    "title": "비밀번호 변경",
+    "subtitle": "현재 비밀번호와 새 비밀번호를 입력해주세요",
+    "oldPassword": "현재 비밀번호",
+    "oldPasswordPlaceholder": "현재 비밀번호 입력",
+    "newPassword": "새 비밀번호",
+    "newPasswordPlaceholder": "새 비밀번호 입력",
+    "confirmPassword": "새 비밀번호 확인",
+    "confirmPasswordPlaceholder": "새 비밀번호 다시 입력",
+    "submit": "비밀번호 업데이트",
+    "success": {
+      "title": "성공",
+      "message": "비밀번호가 성공적으로 변경되었습니다!"
+    },
+    "errors": {
+      "title": "오류",
+      "oldPasswordRequired": "현재 비밀번호를 입력해주세요",
+      "newPasswordRequired": "새 비밀번호를 입력해주세요",
+      "passwordTooShort": "비밀번호는 최소 6자 이상이어야 합니다",
+      "confirmPasswordRequired": "새 비밀번호를 확인해주세요",
+      "passwordsDoNotMatch": "비밀번호가 일치하지 않습니다",
+      "samePassword": "새 비밀번호는 현재 비밀번호와 같을 수 없습니다",
+      "userNotFound": "사용자 정보를 찾을 수 없습니다",
+      "generic": "비밀번호를 변경할 수 없습니다. 다시 시도해주세요.",
+      "oauthOnly": "이 계정은 Google/Naver로 로그인되어 있으며 비밀번호가 없습니다. 비밀번호를 변경할 수 없습니다."
     }
   },
   "notifications": {
@@ -828,6 +863,8 @@
     "aiAssistant": "AI 어시스턴트",
     "aiassitant": "AI 어시스턴트",
     "startConversation": "AI와 대화 시작하기",
+    "conversations": "대화",
+    "noConversations": "아직 대화가 없습니다",
     "loading": "로딩 중...",
     "userNotFound": "사용자를 찾을 수 없습니다"
   }

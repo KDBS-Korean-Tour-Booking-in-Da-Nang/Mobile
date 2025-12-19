@@ -1,175 +1,109 @@
-import { StyleSheet } from "react-native";
-import {
-  colors,
-  spacing,
-  borderRadius,
-  typography,
-} from "../../../constants/theme";
+import { StyleSheet, Platform } from "react-native";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: "#f8f9fa",
   },
   header: {
     paddingTop: 50,
-    paddingBottom: spacing.xl,
-    paddingHorizontal: spacing.lg,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    backgroundColor: "#E3F2FD",
   },
   backButton: {
-    padding: spacing.sm,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "white",
-  },
-  placeholder: {
-    width: 40,
-  },
-  content: {
-    padding: spacing.lg,
-  },
-  infoContainer: {
-    backgroundColor: colors.background.secondary,
-    padding: spacing.lg,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.xl,
-  },
-  infoTitle: {
-    fontSize: 16,
-    color: colors.text.primary,
-    lineHeight: 24,
-    textAlign: "center",
-  },
-  uploadSection: {
-    marginBottom: spacing.xl,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: colors.text.primary,
-    marginBottom: spacing.lg,
-  },
-  uploadItem: {
-    backgroundColor: colors.surface.primary,
-    borderRadius: borderRadius.md,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border.light,
-  },
-  uploadHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.md,
   },
-  uploadInfo: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  uploadTitle: {
+  backText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
+    color: "#6c757d",
+    marginLeft: 4,
   },
-  uploadDesc: {
-    fontSize: 14,
-    color: colors.text.secondary,
+  content: {
+    flex: 1,
+    paddingBottom: Platform.select({ ios: 200, android: 220 }) as number,
   },
-  uploadButton: {
-    backgroundColor: colors.primary.main,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+  profileHeader: {
+    backgroundColor: "#E3F2FD",
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+  },
+  profileCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 20,
     flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  avatarContainer: {
+    marginRight: 16,
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#e9ecef",
     alignItems: "center",
     justifyContent: "center",
   },
-  uploadButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: spacing.sm,
+  profileInfo: {
+    flex: 1,
   },
-  fileInfo: {
+  username: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#212529",
+    marginBottom: 4,
+  },
+  editProfileText: {
+    fontSize: 14,
+    color: "#6c757d",
+  },
+  optionsContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  optionCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
     flexDirection: "row",
     alignItems: "center",
-    marginTop: spacing.md,
-    padding: spacing.sm,
-    backgroundColor: colors.success.light,
-    borderRadius: borderRadius.sm,
+    justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  fileName: {
-    fontSize: 14,
-    color: colors.success.dark,
-    marginLeft: spacing.sm,
+  optionContent: {
+    flex: 1,
   },
-  notesContainer: {
-    backgroundColor: colors.info.light,
-    padding: spacing.lg,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.xl,
-  },
-  notesTitle: {
+  optionTitle: {
     fontSize: 16,
-    fontWeight: "600",
-    color: colors.info.dark,
-    marginBottom: spacing.md,
+    fontWeight: "bold",
+    color: "#212529",
+    marginBottom: 4,
   },
-  notesList: {
-    gap: spacing.sm,
-  },
-  noteItem: {
+  optionDescription: {
     fontSize: 14,
-    color: colors.info.dark,
+    color: "#6c757d",
     lineHeight: 20,
   },
-  buttonContainer: {
-    flexDirection: "row",
-    gap: spacing.md,
+  seeAllText: {
+    fontSize: 14,
+    color: "#6c757d",
+    fontWeight: "500",
   },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: colors.surface.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.md,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.border.medium,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.text.secondary,
-  },
-  submitButton: {
-    flex: 2,
-    backgroundColor: colors.primary.main,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.md,
-    alignItems: "center",
-  },
-  submitButtonDisabled: {
-    opacity: 0.6,
-  },
-  loadingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  spinning: {
-    marginRight: spacing.sm,
-  },
-  submitButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
+  bottomSpacing: {
+    height: Platform.select({ ios: 100, android: 120 }) as number,
   },
 });
 

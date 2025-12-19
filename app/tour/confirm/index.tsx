@@ -492,17 +492,6 @@ export default function ConfirmTour() {
           : bookingStatus || "PENDING_PAYMENT";
 
       const paymentAmount = amountDueNow;
-      
-      console.log("[CONFIRM] Payment amount calculated:", {
-        amountDueNow: paymentAmount,
-        finalTotal: finalTotal,
-        depositPercentage: depositPercentage,
-        voucherPreview: voucherPreview ? {
-          finalDepositAmount: voucherPreview.finalDepositAmount,
-          finalTotal: voucherPreview.finalTotal,
-          discountAmount: voucherPreview.discountAmount,
-        } : null,
-      });
 
       router.push({
         pathname: "/payment" as any,
@@ -510,7 +499,7 @@ export default function ConfirmTour() {
           bookingId: String(bookingId),
           userEmail: userEmailKey || bookingData.customerEmail || "",
           bookingStatus: bookingStatusForPayment,
-          amount: String(Math.round(paymentAmount)), // Đảm bảo là số nguyên và string
+          amount: String(Math.round(paymentAmount)), 
           voucherCode: voucherPreview?.voucherCode || "",
           orderInfo:
             depositPercentage > 0 && depositPercentage < 100

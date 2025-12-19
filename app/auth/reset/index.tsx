@@ -90,7 +90,11 @@ export default function SetNewPassword() {
               style={styles.input}
               placeholder="******"
               value={newPassword}
-              onChangeText={setNewPassword}
+              onChangeText={(text) => {
+                // Remove spaces from password input
+                const filteredText = text.replace(/\s/g, "");
+                setNewPassword(filteredText);
+              }}
               secureTextEntry
               autoCapitalize="none"
             />
@@ -101,7 +105,11 @@ export default function SetNewPassword() {
               style={styles.input}
               placeholder="******"
               value={confirmPassword}
-              onChangeText={setConfirmPassword}
+              onChangeText={(text) => {
+                // Remove spaces from password input
+                const filteredText = text.replace(/\s/g, "");
+                setConfirmPassword(filteredText);
+              }}
               secureTextEntry
               autoCapitalize="none"
             />
