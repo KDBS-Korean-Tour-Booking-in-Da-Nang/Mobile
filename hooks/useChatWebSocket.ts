@@ -47,7 +47,6 @@ export function useChatWebSocket(currentUserId: number) {
         const token = await AsyncStorage.getItem("authToken");
 
         if (!wsUrl) {
-          console.log("ERROR: WebSocket URL is undefined!");
           return;
         }
 

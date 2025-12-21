@@ -24,6 +24,8 @@ import { useTranslation } from "react-i18next";
 import { useNavigation } from "../navigation/navigation";
 import { geminiEndpoints } from "../services/endpoints/gemini";
 import { usersEndpoints } from "../services/endpoints/users";
+import { tourEndpoints } from "../services/endpoints/tour";
+import { getTourThumbnailUrl } from "../src/utils/media";
 
 interface PostCardProps {
   post: PostResponse;
@@ -66,6 +68,8 @@ const PostCard: React.FC<PostCardProps> = ({
   const [isShowingTranslated, setIsShowingTranslated] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [postUserId, setPostUserId] = useState<number | null>(null);
+  const [tourImageUrl, setTourImageUrl] = useState<string | null>(null);
+  const [loadingTourImage, setLoadingTourImage] = useState(false);
 
   useEffect(() => {
     if (
@@ -195,6 +199,54 @@ const PostCard: React.FC<PostCardProps> = ({
       } catch {}
     })();
   }, [post.id]);
+
+  useEffect(() => {
+    const loadTourImage = async () => {
+      let tourId: number | null = null;
+      const metaMatch =
+        (post.content || "").match(/<!--META:(\{[\s\S]*?\})-->/i) ||
+        (post.content || "").match(/\[\[META:(\{[\s\S]*?\})\]\]/i);
+      if (metaMatch && metaMatch[1]) {
+        try {
+          const meta = JSON.parse(metaMatch[1]);
+          if (
+            meta &&
+            meta.shareType === "TOUR" &&
+            Number.isFinite(meta.tourId)
+          ) {
+            tourId = Number(meta.tourId);
+          }
+        } catch {}
+      }
+      if (!tourId) {
+        tourId = extractTourIdFromContent(post.content || "");
+      }
+
+      if (!tourId) {
+        setTourImageUrl(null);
+        return;
+      }
+
+      try {
+        setLoadingTourImage(true);
+        const tourResponse = await tourEndpoints.getById(tourId);
+        const tour = tourResponse.data;
+        if (tour && tour.tourImgPath) {
+          const imageUrl = getTourThumbnailUrl(tour.tourImgPath);
+          setTourImageUrl(imageUrl);
+        } else {
+          setTourImageUrl(null);
+        }
+      } catch (error) {
+        console.error("Error loading tour image:", error);
+        setTourImageUrl(null);
+      } finally {
+        setLoadingTourImage(false);
+      }
+    };
+
+    loadTourImage();
+  }, [post.content, post.id]);
 
   const handleReaction = async (reactionType: "LIKE" | "DISLIKE") => {
     if (isLoading) return;
@@ -824,7 +876,7 @@ const PostCard: React.FC<PostCardProps> = ({
             }
             if (!tourId) tourId = extractTourIdFromContent(post.content || "");
             if (!tourId) return null;
-            const cover = coverFromMeta || (post.imageUrls || [])[0];
+            const cover = tourImageUrl || coverFromMeta;
             return (
               <TouchableOpacity
                 activeOpacity={0.9}
@@ -849,6 +901,20 @@ const PostCard: React.FC<PostCardProps> = ({
                     }}
                     contentFit="cover"
                   />
+                ) : loadingTourImage ? (
+                  <View
+                    style={{
+                      width: "100%",
+                      height: 180,
+                      borderRadius: 8,
+                      marginBottom: 8,
+                      backgroundColor: "#f0f0f0",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text style={{ color: "#999" }}>{t("common.loading")}</Text>
+                  </View>
                 ) : null}
                 <Text
                   style={{ fontWeight: "700", fontSize: 16 }}
