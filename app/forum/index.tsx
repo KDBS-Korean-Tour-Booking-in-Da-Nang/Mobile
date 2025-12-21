@@ -581,7 +581,6 @@ export default function Forum() {
   const loadFullPostDetails = useCallback(async (postId: number) => {
     try {
       const response = await forumEndpoints.getPostById(postId);
-      console.log("Full post details loaded:", response.data);
       const fullPost = transformApiPost(response.data);
       setPosts((prev) => {
         return prev.map((p) => (p.id === postId ? fullPost : p));

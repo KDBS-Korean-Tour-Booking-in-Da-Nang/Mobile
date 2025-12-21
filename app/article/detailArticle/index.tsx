@@ -518,14 +518,8 @@ export default function ArticleDetail() {
                           style={styles.suggestTourCard}
                           onPress={() => {
                             if (tourId && !isNaN(tourId) && tourId > 0) {
-                              console.log("[Article Detail] Navigating to tour detail:", tourId);
                               navigate(`/tour/tourDetail?id=${tourId}` as any);
                             } else {
-                              console.error("[Article Detail] Invalid tour ID:", {
-                                originalId: tour.id,
-                                parsedId: tourId,
-                                tour: tour
-                              });
                             }
                           }}
                         >

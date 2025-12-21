@@ -55,7 +55,6 @@ export function useStompChat() {
           user?.email || user?.userEmail || user?.emailAddress || user?.mail;
 
         if (!wsUrl) {
-          console.log("ERROR: WebSocket URL is undefined!");
           return;
         }
 
