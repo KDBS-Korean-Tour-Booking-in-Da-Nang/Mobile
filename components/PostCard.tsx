@@ -70,6 +70,7 @@ const PostCard: React.FC<PostCardProps> = ({
   const [postUserId, setPostUserId] = useState<number | null>(null);
   const [tourImageUrl, setTourImageUrl] = useState<string | null>(null);
   const [loadingTourImage, setLoadingTourImage] = useState(false);
+  const [tourDescription, setTourDescription] = useState<string | null>(null);
 
   useEffect(() => {
     if (
@@ -224,6 +225,7 @@ const PostCard: React.FC<PostCardProps> = ({
 
       if (!tourId) {
         setTourImageUrl(null);
+        setTourDescription(null);
         return;
       }
 
@@ -231,15 +233,37 @@ const PostCard: React.FC<PostCardProps> = ({
         setLoadingTourImage(true);
         const tourResponse = await tourEndpoints.getById(tourId);
         const tour = tourResponse.data;
-        if (tour && tour.tourImgPath) {
-          const imageUrl = getTourThumbnailUrl(tour.tourImgPath);
-          setTourImageUrl(imageUrl);
+        if (tour) {
+          if (tour.tourImgPath) {
+            const imageUrl = getTourThumbnailUrl(tour.tourImgPath);
+            setTourImageUrl(imageUrl);
+          } else {
+            setTourImageUrl(null);
+          }
+          // Load tour description
+          if (tour.tourDescription) {
+            // Strip HTML tags and decode HTML entities for plain text display
+            const plainText = tour.tourDescription
+              .replace(/<[^>]*>/g, "") // Remove HTML tags
+              .replace(/&nbsp;/g, " ")
+              .replace(/&amp;/g, "&")
+              .replace(/&lt;/g, "<")
+              .replace(/&gt;/g, ">")
+              .replace(/&quot;/g, '"')
+              .replace(/&#39;/g, "'")
+              .trim();
+            setTourDescription(plainText || null);
+          } else {
+            setTourDescription(null);
+          }
         } else {
           setTourImageUrl(null);
+          setTourDescription(null);
         }
       } catch (error) {
         console.error("Error loading tour image:", error);
         setTourImageUrl(null);
+        setTourDescription(null);
       } finally {
         setLoadingTourImage(false);
       }
@@ -922,22 +946,19 @@ const PostCard: React.FC<PostCardProps> = ({
                 >
                   {(tourNameFromMeta && tourNameFromMeta.trim()) || post.title}
                 </Text>
-                {tourDescFromMeta && tourDescFromMeta.trim() ? (
-                  <Text
-                    style={{ color: "#555", marginTop: 6 }}
-                    numberOfLines={2}
-                  >
-                    {tourDescFromMeta.trim()}
-                  </Text>
-                ) : null}
-                <TouchableOpacity
-                  onPress={() => navigate(`/tour/tourDetail?id=${tourId}`)}
-                  style={{ marginTop: 6 }}
-                >
-                  <Text
-                    style={{ color: "#007AFF" }}
-                  >{`/tour/tourDetail?id=${tourId}`}</Text>
-                </TouchableOpacity>
+                {(() => {
+                  const descriptionToShow =
+                    (tourDescFromMeta && tourDescFromMeta.trim()) ||
+                    tourDescription;
+                  return descriptionToShow ? (
+                    <Text
+                      style={{ color: "#555", marginTop: 6 }}
+                      numberOfLines={2}
+                    >
+                      {descriptionToShow}
+                    </Text>
+                  ) : null;
+                })()}
               </TouchableOpacity>
             );
           })()}

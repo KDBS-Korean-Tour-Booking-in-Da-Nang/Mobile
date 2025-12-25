@@ -20,6 +20,8 @@ export interface TourResponse {
   tourExpirationDate?: string;
   depositPercentage?: number; // Phần trăm tiền cọc (0-100)
   minAdvancedDays?: number; // Số ngày tối thiểu phải đặt trước khi khởi hành
+  minGuests?: number; // Số lượng khách tối thiểu
+  maxGuests?: number; // Số lượng khách tối đa
 }
 
 export interface TourContentResponse {

@@ -39,7 +39,6 @@ const getArticleFields = (article: Article, lang: string) => {
       content: article.articleContentKR || article.articleContent,
     };
   } else {
-
     return {
       title: article.articleTitle,
       description: article.articleDescription,
@@ -70,7 +69,6 @@ export default function ArticleList() {
         (comment) => !comment.parentCommentId
       );
       setArticleComments((prev) => {
-
         if (prev[articleId]) {
           return prev;
         }
@@ -121,7 +119,6 @@ export default function ArticleList() {
         loadCommentsForArticle(article.articleId);
       });
     }
-
   }, [articles]);
 
   useEffect(() => {
@@ -171,70 +168,6 @@ export default function ArticleList() {
       return title.includes(query) || description.includes(query);
     });
   }, [articles, searchQuery, currentLang]);
-
-  const formatCommentDate = (dateString: string) => {
-    if (!dateString) {
-      return t("article.comment.justNow") || "Vừa xong";
-    }
-
-    try {
-      let date: Date;
-
-      if (
-        dateString.includes("T") &&
-        !dateString.includes("Z") &&
-        !dateString.includes("+") &&
-        !dateString.match(/[+-]\d{2}:\d{2}$/)
-      ) {
-        const parts = dateString.split("T");
-        if (parts.length === 2) {
-          const [year, month, day] = parts[0].split("-").map(Number);
-          const timePart = parts[1].split(".")[0];
-          const [hour, minute, second] = timePart.split(":").map(Number);
-          date = new Date(
-            year,
-            month - 1,
-            day,
-            hour || 0,
-            minute || 0,
-            second || 0
-          );
-        } else {
-          date = new Date(dateString);
-        }
-      } else {
-        date = new Date(dateString);
-      }
-
-      if (isNaN(date.getTime())) {
-        return t("article.comment.justNow") || "Vừa xong";
-      }
-
-      const now = new Date();
-      const diffInMs = now.getTime() - date.getTime();
-      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-
-      if (diffInMinutes < 1) {
-        return t("article.comment.justNow") || "Vừa xong";
-      } else if (diffInHours < 1) {
-        return `${diffInMinutes} phút trước`;
-      } else if (diffInHours < 24) {
-        return (
-          t("article.comment.hoursAgo", { hours: diffInHours }) ||
-          `${diffInHours} giờ trước`
-        );
-      } else {
-        const diffInDays = Math.floor(diffInHours / 24);
-        return (
-          t("article.comment.daysAgo", { days: diffInDays }) ||
-          `${diffInDays} ngày trước`
-        );
-      }
-    } catch {
-      return t("article.comment.justNow") || "Vừa xong";
-    }
-  };
 
   if (loading) {
     return (
@@ -287,7 +220,11 @@ export default function ArticleList() {
                   onPress={() => setSearchQuery("")}
                   style={styles.clearSearchButton}
                 >
-                  <Ionicons name="close-circle-outline" size={18} color="#7A8A99" />
+                  <Ionicons
+                    name="close-circle-outline"
+                    size={18}
+                    color="#7A8A99"
+                  />
                 </TouchableOpacity>
               )}
             </View>
@@ -317,7 +254,6 @@ export default function ArticleList() {
               {filteredArticles.map((article) => {
                 const comments = articleComments[article.articleId] || [];
                 const commentCount = comments.length;
-                const topComments = comments.slice(0, 3);
 
                 return (
                   <View
@@ -372,63 +308,6 @@ export default function ArticleList() {
                         </View>
                       </View>
                     </TouchableOpacity>
-
-                    {}
-                    {topComments.length > 0 && (
-                      <View style={styles.articleCommentsPreview}>
-                        {topComments.map((comment) => (
-                          <View
-                            key={comment.articleCommentId}
-                            style={styles.commentPreviewItem}
-                          >
-                            <View style={styles.commentPreviewAvatar}>
-                              {comment.userAvatar ? (
-                                <Image
-                                  source={{ uri: comment.userAvatar }}
-                                  style={styles.commentPreviewAvatarImage}
-                                />
-                              ) : (
-                                <Ionicons
-                                  name="person"
-                                  size={12}
-                                  color="#666"
-                                />
-                              )}
-                            </View>
-                            <View style={styles.commentPreviewContent}>
-                              <Text style={styles.commentPreviewUserName}>
-                                {comment.username || "Người dùng"}
-                              </Text>
-                              <Text
-                                style={styles.commentPreviewText}
-                                numberOfLines={2}
-                              >
-                                {comment.content}
-                              </Text>
-                              <Text style={styles.commentPreviewDate}>
-                                {formatCommentDate(comment.createdAt)}
-                              </Text>
-                            </View>
-                          </View>
-                        ))}
-                        {commentCount > 3 && (
-                          <TouchableOpacity
-                            style={styles.viewAllCommentsButton}
-                            onPress={() => {
-                              navigate(
-                                `/article/detailArticle?id=${article.articleId}`
-                              );
-                            }}
-                          >
-                            <Text style={styles.viewAllCommentsText}>
-                              {t("article.comment.viewAll", {
-                                count: commentCount,
-                              }) || `Xem tất cả ${commentCount} bình luận`}
-                            </Text>
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    )}
                   </View>
                 );
               })}
