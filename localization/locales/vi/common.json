@@ -357,6 +357,9 @@
       "destinations": "Điểm đến",
       "destinationAndItinerary": "Điểm đến và Hành trình",
       "bookingNow": "Đặt tour ngay",
+      "guestLimitRange": "Số lượng khách: từ {{min}} đến {{max}} người",
+      "guestLimitMin": "Số lượng khách tối thiểu: {{min}} người",
+      "guestLimitMax": "Số lượng khách tối đa: {{max}} người",
       "applicableVouchers": "Voucher áp dụng",
       "loadingVouchers": "Đang tải voucher...",
       "vouchersAvailable": "voucher khả dụng",
@@ -482,8 +485,18 @@
         "childDobInvalid": "Trẻ em {{index}}: Vui lòng chọn ngày sinh hợp lệ",
         "childAgeRange": "Trẻ em {{index}}: Tuổi phải từ 2 đến dưới 18",
         "babyDobInvalid": "Em bé {{index}}: Vui lòng chọn ngày sinh hợp lệ",
-        "babyAgeMax": "Em bé {{index}}: Tuổi phải dưới 2"
+        "babyAgeMax": "Em bé {{index}}: Tuổi phải dưới 2",
+        "minGuestsRequired": "Số lượng khách tối thiểu là {{min}} người",
+        "maxGuestsExceeded": "Số lượng khách tối đa là {{max}} người"
       },
+      "warnings": {
+        "title": "Cảnh báo số lượng khách",
+        "minGuestsRequired": "Số lượng khách tối thiểu là {{min}} người. Hiện tại bạn đã chọn {{total}} người. Vui lòng tăng thêm số lượng khách để tiếp tục.",
+        "maxGuestsExceeded": "Số lượng khách tối đa là {{max}} người. Hiện tại bạn đã chọn {{total}} người. Vui lòng giảm số lượng khách để tiếp tục."
+      },
+      "guestLimitRange": "Tour này cho phép từ {{min}} đến {{max}} khách. Vui lòng chọn số lượng khách trong khoảng này.",
+      "guestLimitMinOnly": "Tour này yêu cầu tối thiểu {{min}} khách. Vui lòng chọn số lượng khách trong khoảng này.",
+      "guestLimitMaxOnly": "Tour này cho phép tối đa {{max}} khách. Vui lòng chọn số lượng khách trong khoảng này.",
       "departureDateRange": "Có thể chọn từ {{minDate}} đến {{maxDate}}",
       "departureDateMinOnly": "Có thể chọn từ {{minDate}} trở đi",
       "bookingDeadlineNote": "cần đặt trước {{days}} ngày",
