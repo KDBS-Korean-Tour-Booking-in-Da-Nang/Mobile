@@ -45,9 +45,6 @@ type VoucherPreviewItem = {
   endDate?: string;
 };
 
-const DEFAULT_TOUR_IMAGE =
-  "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop";
-
 export default function TourDetail() {
   const { goBack, navigate } = useNavigation();
   const { t } = useTranslation();
@@ -91,7 +88,7 @@ export default function TourDetail() {
           tourId,
           error: error?.message,
           response: error?.response?.data,
-          status: error?.response?.status
+          status: error?.response?.status,
         });
         Alert.alert(t("common.error"), t("tour.errors.loadFailed"));
       } finally {
@@ -110,8 +107,10 @@ export default function TourDetail() {
       }
       try {
         const ratingsResponse = await tourEndpoints.getTourRatings(tourId);
-        const ratings = Array.isArray(ratingsResponse.data) ? ratingsResponse.data : [];
-        
+        const ratings = Array.isArray(ratingsResponse.data)
+          ? ratingsResponse.data
+          : [];
+
         if (ratings.length === 0) {
           setAverageRating(null);
           return;
@@ -191,7 +190,6 @@ export default function TourDetail() {
       setVoucherLoading(true);
       setVoucherError(null);
       try {
-
         const response = await voucherEndpoints.getByTourId(tour.id);
         const data = Array.isArray(response.data) ? response.data : [];
         const normalized = data
@@ -291,7 +289,6 @@ export default function TourDetail() {
 
         setHasBookedTour(hasSuccessfulBooking);
       } catch {
-
         setHasBookedTour(false);
       } finally {
         setCheckingBooking(false);
@@ -303,7 +300,7 @@ export default function TourDetail() {
 
   const imageList = useMemo(() => {
     const cover = getTourThumbnailUrl(tour?.tourImgPath);
-    return cover ? [cover] : [DEFAULT_TOUR_IMAGE];
+    return cover ? [cover] : [];
   }, [tour?.tourImgPath]);
 
   if (loading) {
@@ -528,30 +525,6 @@ export default function TourDetail() {
               </View>
               <View style={styles.metaDivider} />
               {}
-              <View style={styles.metaCol}>
-                <Text
-                  style={[
-                    styles.metaLabelCaps,
-                    (Dimensions.get("window").width <= 360 ||
-                      Dimensions.get("window").height <= 700) &&
-                      styles.metaLabelCapsSm,
-                  ]}
-                  numberOfLines={1}
-                  ellipsizeMode="clip"
-                >
-                  {t("tour.meta.vehicle")}
-                </Text>
-                <Text
-                  style={[
-                    styles.metaValue,
-                    (Dimensions.get("window").width <= 360 ||
-                      Dimensions.get("window").height <= 700) &&
-                      styles.metaValueSm,
-                  ]}
-                >
-                  {tour.tourVehicle || t("tour.vehicles.car")}
-                </Text>
-              </View>
             </View>
           </View>
 
@@ -677,6 +650,37 @@ export default function TourDetail() {
             </View>
           </View>
 
+          {((tour.minGuests && tour.minGuests > 0) ||
+            (tour.maxGuests && tour.maxGuests > 0)) && (
+            <View style={styles.guestLimitCard}>
+              <View style={styles.guestLimitContent}>
+                <Ionicons name="people-outline" size={20} color="#5A6C7D" />
+                <Text style={styles.guestLimitText}>
+                  {tour.minGuests &&
+                  tour.minGuests > 0 &&
+                  tour.maxGuests &&
+                  tour.maxGuests > 0
+                    ? t("tour.detail.guestLimitRange", {
+                        min: tour.minGuests,
+                        max: tour.maxGuests,
+                        defaultValue: `Số lượng khách: từ ${tour.minGuests} đến ${tour.maxGuests} người`,
+                      })
+                    : tour.minGuests && tour.minGuests > 0
+                    ? t("tour.detail.guestLimitMin", {
+                        min: tour.minGuests,
+                        defaultValue: `Số lượng khách tối thiểu: ${tour.minGuests} người`,
+                      })
+                    : tour.maxGuests && tour.maxGuests > 0
+                    ? t("tour.detail.guestLimitMax", {
+                        max: tour.maxGuests,
+                        defaultValue: `Số lượng khách tối đa: ${tour.maxGuests} người`,
+                      })
+                    : ""}
+                </Text>
+              </View>
+            </View>
+          )}
+
           <TouchableOpacity
             style={styles.voucherRow}
             onPress={() => setShowVoucherModal(true)}
@@ -728,7 +732,6 @@ export default function TourDetail() {
                   if (!html || typeof html !== "string") return null;
 
                   try {
-
                     const imgRegex = /<img[^>]*src=["']([^"']+)["'][^>]*>/gi;
                     const images: string[] = [];
                     let workingHtml = html;

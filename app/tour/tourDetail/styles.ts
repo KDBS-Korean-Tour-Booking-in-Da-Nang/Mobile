@@ -186,6 +186,33 @@ const styles = StyleSheet.create({
     padding: 4,
     marginBottom: 4,
   },
+  guestLimitCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    padding: 14,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  guestLimitContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  guestLimitText: {
+    fontSize: 14,
+    color: "#555",
+    fontWeight: "500",
+    flex: 1,
+  },
   voucherRow: {
     backgroundColor: "#fff",
     borderRadius: 12,

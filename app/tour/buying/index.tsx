@@ -200,6 +200,8 @@ export default function BuyingTour() {
   const [voucher, setVoucher] = React.useState<VoucherResponse | null>(null);
   const [selectedVoucherPreview, setSelectedVoucherPreview] = React.useState<ApplyVoucherResponse | null>(null);
   const [showVoucherModal, setShowVoucherModal] = React.useState(false);
+  const [showGuestLimitWarning, setShowGuestLimitWarning] = React.useState(false);
+  const [guestLimitWarningMessage, setGuestLimitWarningMessage] = React.useState("");
   const [availableVouchers, setAvailableVouchers] = React.useState<
     VoucherResponse[]
   >([]);
@@ -214,11 +216,20 @@ export default function BuyingTour() {
   const [averageRating, setAverageRating] = React.useState<number | null>(null);
 
   const increment = React.useCallback((type: "adult" | "children" | "baby") => {
+    const currentTotal = adultCount + childrenCount + babyCount;
+    const maxGuests = tour?.maxGuests;
+    
+    if (maxGuests && maxGuests > 0 && currentTotal >= maxGuests) {
+      return;
+    }
+    
     if (type === "adult") setAdultCount((c) => c + 1);
     if (type === "children") setChildrenCount((c) => c + 1);
     if (type === "baby") setBabyCount((c) => c + 1);
-  }, []);
+  }, [adultCount, childrenCount, babyCount, tour?.maxGuests]);
+  
   const decrement = React.useCallback((type: "adult" | "children" | "baby") => {
+    // Cho phép giảm thoải mái, không block khi giảm xuống dưới min
     if (type === "adult") setAdultCount((c) => Math.max(1, c - 1));
     if (type === "children") setChildrenCount((c) => Math.max(0, c - 1));
     if (type === "baby") setBabyCount((c) => Math.max(0, c - 1));
@@ -367,6 +378,36 @@ export default function BuyingTour() {
       Alert.alert(t("common.error"), t("tour.booking.errors.adultMin"));
       return false;
     }
+
+    // Validate minGuests và maxGuests
+    const totalGuests = adultCount + childrenCount + babyCount;
+    const minGuests = tour?.minGuests;
+    const maxGuests = tour?.maxGuests;
+
+    if (minGuests && minGuests > 0 && totalGuests < minGuests) {
+      setGuestLimitWarningMessage(
+        t("tour.booking.warnings.minGuestsRequired", {
+          min: minGuests,
+          total: totalGuests,
+          defaultValue: `Số lượng khách tối thiểu là ${minGuests} người. Hiện tại bạn đã chọn ${totalGuests} người.`,
+        })
+      );
+      setShowGuestLimitWarning(true);
+      return false;
+    }
+
+    if (maxGuests && maxGuests > 0 && totalGuests > maxGuests) {
+      setGuestLimitWarningMessage(
+        t("tour.booking.warnings.maxGuestsExceeded", {
+          max: maxGuests,
+          total: totalGuests,
+          defaultValue: `Số lượng khách tối đa là ${maxGuests} người. Hiện tại bạn đã chọn ${totalGuests} người.`,
+        })
+      );
+      setShowGuestLimitWarning(true);
+      return false;
+    }
+
     if (!formData.address || formData.address.trim().length < 2) {
       Alert.alert(t("common.error"), t("tour.booking.errors.fullNameRequired"));
       return false;
@@ -909,9 +950,7 @@ export default function BuyingTour() {
     const cover = getTourThumbnailUrl(tour?.tourImgPath);
     return cover
       ? [cover]
-      : [
-          "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
-        ];
+      : [];
   }, [tour?.tourImgPath]);
 
   if (loading) {
@@ -1276,9 +1315,34 @@ export default function BuyingTour() {
             {}
             {}
 
-            <Text style={[styles.sectionSubLabel, { marginTop: 10 }]}>
-              {t("tour.booking.totalGuests")}
-            </Text>
+            <View style={styles.totalGuestsHeader}>
+              <Text style={styles.sectionSubLabel}>
+                {t("tour.booking.totalGuests")}
+              </Text>
+            </View>
+            {((tour.minGuests && tour.minGuests > 0) || (tour.maxGuests && tour.maxGuests > 0)) && (
+              <View style={styles.guestLimitWarning}>
+                <Text style={styles.guestLimitWarningText}>
+                  {tour.minGuests && tour.minGuests > 0 && tour.maxGuests && tour.maxGuests > 0
+                    ? t("tour.booking.guestLimitRange", {
+                        min: tour.minGuests,
+                        max: tour.maxGuests,
+                        defaultValue: `This tour allows ${tour.minGuests} to ${tour.maxGuests} guests. Please select the number of guests within this range.`,
+                      })
+                    : tour.minGuests && tour.minGuests > 0
+                    ? t("tour.booking.guestLimitMinOnly", {
+                        min: tour.minGuests,
+                        defaultValue: `This tour requires at least ${tour.minGuests} guests. Please select the number of guests within this range.`,
+                      })
+                    : tour.maxGuests && tour.maxGuests > 0
+                    ? t("tour.booking.guestLimitMaxOnly", {
+                        max: tour.maxGuests,
+                        defaultValue: `This tour allows up to ${tour.maxGuests} guests. Please select the number of guests within this range.`,
+                      })
+                    : ""}
+                </Text>
+              </View>
+            )}
             <View style={styles.counterRowWrapper}>
               <View style={styles.counterGroup}>
                 <Text style={[styles.counterLabel, { color: "#3B5BDB" }]}>
@@ -2195,9 +2259,11 @@ export default function BuyingTour() {
 
                 {}
                 <View style={styles.totalSection}>
-                  <Text style={styles.totalLabel}>
-                    {t("tour.confirm.total")}
-                  </Text>
+                  <View style={styles.totalLabelContainer}>
+                    <Text style={styles.totalLabel}>
+                      {t("tour.confirm.total")}
+                    </Text>
+                  </View>
                   <Text style={styles.totalValue}>
                     {formatPrice(finalTotal)}
                   </Text>
@@ -2454,6 +2520,52 @@ export default function BuyingTour() {
               </TouchableOpacity>
           </View>
       </View>
+        </View>
+      </Modal>
+
+      {/* Guest Limit Warning Modal */}
+      <Modal
+        visible={showGuestLimitWarning}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowGuestLimitWarning(false)}
+      >
+        <View style={styles.warningModalOverlay}>
+          <View style={styles.warningModalContent}>
+            <View style={styles.warningModalHeader}>
+              <Text style={styles.warningModalTitle}>
+                {t("tour.booking.warnings.title", {
+                  defaultValue: "Guest Count Warning",
+                })}
+              </Text>
+              <TouchableOpacity
+                style={styles.warningModalCloseButton}
+                onPress={() => setShowGuestLimitWarning(false)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close" size={20} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.warningModalBody}>
+              <View style={styles.warningIconContainer}>
+                <Ionicons name="information-circle" size={48} color="#F59E0B" />
+              </View>
+              <Text style={styles.warningModalMessage}>
+                {guestLimitWarningMessage}
+              </Text>
+            </View>
+            <View style={styles.warningModalFooter}>
+              <TouchableOpacity
+                style={styles.warningModalButton}
+                onPress={() => setShowGuestLimitWarning(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.warningModalButtonText}>
+                  {t("common.ok", { defaultValue: "OK" })}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </Modal>
     </MainLayout>

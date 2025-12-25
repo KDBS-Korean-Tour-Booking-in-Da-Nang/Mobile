@@ -342,6 +342,9 @@
       "children": "어린이",
       "baby": "유아",
       "destinationAndItinerary": "목적지 및 일정",
+      "guestLimitRange": "인원 수: {{min}}명부터 {{max}}명까지",
+      "guestLimitMin": "최소 인원: {{min}}명",
+      "guestLimitMax": "최대 인원: {{max}}명",
       "applicableVouchers": "적용 가능한 바우처",
       "loadingVouchers": "바우처 로딩 중...",
       "vouchersAvailable": "개의 사용 가능한 바우처",
@@ -462,10 +465,18 @@
         "adultDobInvalid": "성인 {{index}}: 유효한 생년월일을 선택해주세요",
         "adultAgeMin": "성인 {{index}}: 나이는 18세 이상이어야 합니다",
         "childDobInvalid": "어린이 {{index}}: 유효한 생년월일을 선택해주세요",
-        "childAgeRange": "어린이 {{index}}: 나이는 2세 이상 18세 미만이어야 합니다",
-        "babyDobInvalid": "유아 {{index}}: 유효한 생년월일을 선택해주세요",
-        "babyAgeMax": "유아 {{index}}: 나이는 2세 미만이어야 합니다"
+        "minGuestsRequired": "최소 인원은 {{min}}명입니다",
+        "maxGuestsExceeded": "최대 인원은 {{max}}명입니다",
+        "childAgeRange": "어린이 {{index}}: 나이는 2세 이상 18세 미만이어야 합니다"
       },
+      "warnings": {
+        "title": "인원 수 경고",
+        "minGuestsRequired": "최소 인원은 {{min}}명입니다. 현재 {{total}}명이 선택되어 있습니다. 계속하려면 인원 수를 늘려주세요.",
+        "maxGuestsExceeded": "최대 인원은 {{max}}명입니다. 현재 {{total}}명이 선택되어 있습니다. 계속하려면 인원 수를 줄여주세요."
+      },
+      "guestLimitRange": "이 투어는 {{min}}명부터 {{max}}명까지 허용됩니다. 이 범위 내에서 인원 수를 선택해주세요.",
+      "guestLimitMinOnly": "이 투어는 최소 {{min}}명이 필요합니다. 이 범위 내에서 인원 수를 선택해주세요.",
+      "guestLimitMaxOnly": "이 투어는 최대 {{max}}명까지 허용됩니다. 이 범위 내에서 인원 수를 선택해주세요.",
       "departureDateRange": "{{minDate}}부터 {{maxDate}}까지 선택 가능",
       "departureDateMinOnly": "{{minDate}}부터 선택 가능",
       "bookingDeadlineNote": "{{days}}일 전 예약 필요",
